@@ -1,7 +1,7 @@
 
 (function(){
 
-var formatter = require('./formatter');
+var formatter = require('../utils/formatter');
 var token     = require('./token');
 
 var digits     = /^[0-9]+/;

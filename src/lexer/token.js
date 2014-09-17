@@ -1,8 +1,8 @@
 
 (function(){
 
-var formatter = require('./formatter');
-var _ = require('underscore');
+var _         = require('underscore');
+var formatter = require('../utils/formatter');
 
 function Token(file, line, col, val, tp) {
   this.filename = file;
