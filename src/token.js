@@ -2,6 +2,7 @@
 (function(){
 
 var formatter = require('./formatter');
+var _ = require('underscore');
 
 function Token(file, line, col, val, tp) {
   this.filename = file;
@@ -16,7 +17,9 @@ Token.prototype.toFormatter = function(f) {
   f.addPair('File', this.filename);
   f.addPair('Line #', this.lineno);
   f.addPair('Col #', this.colno);
-  f.addPair('Value', this.value);
+  if(this.type !== 'NEWLINE') {
+    f.addPair('Value', this.value);
+  }
   f.addPair('Type', this.type);
   f.end();
 };
@@ -51,7 +54,39 @@ exports.mkDigits = mkDigits;
 exports.mkIdent  = mkIdent;
 exports.mkError  = mkError;
 
+function Graph(symbols) {
+  this.result = [];
+  var that = this;
+  _.each(symbols, function(sym) {
+    if(sym in Symbols) {
+      that.result.push({
+        symbol: sym,
+        value: Symbols[sym]
+      });
+    } else {
+      throw 'Unknown symbol: ' + sym;
+    }
+  });
+}
+exports.Graph = Graph;
+
+Graph.prototype.match = function(input) {
+  return _.find(this.result, function(item) {
+    if(input.substr(0, item.value.length) == item.value) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+};
+
 exports.Types = {
+  DIGITS: 'DIGITS',
+  IDENT: 'IDENT',
+  NEWLINE: 'NEWLINE',
+};
+
+var Symbols = {
   NEWLINE: '\n',
   DOT: '.',
   COLON: ':',
@@ -73,6 +108,7 @@ exports.Types = {
   OR: '|',
   XOR: '^',
   EQ: '=',
+  NOT: '!',
   LT: '<',
   GT: '>',
   EQEQ: '==',

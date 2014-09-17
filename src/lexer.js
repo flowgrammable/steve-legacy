@@ -4,10 +4,10 @@
 var formatter = require('./formatter');
 var token     = require('./token');
 
-var digits     = /[0-9]+/;
-var ident      = /[a-zA-Z_][a-zA-Z0-9_]*/;
-var whitespace = /[ \t]+/;
-var newline    = /[\n]/;
+var digits     = /^[0-9]+/;
+var ident      = /^[a-zA-Z_][a-zA-Z0-9_]*/;
+var whitespace = /^[ \t]+/;
+var newline    = /^[\n]/;
 
 function count(pattern, input) {
   var str = pattern.exec(input);
@@ -35,7 +35,14 @@ function countNewline(input) {
 }
 
 function take(countF, type, ctx) {
-  var amt = countF(ctx.remainder);
+  var amt;
+  if(typeof countF === 'function') {
+    amt = countF(ctx.remainder);
+  } else if(typeof countF === 'number') {
+    amt = countF;
+  } else {
+    throw 'Unknown countF: ' + typeof countF;
+  }
   if(amt > 0) {
     return token.mkToken(
       ctx.filename,
@@ -59,6 +66,15 @@ function takeIdent(ctx) {
 
 function takeNewline(ctx) {
   return take(countNewline, token.Types.NEWLINE, ctx);
+}
+
+function takeSymbol(ctx, graph) {
+  var m = graph.match(ctx.remainder);
+  if(m) {
+    return take(m.value.length, m.symbol, ctx);
+  } else {
+    return null;
+  }
 }
 
 function takeUnknown(ctx) {
@@ -116,6 +132,12 @@ function tokenize(ctx) {
   tok = takeNewline(ctx);
   if(tok) { return tok; }
 
+  tok = takeSymbol(ctx, diGraph);
+  if(tok) { return tok; }
+
+  tok = takeSymbol(ctx, uniGraph);
+  if(tok) { return tok; }
+
   return takeUnknown(ctx);
 }
 
@@ -130,6 +152,34 @@ function lex(f, input) {
     tokens: ctx.tokens
   };
 }
+
+var uniGraph = new token.Graph([
+  'DOT',
+  'EQ',
+  'SEMI',
+  'COLON',
+  'LPAREN',
+  'RPAREN',
+  'LBRACE',
+  'RBRACE',
+  'LBRACK',
+  'RBRACK',
+  'PLUS',
+  'MINUS',
+  'MULT',
+  'DIV',
+  'MOD',
+  'NOT',
+  'LT',
+  'GT'
+]);
+
+var diGraph = new token.Graph([
+  'EQEQ',
+  'NTEQ',
+  'LTEQ',
+  'GTEQ'
+]);
 
 exports.lex = lex;
 
