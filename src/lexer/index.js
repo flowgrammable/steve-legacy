@@ -8,6 +8,8 @@ var digits     = /^[0-9]+/;
 var ident      = /^[a-zA-Z_][a-zA-Z0-9_]*/;
 var whitespace = /^[ \t]+/;
 var newline    = /^[\n]/;
+var squote     = /^'[^'\n]?'/;
+var dquote     = /^"[^"\n]*"/;
 
 function count(pattern, input) {
   var str = pattern.exec(input);
@@ -32,6 +34,14 @@ function countWhitespace(input) {
 
 function countNewline(input) {
   return count(newline, input);
+}
+
+function countSQuote(input) {
+  return count(squote, input);
+}
+
+function countDQuote(input) {
+  return count(dquote, input);
 }
 
 function take(countF, type, ctx) {
@@ -68,13 +78,24 @@ function takeNewline(ctx) {
   return take(countNewline, token.Types.NEWLINE, ctx);
 }
 
-function takeSymbol(ctx, graph) {
-  var m = graph.match(ctx.remainder);
-  if(m) {
-    return take(m.value.length, m.symbol, ctx);
-  } else {
-    return null;
-  }
+function takeSQuote(ctx) {
+  return take(countSQuote, token.Types.SQUOTE, ctx);
+}
+
+function takeDQuote(ctx) {
+  return take(countDQuote, token.Types.DQUOTE, ctx);
+}
+
+function takeSymbol(graph) {
+  var _graph = graph;
+  return function(ctx) {
+    var m = _graph.match(ctx.remainder);
+    if(m) {
+      return take(m.value.length, m.symbol, ctx);
+    } else {
+      return null;
+    }
+  };
 }
 
 function takeUnknown(ctx) {
@@ -120,32 +141,32 @@ Context.prototype.step = function(tok) {
   return this;
 };
 
-function tokenize(ctx) {
-  var tok = null;
-
-  tok = takeDigits(ctx);
-  if(tok) { return tok; }
-
-  tok = takeIdent(ctx);
-  if(tok) { return tok; }
-  
-  tok = takeNewline(ctx);
-  if(tok) { return tok; }
-
-  tok = takeSymbol(ctx, diGraph);
-  if(tok) { return tok; }
-
-  tok = takeSymbol(ctx, uniGraph);
-  if(tok) { return tok; }
-
-  return takeUnknown(ctx);
+function tokenize(tokenizers) {
+  var _tokenizers = arguments;
+  return function(ctx) {
+    var idx;
+    for(idx = 0; idx < _tokenizers.length; ++idx) {
+      var tok = _tokenizers[idx](ctx);
+      if(tok) { return tok; }
+    }
+    return null;
+  };
 }
 
 function lex(f, input) {
   var ctx = new Context(f, input);
   while(!isDone(ctx)) {
     ctx.trim();
-    ctx.step(tokenize(ctx));
+    ctx.step(tokenize(
+      takeDigits,
+      takeIdent,
+      takeNewline,
+      takeSQuote,
+      takeDQuote,
+      takeSymbol(diGraph),
+      takeSymbol(uniGraph),
+      takeUnknown
+    )(ctx));
   }
   return {
     filename: f,
