@@ -178,6 +178,8 @@ var uniGraph = new token.Graph([
   'DOT',
   'EQ',
   'SEMI',
+  'COMMA',
+  'BAR',
   'COLON',
   'LPAREN',
   'RPAREN',
