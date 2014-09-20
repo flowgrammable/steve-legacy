@@ -1,0 +1,24 @@
+
+def IPv4:namespace = {
+
+def Address : type = uint(32, msbf);
+  
+def Header : type = record {
+  version  : uint(4) | == 4 = 4;
+  ihl      : uint(4) | >= 5 = 5;
+  dscp     : uint(6) = 0;
+  ecn      : uint(2) = 0;
+  length   : uint(16, msbf) >= 10 = 20;
+  id       : uint(16, msbf);
+  flags    : uint(3);
+  offset   : uint(13, msbf) = 0;
+  ttl      : uint(8) = 128;
+  protocol : uint(8);
+  checksum : uint(16, msbf);
+  src      : Address;
+  dst      : Address;
+};
+
+
+};
+

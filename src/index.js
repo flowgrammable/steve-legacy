@@ -6,7 +6,8 @@ var fs      = require('fs');
 var program = require('commander');
 var _       = require('underscore');
 
-var lex = require('./lexer');
+var lex    = require('./lexer');
+var parser = require('./parser');
 
 program
   .version('0.0.1')
@@ -22,13 +23,12 @@ program
   .option('--javascript', 'Generate Javascript output')
   .parse(process.argv);
 
-var files = _.map(program.args, function(file) {
-  return lex.lex(file, fs.readFileSync(file, 'utf8'));
+var parses = _.map(program.args, function(file) {
+  return parser.parse(lex.lex(file, fs.readFileSync(file, 'utf8')));
 });
 
-_.each(files, function(item) {
-  console.log(item.filename);
-  console.log(item.tokens.toString());
+_.each(parses, function(ptree) {
+  console.log(ptree.toString());
 });
 
 })();
