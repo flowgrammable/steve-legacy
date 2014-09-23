@@ -1,4 +1,6 @@
 
+(function(){
+
 Formatter = function(name) {
   this.result = '';
   this.tab = '  ';
@@ -53,3 +55,6 @@ Formattable.prototype.toString = function() {
   var result = f.toString();
   return result;
 };
+
+})();
+

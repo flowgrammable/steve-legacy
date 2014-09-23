@@ -28,7 +28,7 @@ var parses = _.map(program.args, function(file) {
 });
 
 _.each(parses, function(ptree) {
-  console.log(ptree.toString());
+  console.log(ptree);
 });
 
 })();

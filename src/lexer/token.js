@@ -1,16 +1,19 @@
 
 (function(){
 
-var _         = require('underscore');
-var formatter = require('../utils/formatter');
+var _   = require('underscore');
+var fmt = require('../utils/formatter');
 
 function Token(file, line, col, val, tp) {
+  fmt.Formattable.call(this);
   this.filename = file;
   this.lineno = line;
   this.colno = col;
   this.value = val;
   this.type = tp;
 }
+Token.prototype = Object.create(fmt.Formattable);
+Token.constructor = Token;
 
 Token.prototype.toFormatter = function(f) {
   f.begin('Token');
@@ -22,14 +25,6 @@ Token.prototype.toFormatter = function(f) {
   }
   f.addPair('Type', this.type);
   f.end();
-};
-
-Token.prototype.toString = function() {
-  var f, s;
-  f = new formatter.Formatter();
-  this.toFormatter(f);
-  s = f.toString();
-  return s;
 };
 
 function mkToken(file, line, col, val, tp) {
@@ -84,6 +79,7 @@ exports.Types = {
   DIGITS:  'DIGITS',
   IDENT:   'IDENT',
   NEWLINE: 'NEWLINE',
+  WHITESPACE: 'WHITESPACE',
   SQUOTE:  'SQUOTE',
   DQUOTE:  'DQUOTE'
 };
