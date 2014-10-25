@@ -31,6 +31,30 @@ function parse(symbol, cons, ctx) {
   }
 }
 
+var binOps = [
+  '+', '-', '*', '/
+];
+
+function parseOp(ctx) {
+  var op;
+  op = consume('+', ctx);
+  op = consume('-', ctx);
+  op = consume('*', ctx);
+  op = consume('/', ctx);
+  op = consume('%', ctx);
+  op = consume('&', ctx);
+  op = consume('|', ctx);
+  op = consume('^', ctx);
+  op = consume('~', ctx);
+  op = consume('.', ctx);
+  op = consume('<<', ctx);
+  op = consume('>>', ctx);
+  op = consume('&&', ctx);
+  op = consume('||', ctx);
+  op = consume('==', ctx);
+  op = consume('!=', ctx);
+}
+
 function parseToplevel(ctx) {
   if(!consume('LPAREN', ctx)) {
     console.log(ctx.remainder[0].type);
