@@ -98,6 +98,10 @@ function takeSymbol(graph) {
   };
 }
 
+function takeWhitespace(ctx) {
+  return take(countWhitespace, token.Types.WHITESPACE, ctx);
+}
+
 function takeUnknown(ctx) {
   return token.mkError(
     ctx.filename,
@@ -134,8 +138,10 @@ Context.prototype.step = function(tok) {
       this.colno = 1;
     } else {
       this.colno += tok.value.length;
+      if(tok.type != token.Types.WHITESPACE) {
+        this.tokens.push(tok);
+      }
     }
-    this.tokens.push(tok);
     this.remainder = this.remainder.slice(tok.value.length);
   }
   return this;
@@ -156,8 +162,8 @@ function tokenize(tokenizers) {
 function lex(f, input) {
   var ctx = new Context(f, input);
   while(!isDone(ctx)) {
-    ctx.trim();
     ctx.step(tokenize(
+      takeWhitespace,
       takeDigits,
       takeIdent,
       takeNewline,
@@ -168,6 +174,7 @@ function lex(f, input) {
       takeUnknown
     )(ctx));
   }
+
   return {
     filename: f,
     tokens: ctx.tokens
