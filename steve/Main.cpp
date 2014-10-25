@@ -20,10 +20,10 @@ main() {
 
   Lexer lex;
   Tokens toks = lex(text);
-  for (const Token& k : toks)
-    std::cout << debug(k) << ' ';
-  std::cout << '\n';
-  return 0;
+  // for (const Token& k : toks)
+  //   std::cout << debug(k) << ' ';
+  // std::cout << '\n';
+  // return 0;
 
   Parser parse;
   Tree* pt = parse(toks);
