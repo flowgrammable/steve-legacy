@@ -1,0 +1,42 @@
+
+
+set(cppformat_src contrib/cppformat/format.cc)
+set(contrib_src ${cppformat_src})
+
+add_library(steve-lib
+  Meta.cpp
+  Debug.cpp
+  Memory.cpp
+  String.cpp
+  Integer.cpp
+  Format.cpp
+  Print.cpp
+  Error.cpp
+  Location.cpp
+  Token.cpp
+  Node.cpp
+  Syntax.cpp
+  Ast.cpp
+  Same.cpp
+  Value.cpp
+  Type.cpp
+  Decl.cpp
+  Scope.cpp
+  Subst.cpp
+  Conv.cpp
+  Intrinsic.cpp
+  Language.cpp
+  Lexer.cpp
+  Parser.cpp
+  Elaborator.cpp
+  Evaluator.cpp
+  ${contrib_src}
+)
+set_target_properties(steve-lib PROPERTIES ARCHIVE_OUTPUT_NAME steve)
+target_link_libraries(steve-lib gc gmp)
+
+add_executable(steve Main.cpp)
+target_link_libraries(steve steve-lib)
+
+add_subdirectory(Token.test)
+add_subdirectory(Ast.test)
