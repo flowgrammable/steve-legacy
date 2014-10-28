@@ -63,13 +63,23 @@ partial(Expr* e) { return e; }
 // Note that a definitions' initializer was previously evaluated. 
 // However, we need to re-evaluate to get into eval form. This is
 // effectively just a conversion.
+//
+// Note that a reference to a parameter is not expanded. It is
+// preserved as a declaration id. These are generally removed
+// by substitution.
+//
+// TODO: The semantics of this evaluation need to be specified
+// more thoroughly. When do we actually need to collapse a
+// reference and when can we not do it. 
 Eval
 eval_decl_id(Decl_id* t) {
   Decl* decl = t->decl();
-  if (Def* def = as<Def>(decl)) {
+  if (Def* def = as<Def>(decl))
     return eval_expr(def->init());
-  }
-  return partial(decl);
+  else if (is<Parm>(decl))
+    return partial(t);
+  else
+    return partial(decl);
 }
 
 
@@ -77,7 +87,6 @@ eval_decl_id(Decl_id* t) {
 template<typename T>
   inline Eval
   eval_literal(T* e) { return value(e->value()); }
-
 
 
 // Evaluate a sequence of arguments.
@@ -105,8 +114,8 @@ eval_call(Call* e) {
   Expr_seq* args = to_exprs(evals, e->args());
 
   // If all of the arguments are fully reduced, then evaluate the
-  // function call. Otherwise, replace the call's arugmnets with
-  // the partially evaluted results.
+  // function call. Otherwise, replace the call's arguments with
+  // the partially evaluated results.
   if (all_values(evals)) {
     Subst s {fn->parms(), args};
     Expr* r = subst(fn, s);

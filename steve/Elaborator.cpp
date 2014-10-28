@@ -82,11 +82,13 @@ elab_type(Tree* t) {
     if (Def* def = as<Def>(id->decl()))
       e = def->init();
 
-  // Evaluate type functions
+  // If the elaboration refers to a type function, then evaluate it.
   if (Call *call = as<Call>(e)) {
-    std::cout << "TYPE FN: " << debug(call) << '\n';
-    Expr *result = reduce(e);
-    std::cout << "TYPE VAL: " << debug(result) << '\n';
+    if (not is_same(get_type(call), get_typename_type())) {
+      error(call->loc) << format("'{}' does not yield a type", debug(call));
+      return nullptr;
+    }
+    e = reduce(e);
   }
   
   // Now check to see if we've gotten a type.
@@ -839,7 +841,6 @@ elab_fn(Fn_tree* t, Tree* e) {
   if (not body)
     return nullptr;
   fn->third = reduce(body);
-
   return d;
 }
 
