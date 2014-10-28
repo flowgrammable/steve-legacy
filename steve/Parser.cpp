@@ -689,10 +689,11 @@ parse_variant_type(Parser& p) {
 
 // Parse an enumerator list.
 //
-//    enumerator-list ::= comma-separated(expression)
+//    enumerator-list ::= comma-separated(assignment-expr)
 Tree_seq*
 parse_enumerator_list(Parser& p) {
-  return parse_comma_separated(p, parse_expr);
+  extern Tree* parse_assignment_expr(Parser&);
+  return parse_comma_separated(p, parse_assignment_expr);
 }
 
 // Parse an enum type.
