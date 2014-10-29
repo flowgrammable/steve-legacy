@@ -98,18 +98,38 @@ eval_args(Expr_seq* args) {
   return result;
 }
 
+Eval
+eval_fn_call(Call*, Fn* fn, Expr_seq* args) {
+  Subst s {fn->parms(), args};
+  Expr* r = subst(fn, s);
+  return eval_expr(r);
+}
+
+
+// FIXME: Use the call to re-establish the source location of the
+// evaluated term.
+//
+// FIXME: This is kind of gross. Can we make it prettier?
+Eval
+eval_builtin_call(Call* e, Builtin* b, Expr_seq* args) {
+  Expr_seq& a = *args;
+  if (b->arity() == 1)
+    return eval_expr(b->fn().f1(a[0]));
+  if (b->arity() == 2)
+    return eval_expr(b->fn().f2(a[0], a[1]));
+  if (b->arity() == 3)
+    return eval_expr(b->fn().f3(a[0], a[1], a[2]));
+  steve_unreachable(format("{}: evaluation failure: invalid arity", b->loc));
+}
+
 // Evaluate the call of a function declaration by applying the arguments
 // to its definition.
 Eval
 eval_call(Call* e) {
   // Reduce the function.
-  Fn* fn = as<Fn>(reduce(e->fn()));
-  if (not fn)
-    steve_unreachable(format("{}: evaluation failure: '{}' is not a function", 
-                      e->loc,
-                      debug(e->fn())));
+  Term* tgt = as<Term>(reduce(e->fn()));
 
-  // Reduce the function arguments.
+  // Evaluate the function arguments first.
   Eval_seq evals = eval_args(e->args());
   Expr_seq* args = to_exprs(evals, e->args());
 
@@ -117,16 +137,22 @@ eval_call(Call* e) {
   // function call. Otherwise, replace the call's arguments with
   // the partially evaluated results.
   if (all_values(evals)) {
-    Subst s {fn->parms(), args};
-    Expr* r = subst(fn, s);
-    return eval_expr(r);
+    if (Fn* fn = as<Fn>(tgt))
+      return eval_fn_call(e, fn, args);
+    if (Builtin* b = as<Builtin>(tgt))
+      return eval_builtin_call(e, b, args);
+    steve_unreachable(format("{}: evalutaion failure: invalid call target"));
   } else {
     // Rewrite the call expression with the reduced function and
     // arguments.
-    e->first = fn;
+    e->first = tgt;
     e->second = args;
     return partial(e);
   }
+
+  steve_unreachable(format("{}: evaluation failure: '{}' is not a function", 
+                    e->loc,
+                    debug(e->fn())));
 }
 
 // Check that the value of n can fit in the representation of t. Here,
@@ -210,6 +236,7 @@ eval_expr(Expr* e) {
   case range_term: return e;
   case unary_term: return e;
   case binary_term: return e;
+  case builtin_term: return e;
   default:
     break;
   }

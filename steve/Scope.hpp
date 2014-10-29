@@ -46,8 +46,8 @@ public:
   Scope(Scope_kind, Scope*);
   Scope(Scope_kind, Scope*, Expr*);
 
-  const Overload* lookup(Name*);
-  const Overload* declare(Name*, Decl*);
+  Overload* lookup(Name*);
+  Overload* declare(Name*, Decl*);
   
   Scope_kind kind;
   Scope* parent;
@@ -58,11 +58,11 @@ public:
 // -------------------------------------------------------------------------- //
 // Declarations
 
-const Overload* lookup(Name*);
+Overload* lookup(Name*);
 Decl* lookup_single(Name*);
-const Overload* declare(Name*, Decl*);
-const Overload* declare(Decl*);
-const Overload* declare_outside(Decl*);
+Overload* declare(Name*, Decl*);
+Overload* declare(Decl*);
+Overload* declare_outside(Decl*);
 
 
 // -------------------------------------------------------------------------- //

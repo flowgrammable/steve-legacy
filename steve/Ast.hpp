@@ -45,6 +45,7 @@ constexpr Node_kind pred_term      = make_term_node(24); // t as B for a boolean
 constexpr Node_kind range_term     = make_term_node(28); // t1 .. t2
 constexpr Node_kind unary_term     = make_term_node(30); // op t
 constexpr Node_kind binary_term    = make_term_node(31); // t1 op t2
+constexpr Node_kind builtin_term   = make_term_node(40); // <intrinsic>
 // Statements
 // Declarations
 constexpr Node_kind top_decl       = make_decl_node(1); // decl*
@@ -508,10 +509,6 @@ struct Block : Term, Kind_of<block_term> {
 // An anonymous function of the form \(p*)->t.e where p* is
 // a sequence of parameters, t is the result type and e is its
 // definition.
-//
-// The is_intrinsic method returns true when the function
-// is a built-in function. This is the case when the definition
-// is null.
 struct Fn : Term, Kind_of<fn_term> {
   Fn(Decl_seq* p, Type* t, Expr* e) 
     : Term(Kind), first(p), second(t), third(e) { }
@@ -522,14 +519,43 @@ struct Fn : Term, Kind_of<fn_term> {
   Type* result() const { return second; }
   Expr* body() const { return third; }
 
-  // FIXME: This is not right... There needs to be a better
-  // test for these kinds of things.
-  bool is_intrinsic() const { return not third; }
-
   Decl_seq* first;
   Type* second;
   Expr* third;
 };
+
+// A builtin function represented as an expression.
+struct Builtin : Term, Kind_of<builtin_term> {
+  using Unary = Expr* (*)(Expr*);
+  using Binary = Expr* (*)(Expr*, Expr*);
+  using Ternary = Expr* (*)(Expr*, Expr*, Expr*);
+  
+  union Fn {
+    Fn(Unary f) : f1(f) { }
+    Fn(Binary f) : f2(f) { }
+    Fn(Ternary f) : f3(f) { }
+    
+    Unary f1;
+    Binary f2;
+    Ternary f3;
+  };
+
+  Builtin(int a, Fn f)
+    : Term(Kind), first(a), second(f) { }
+  Builtin(Unary f)
+    : Term(Kind), first(1), second(f) { }
+  Builtin(Binary f)
+    : Term(Kind), first(2), second(f) { }
+  Builtin(Ternary f)
+    : Term(Kind), first(3), second(f) { }
+
+  int arity() const { return first; }
+  Fn fn() const { return second; }
+
+  int first;
+  Fn second;
+};
+
 
 // A function call of the form `f(a*)` where `f` is the target
 // function (or overload set) and 'a*' is a sequence of arguments.

@@ -111,7 +111,7 @@ Scope::Scope(Scope_kind k, Scope* p, Expr* c)
 }
 
 // Return a declaration corresponding to the given name.
-const Overload*
+Overload*
 Scope::lookup(Name* n) {
   auto iter = find(n);
   if (iter != end())
@@ -130,7 +130,7 @@ Scope::lookup(Name* n) {
 // Insert the given declaration into this scope. If this is not the
 // first declaration with the given name, then we need to determine
 // if the definition can be overloaded.
-const Overload*
+Overload*
 Scope::declare(Name* n, Decl* d) {
   auto result = insert({n, {d}});
   Overload& ovl = result.first->second;
@@ -155,7 +155,7 @@ Scope* stack_ = nullptr;
 
 // Lookup the given name in the current scope, returning its overload
 // iset, if any.
-const Overload*
+Overload*
 lookup(Name* n) {
   steve_assert(stack_, "lookup on empty scope stack");
   return stack_->lookup(n);
@@ -166,7 +166,7 @@ lookup(Name* n) {
 // refers to multiple entities, emit an error.
 Decl*
 lookup_single(Name* n) {
-  if (const Overload* ovl = lookup(n)) {
+  if (Overload* ovl = lookup(n)) {
     if (ovl->singleton())
       return ovl->front();
     error(n->loc) << format("'{}' refers to multiple entities:", debug(n));
@@ -181,7 +181,7 @@ lookup_single(Name* n) {
 
 // Declare the given definition in the current scope, returning its
 // overload set.
-const Overload*
+Overload*
 declare(Name* n, Decl* d) {
   steve_assert(stack_, "declaration on empty scope stack");
   return stack_->declare(n, d);
@@ -190,7 +190,7 @@ declare(Name* n, Decl* d) {
 // Declare the given definition in the the enclosing scope of the 
 // current scope. This is used to leak a definiton ouside a 
 // particular scope. Return the overload of the new declaration.
-const Overload*
+Overload*
 declare_outside(Decl* d) { 
   return stack_->parent->declare(get_name(d), d); 
 }

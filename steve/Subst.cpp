@@ -73,8 +73,10 @@ subst_decl_id(Decl_id* e, const Subst& sub) {
 
 // Evaluate the intrinsic function.
 Expr*
-subst_intrinsic(Intrinsic* e, const Subst& s) {
-  return e->subst(s);
+subst_builtin(Builtin* e, const Subst& s) {
+  std::cout << "HERE?\n";
+  return e;
+  // return e->subst(s);
 }
 
 // Substitute into a function of the form \(p*).e.
@@ -84,11 +86,10 @@ subst_intrinsic(Intrinsic* e, const Subst& s) {
 // FIXME: Do I need to substitute into the paramter list? Probably.
 Expr*
 subst_fn(Fn* e, const Subst& s) {
-  if (e->is_intrinsic())
-    return subst_intrinsic(as<Intrinsic>(e), s);
-  else
-    return subst(e->body(), s);
-  return e;
+  // if (e->is_intrinsic())
+  //   return subst_intrinsic(as<Intrinsic>(e), s);
+  // else
+  return subst(e->body(), s);
 }
 
 // Substitute into a call expression.
@@ -110,7 +111,6 @@ subst_call(Call* e, const Subst& sub) {
   return make_expr<Call>(e->loc, get_type(e), fn, args);
 }
 
-
 } // namespace
 
 
@@ -126,7 +126,7 @@ subst(Expr* e, const Subst& sub) {
 
   case fn_term: return subst_fn(as<Fn>(e), sub);
   case call_term: return subst_call(as<Call>(e), sub);
-
+  case builtin_term: return subst_builtin(as<Builtin>(e), sub);
 
   case typename_type: return e;
   case unit_type: return e;

@@ -203,7 +203,7 @@ elab_lit(Lit_tree* t) {
   case bool_tok: return make_bool_type(t->loc);
   case nat_tok: return make_nat_type(t->loc);
   case int_tok: return make_int_type(t->loc);
-  case bitfield_tok: return elab_intrinsic(t, get_bitfield_ctor);
+  case bitfield_tok: return elab_intrinsic(t, get_bitfield);
   case boolean_literal_tok: return elab_bool(t, k);
   case binary_literal_tok: return elab_int(t, k);
   case octal_literal_tok: return elab_int(t, k);
@@ -283,12 +283,12 @@ check_boolean(Term* e) {
   return nullptr;
 }
 
-// Check that each argument matches the corresponding parameter, rewriting
-// the argument, possibly to have conversions.
-//
-// TODO: Allow conversions.
+// Check that each argument matches the type of the corresponding 
+// parameter. This returns a sequence of expressions, converting
+// each argument to the parameter, or if no conversions are possible,
+// nullptr.
 Expr_seq*
-check_arguments(Call_tree* t, Def* fn, Expr_seq* args, Decl_seq* parms) {
+check_arguments(Call_tree* t, Def* fn, Expr_seq* args, Type_seq* parms) {
   auto first1 = args->begin();
   auto last1 = args->end();
   auto first2 = parms->begin();
@@ -303,8 +303,8 @@ check_arguments(Call_tree* t, Def* fn, Expr_seq* args, Decl_seq* parms) {
   Expr_seq* result = new Expr_seq();
   while (first1 != last1 and first2 != last2) {
     Expr* arg = *first1;
-    Expr* parm = *first2;
-    if (Expr* a = check_convertible(arg, get_type(parm)))
+    Type* parm = *first2;
+    if (Expr* a = check_convertible(arg, parm))
       result->push_back(a);
     ++first1;
     ++first2;
@@ -333,6 +333,7 @@ check_arguments(Call_tree* t, Def* fn, Expr_seq* args, Decl_seq* parms) {
 
   return result;  
 }
+
 
 // Elaborate a function call. The argument types must agree with
 // the parameter types of the given function.
@@ -366,8 +367,9 @@ elab_call(Call_tree* t) {
   // TODO: This is the single declaration case. Implement overload
   // resolution here. Actually, refactor the single case into a
   // special case of overload resolution. 
-  Def* def = nullptr;   // Provides diagnostic context
-  Fn* fn = nullptr; // The expression actually called
+  Def* def = nullptr; // Provides diagnostic context
+  Term* fn = nullptr; // The expression actually called
+  Fn_type* ft = nullptr; // The type of the fn
 
   // Unroll the target until we find a function.
   //
@@ -375,23 +377,25 @@ elab_call(Call_tree* t) {
   if (Decl_id* ref = as<Decl_id>(tgt)) {
     def = as<Def>(ref->decl());
     if (def)
-      fn = as<Fn>(def->init());
+      fn = as<Term>(def->init());
+    if (fn)
+      ft = as<Fn_type>(get_type(fn));
   }
 
   // Make sure we have a callable expression.
-  if (not fn) {
+  if (not fn or not fn_type) {
     error(t->fn()->loc) << format("'{}' is not callable", debug(tgt));
     return nullptr;
   }
 
   // Check the arguments against the function parameters.
-  args = check_arguments(t, def, args, fn->parms());
+  args = check_arguments(t, def, args, ft->parms());
   if (not args)
     return nullptr;
 
   // Get the result type of the function; that's the type of
   // the expression.
-  Type* type = fn->result();
+  Type* type = ft->result();
 
   // TODO: If all of the arguments are constant, then evaluate
   // the result of the call.

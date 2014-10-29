@@ -1,8 +1,8 @@
 
 #include <steve/Intrinsic.hpp>
 #include <steve/Language.hpp>
+#include <steve/Scope.hpp>
 #include <steve/Type.hpp>
-#include <steve/Subst.hpp>
 #include <steve/Debug.hpp>
 
 #include <algorithm>
@@ -12,91 +12,111 @@ namespace steve {
 
 namespace {
 
-using Type_desc = Type* (*)();
-using Parm_desc = std::pair<const char*, Type_desc>;
+// Builtin functions
+Expr* eval_bitfield(Expr*, Expr*, Expr*);
+
+// -------------------------------------------------------------------------- //
+// Construction framework
+//
+// The following facilities support a declarative style of creating
+// and resolving builtin facilities.
 
 // Create a name.
 inline Name*
 make_name(const char* n) { return new Basic_id(n); }
 
-// Create a parameter
-Parm*
-make_parm(const char* name, Type_desc type) {
-  Name* n = make_name(name);
-  Type* t = type();
-  Parm* p = make_expr<Parm>(no_location, t, n, t, nullptr);
-  return p;
-}
+enum Typename {
+  typename_,
+  unit_,
+  bool_,
+  nat_,
+  int_
+};
 
-Decl_seq*
-make_parms(std::initializer_list<Parm_desc> list) {
-  Decl_seq* decls = new Decl_seq;
-  for (const Parm_desc& d : list)
-    decls->push_back(make_parm(d.first, d.second));
-  return decls;
-}
+using Typenames = std::initializer_list<Typename>;
 
-// Define an intrinsic function with the given name.
-template<typename T>
-  inline Decl* 
-  define_fn(const char* s) {
-    Fn* f = new T();
-    Type* t =  get_fn_type(f);
-    f->tr = t;
-    Name* n = make_name(s);
-    return make_expr<Def>(no_location, t, n, t, f);
+using Builtin_fn = Builtin::Fn;
+using Arity1 = Builtin::Unary;
+using Arity2 = Builtin::Binary;
+using Arity3 = Builtin::Ternary;
+
+// Make a tpye corresponding to the type selector.
+Type*
+make_type(Typename t) {
+  switch (t) {
+  case typename_: return get_typename_type();
+  case unit_: return get_unit_type();
+  case bool_: return get_bool_type();
+  case nat_: return get_nat_type();
+  case int_: return get_int_type();
+  default: steve_unreachable("unspecified builtin type.");
   }
+}
 
-// Defines the bitfield constructor.
-Decl*
-make_bitfield_ctor() { return define_fn<Bitfield_fn>("bitfield"); }
+// Make a sequence of types.
+Type_seq*
+make_parms(Typenames ts) {
+  Type_seq* rs = new Type_seq();
+  for (Typename t : ts)
+    rs->push_back(make_type(t));
+  return rs;
+}
 
-// Intrinsic functions
-Decl* bitfield_ctor_;
+// The Spec class provides a partial constructor for a builtin
+// function. That is, it partially allocates many of the resources
+// based on simplified inputs, and these are used to complete
+// the declaration in a subsequent pass.
+//
+// TODO: Why don't I just complete the declaration here?
+struct Spec {
+  Spec(const char* n, Typenames ps, Typename r, Arity3 f)
+    : name(make_name(n))
+    , parms(make_parms(ps))
+    , result(make_type(r))
+    , fn(new Builtin(3, f))
+    , def()
+    , ovl()
+   { complete(); }
 
-} // namespace
-
-
-// -------------------------------------------------------------------------- //
-// Intrinsic initialization and access
+  void complete();
+  
+  Name*     name;
+  Type_seq* parms;
+  Type*     result;
+  Builtin*  fn;
+  Decl*     def;
+  Overload* ovl;
+};
 
 void
-init_intrinsics() {
-  bitfield_ctor_ = make_bitfield_ctor();
+Spec::complete() {
+  // Finish the function typoe
+  Type* type = new Fn_type(parms, result);
+  fn->tr = type;
+
+  // Build the declaration.
+  def = new Def(name, type, fn);
+  def->tr = type;
+
+  // Declare it, saving the overload set.
+  ovl = declare(def);
 }
 
-// Returns the bitfield function definition.
-Decl*
-get_bitfield_ctor() { return bitfield_ctor_; }
-
-
 // -------------------------------------------------------------------------- //
-// Type constructors
+// Builtin implementations
 
-
-Bitfield_fn::Bitfield_fn()
-  : Intrinsic(make_parms({ 
-        {"t", get_typename_type},
-        {"n", get_nat_type},
-        {"o", get_nat_type}
-      }),
-      get_typename_type()) 
-{ }
-
-// FIXME: These arguments should be type checked prior to the
-// substitution.
 Expr*
-Bitfield_fn::subst(const Subst& s) const {
+eval_bitfield(Expr* t, Expr* n, Expr* b) {
   // Get the underlying type of the bitfield. 
   // TODO: It must be one of bool, nat, int, or char.
-  Type* t = as<Type>(s.get(type_parm()));
+  Type* t1 = as<Type>(t);
   steve_assert(t, format("'{}' is not a valid type for a bitfield", debug(t)));
 
   // Get the width of the bitfield.
   // TODO: Is n partially evaluated?
   // TODO: Ensure that n is a valid selection for the
   // given type.
-  Int* n = as<Int>(s.get(width_parm()));
+  Int* n1 = as<Int>(n);
   steve_assert(n, format("invalid bitifield witdh '{}'", debug(n)));
 
   // Get the optional boolean value. If omitted, the selector
@@ -106,10 +126,62 @@ Bitfield_fn::subst(const Subst& s) const {
   // TODO: Ensure that the byte order selector is valid for the
   // type and witdth (e.g., byte order selectors on sub-byte
   // bitfields don't make a lot of sense).
-  Int* o = as<Int>(s.get(order_parm()));
-  steve_assert(o, format("invalid byte order selector '{}'", debug(o)));
+  Int* b1 = as<Int>(b);
+  steve_assert(b1, format("invalid byte order selector '{}'", debug(b)));
 
-  return make_expr<Bitfield_type>(loc, get_typename_type(), t, n, o);
+  // FIXME: Do I need a source location or not?
+  return make_expr<Bitfield_type>(no_location, get_typename_type(), t1, n1, b1);
 }
+
+// bool
+// eq_bool(bool a, bool b) { return a == b; }
+
+// Integer
+// eq_nat(const Integer& a, const Integer& b) {
+//   return a.as_integer() == b.as_integer();
+// }
+
+// Integer
+// eq_int(const Integer& a, const Integer& b) {
+//   return a.as_integer() == b.as_integer();
+// }
+
+
+// -------------------------------------------------------------------------- //
+// Globals
+
+// Intrinsic functions
+Decl* bitfield_;
+
+} // namespace
+
+
+// -------------------------------------------------------------------------- //
+// Builtin accessors
+
+void
+init_intrinsics() {
+  Scope_guard scope(module_scope);
+
+  Spec specs[] = {
+    /* 0 */ { "bitfield", {typename_, nat_, nat_}, typename_, eval_bitfield }
+  };
+
+  // Push a fake global scope and initialize all of the
+  // builtin in functions. Note that some will result in
+  // the creation of overloads.
+
+  // Extract the declared features
+  bitfield_ = specs[0].def;
+}
+
+
+
+// -------------------------------------------------------------------------- //
+// Builtin accessors
+
+// Returns the bitfield function definition.
+Decl*
+get_bitfield() { return bitfield_; }
 
 } // namespace steve

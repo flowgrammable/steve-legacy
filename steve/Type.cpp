@@ -15,6 +15,7 @@ namespace steve {
 namespace {
 
 Type* typename_;
+Type* unit_;
 Type* bool_;
 Type* nat_;
 Type* int_;
@@ -25,6 +26,7 @@ Type* char_;
 void 
 init_types() {
   typename_ = new Typename_type();
+  unit_ = make_expr<Unit_type>(no_location, typename_);
   bool_ = make_expr<Bool_type>(no_location, typename_);
   nat_ = make_expr<Nat_type>(no_location, typename_);
   int_ = make_expr<Int_type>(no_location, typename_);
@@ -34,6 +36,10 @@ init_types() {
 // Returns the builtin typename type.
 Type* 
 get_typename_type() { return typename_; }
+
+// Returns the unit type.
+Type*
+get_unit_type() { return unit_; }
 
 // Returns the builtin bool type.
 Type*
@@ -55,6 +61,12 @@ get_char_type() { return char_; }
 Type*
 make_typename_type(const Location& l) { 
   return make_expr<Typename_type>(l, typename_);
+}
+
+// Create a type expression for type unit.
+Type*
+make_unit_type(const Location& l) { 
+  return make_expr<Unit_type>(l, typename_);
 }
 
 // Create a type expression for type bool.

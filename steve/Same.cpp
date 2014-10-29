@@ -116,7 +116,6 @@ is_same(Expr* t, Expr* u) {
 
   default: break;
   }
-  std::cout << "HERE: " << debug(t) << ' ' << debug(u) << '\n';
   steve_unreachable(format("equivalence of unknown node '{}'", node_name(t)));
 }
 

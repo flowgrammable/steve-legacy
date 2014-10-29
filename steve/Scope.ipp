@@ -18,7 +18,7 @@ Scope::Scope(Scope_kind k, Scope* p)
 // -------------------------------------------------------------------------- //
 // Declarations
 
-inline const Overload* 
+inline Overload* 
 declare(Decl* d) { return declare(get_name(d), d); }
 
 // -------------------------------------------------------------------------- //

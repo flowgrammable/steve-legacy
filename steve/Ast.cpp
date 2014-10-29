@@ -45,6 +45,7 @@ init_exprs() {
   init_node(range_term, "range");
   init_node(unary_term, "unary");
   init_node(binary_term, "binary");
+  init_node(builtin_term, "builtin");
   // Decls
   init_node(top_decl, "top-decl");
   init_node(def_decl, "def-decl");
@@ -169,16 +170,17 @@ template<typename T>
 
 void
 debug_fn(Printer& p, Fn* e) {
-  if (e->is_intrinsic()) {
-    sexpr s(p, "intrinsic");
-    debug_print(p, e->first);
-    print_space(p);
-    debug_print(p, e->second);
-    print_space(p);
-    print(p, "<intrinsic>");
-  } else {
-    debug_ternary(p, e);
-  }
+  debug_ternary(p, e);
+  // if (e->is_intrinsic()) {
+  //   sexpr s(p, "intrinsic");
+  //   debug_print(p, e->first);
+  //   print_space(p);
+  //   debug_print(p, e->second);
+  //   print_space(p);
+  //   print(p, "<intrinsic>");
+  // } else {
+  //   debug_ternary(p, e);
+  // }
 }
 
 // Decls
@@ -267,6 +269,7 @@ debug_print(Printer& p, Expr* e) {
   case range_term: return debug_binary(p, as<Range>(e));
   case unary_term: return debug_binary(p, as<Unary>(e));
   case binary_term: return debug_ternary(p, as<Binary>(e));
+  case builtin_term: return print(p, "<builtin>");
   // Statements
   // Declarations
   case top_decl: return debug_nested_unary(p, as<Top>(e));
@@ -280,7 +283,7 @@ debug_print(Printer& p, Expr* e) {
   default:
     // FIXME: Make a print formatter that gives complete information
     // about a node, including its class and id.
-    steve_unreachable(format("debugging unhandled expression {}", node_name(e)));
+    steve_unreachable(format("debugging unhandled expression '{}'", node_name(e)));
   }
 }
 
