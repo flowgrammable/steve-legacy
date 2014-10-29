@@ -26,14 +26,19 @@ check_diagnostics() {
 
 } // namespace
 
+// Returns a pointer to the current diagnostics.
+Diagnostics*
+current_diagnostics() { return diags_; }
+
 // The set the global diagnostics pointer to the give diagnostics. This
 // is generally set in the constructor of a processing phase (e.g.,
 // the parser). All calls to diagnostic constructors will modify this
 // object.
 void
-use_diagnostics(Diagnostics& ds) {
-  diags_ = &ds;
-}
+use_diagnostics(Diagnostics& ds) { diags_ = &ds; }
+
+void
+reset_diagnostics() { diags_ = nullptr; }
 
 // -------------------------------------------------------------------------- //
 // Streaming

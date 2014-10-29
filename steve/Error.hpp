@@ -127,7 +127,30 @@ Diagnostic_stream note(Diagnostics&, const Location&);
 Diagnostic_stream sorry(const Location&);
 Diagnostic_stream sorry(Diagnostics&, const Location&);
 
+// Diagnostic access
+Diagnostics* current_diagnostics();
 void use_diagnostics(Diagnostics&);
+void reset_diagnostics();
+
+// An RAII helper that replaces the current diagnostics with
+// an empty set.
+struct Diagnostics_guard {
+  Diagnostics_guard()
+    : saved(current_diagnostics())
+    , replace()
+  { use_diagnostics(replace); }
+  
+  ~Diagnostics_guard() {
+    if (saved)
+      use_diagnostics(*saved);
+    else
+      reset_diagnostics();
+  }
+
+  Diagnostics* saved;  // The previous diagnostics
+  Diagnostics replace; // The current diagnostics
+};
+
 
 void emit(std::ostream&, const Diagnostics&);
 

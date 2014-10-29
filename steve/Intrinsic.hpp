@@ -15,7 +15,6 @@ struct Decl;
 
 Decl* get_bitfield();
 
-
 } // namespace steve
 
 #endif

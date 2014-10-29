@@ -47,6 +47,7 @@ Name_less::operator()(const Name* a, const Name* b) const {
   
   switch (a->kind) {
   case basic_id: return literal_less(as<Basic_id>(a), as<Basic_id>(b));
+  case operator_id: return literal_less(as<Operator_id>(a), as<Operator_id>(b));
   default: break;
   }
   steve_unreachable(format("unhandled node '{}'", node_name(a)));

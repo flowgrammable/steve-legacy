@@ -126,6 +126,7 @@ bool is_value(const Eval&);
 bool is_partial(const Eval&);
 bool all_values(const Eval_seq&);
 
+Expr* to_expr(const Eval&, Type*);
 Expr* to_expr(const Eval&, Expr*);
 Expr_seq* to_exprs(const Eval_seq&, Expr_seq*);
 

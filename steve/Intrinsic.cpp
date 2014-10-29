@@ -1,8 +1,12 @@
 
 #include <steve/Intrinsic.hpp>
+#include <steve/Token.hpp>
 #include <steve/Language.hpp>
 #include <steve/Scope.hpp>
 #include <steve/Type.hpp>
+#include <steve/Value.hpp>
+#include <steve/Evaluator.hpp>
+#include <steve/Error.hpp>
 #include <steve/Debug.hpp>
 
 #include <algorithm>
@@ -21,10 +25,6 @@ Expr* eval_bitfield(Expr*, Expr*, Expr*);
 // The following facilities support a declarative style of creating
 // and resolving builtin facilities.
 
-// Create a name.
-inline Name*
-make_name(const char* n) { return new Basic_id(n); }
-
 enum Typename {
   typename_,
   unit_,
@@ -39,6 +39,13 @@ using Builtin_fn = Builtin::Fn;
 using Arity1 = Builtin::Unary;
 using Arity2 = Builtin::Binary;
 using Arity3 = Builtin::Ternary;
+
+// Create a name.
+inline Name*
+make_name(const char* n) { return new Basic_id(n); }
+
+inline Name*
+make_name(Token_kind k) { return new Operator_id(token_name(k)); }
 
 // Make a tpye corresponding to the type selector.
 Type*
@@ -67,16 +74,28 @@ make_parms(Typenames ts) {
 // based on simplified inputs, and these are used to complete
 // the declaration in a subsequent pass.
 //
-// TODO: Why don't I just complete the declaration here?
+// FIXME: Factor common initializations?
 struct Spec {
-  Spec(const char* n, Typenames ps, Typename r, Arity3 f)
-    : name(make_name(n))
-    , parms(make_parms(ps))
-    , result(make_type(r))
-    , fn(new Builtin(3, f))
-    , def()
-    , ovl()
-   { complete(); }
+  template<typename N>
+    Spec(N n, Typenames ps, Typename r, Arity3 f)
+      : name(make_name(n))
+      , parms(make_parms(ps))
+      , result(make_type(r))
+      , fn(new Builtin(3, f))
+      , def()
+      , ovl()
+     { complete(); }
+
+  template<typename N>
+    Spec(N n, Typenames ps, Typename r, Arity2 f)
+      : name(make_name(n))
+      , parms(make_parms(ps))
+      , result(make_type(r))
+      , fn(new Builtin(2, f))
+      , def()
+      , ovl()
+     { complete(); }
+
 
   void complete();
   
@@ -133,18 +152,32 @@ eval_bitfield(Expr* t, Expr* n, Expr* b) {
   return make_expr<Bitfield_type>(no_location, get_typename_type(), t1, n1, b1);
 }
 
-// bool
-// eq_bool(bool a, bool b) { return a == b; }
+inline Value
+get_value(Expr* e) { return eval(e).as_value(); }
 
-// Integer
-// eq_nat(const Integer& a, const Integer& b) {
-//   return a.as_integer() == b.as_integer();
-// }
+Expr*
+eq_unit(Expr* a, Expr* b) {
+  Value result = true;
+  return to_expr(result, get_bool_type()); 
+}
 
-// Integer
-// eq_int(const Integer& a, const Integer& b) {
-//   return a.as_integer() == b.as_integer();
-// }
+Expr*
+eq_bool(Expr* a, Expr* b) {
+  Value result = get_value(a).as_bool() == get_value(b).as_bool();
+  return to_expr(result, get_bool_type()); 
+}
+
+Expr*
+eq_nat(Expr* a, Expr* b) {
+  Value result = get_value(a).as_integer() == get_value(b).as_integer();
+  return to_expr(result, get_bool_type()); 
+}
+
+Expr*
+eq_int(Expr* a, Expr* b) {
+  Value result = get_value(a).as_integer() == get_value(b).as_integer();
+  return to_expr(result, get_bool_type()); 
+}
 
 
 // -------------------------------------------------------------------------- //
@@ -161,18 +194,30 @@ Decl* bitfield_;
 
 void
 init_intrinsics() {
+  Diagnostics_guard diags;
   Scope_guard scope(module_scope);
 
+  // FIXME: Re-enable and finish all of the various builtin operators.
   Spec specs[] = {
-    /* 0 */ { "bitfield", {typename_, nat_, nat_}, typename_, eval_bitfield }
-  };
+    // Equality comparison: a == b
+    { equal_equal_tok,    {unit_, unit_}, bool_, eq_unit },
+    // { equal_equal_tok,    {bool_, bool_}, bool_, eq_bool },
+    // { equal_equal_tok,    {nat_, nat_}, bool_, eq_nat },
+    // { equal_equal_tok,    {int_, int_}, bool_, eq_int },
 
-  // Push a fake global scope and initialize all of the
-  // builtin in functions. Note that some will result in
-  // the creation of overloads.
+    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield }
+  };
+  (void)specs;
 
   // Extract the declared features
-  bitfield_ = specs[0].def;
+  bitfield_ = lookup_single(make_name("bitfield"));
+
+  // FIXME: This could be improved.
+  if (not current_diagnostics()->empty()) {
+    std::cerr << "internal compiler error\n";
+    std::cerr << *current_diagnostics();
+    steve_unreachable("");
+  }
 }
 
 
