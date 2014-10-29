@@ -67,11 +67,9 @@ namespace {
 // values or types.
 bool
 overload(Overload& ovl, Decl* d) {
-  // TODO: Attach the note to the declaration so they can be 
-  // better formatted.
-  // Decl* p = iter->second;
   error(d->loc) << format("redefinition of '{0}'", debug(d));
-  // note(p->loc) << format("previous definition is '{0}'", debug(p));
+  for (Decl* d : ovl)
+    note(d->loc) << format("previous definition is '{0}'", debug(d));
   return false;
 }
 

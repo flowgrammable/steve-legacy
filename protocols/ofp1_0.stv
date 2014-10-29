@@ -105,11 +105,11 @@ def ErrorCode : typename = variant(ErrorType) {
   QUEUE_OP_FAILED : QueueOpFailedCode;
 }
 
-// def Error : typename = record {
-//   type : ErrorType;
-//   code : ErrorCode(type);
-//   data : Data;
-// }
+def Error : typename = record {
+  type : ErrorType;
+  code : ErrorCode;
+  data : Data;
+}
 
 // def EchoReq : typename = Data;
 // def EchoRes : typename = Data;

@@ -436,7 +436,12 @@ elab_range(Range_tree* t) {
 // TODO: Document the elaboration rules.
 Expr*
 elab_record(Record_tree* t) {
+  Type* kind = get_typename_type();
   Decl_seq* fields = new Decl_seq();
+  Type* rec = make_expr<Record_type>(t->loc, kind, fields);
+
+  // Push the record scope and elaborate each field in turn.
+  Scope_guard scope(record_scope, rec);
   for (Tree *f : *t->fields()) {
     if (Decl* d = as<Decl>(elab_expr(f)))
       fields->push_back(d);
@@ -883,8 +888,8 @@ elab_def(Def_tree* t) {
 // never replaced. The elaboration operates in-place.
 Expr*
 elab_top(Top_tree* t) {
-  Decl_seq* ds = new Decl_seq();
   Scope_guard scope(module_scope);
+  Decl_seq* ds = new Decl_seq();
   for (Tree* d1 : *t->first) {
     if (Decl* d2 = elab_decl(d1))
       ds->push_back(d2);
