@@ -15,6 +15,7 @@ init_exprs() {
   init_node(seq_node, "seq");
   // Names
   init_node(basic_id, "basic-id");
+  init_node(operator_id, "operator-id");
   init_node(scoped_id, "scoped-id");
   init_node(decl_id, "decl-id");
   // Types
@@ -42,29 +43,8 @@ init_exprs() {
   init_node(promo_term, "promo");
   init_node(pred_term, "pred");
   init_node(range_term, "range");
-
-  init_node(add_term, "add");
-  init_node(sub_term, "sub");
-  init_node(mul_term, "mul");
-  init_node(div_term, "div");
-  init_node(mod_term, "mod");
-  init_node(neg_term, "neg");
-  init_node(band_term, "band");
-  init_node(bor_term, "bor");
-  init_node(bxor_term, "bxor");
-  init_node(lsh_term, "lsh");
-  init_node(rsh_term, "rsh");
-  init_node(bnot_term, "bnot");
-
-  init_node(eq_term, "eq");
-  init_node(ne_term, "ne");
-  init_node(lt_term, "lt");
-  init_node(gt_term, "gt");
-  init_node(le_term, "le");
-  init_node(ge_term, "ge");
-  init_node(and_term, "and");
-  init_node(or_term, "or");
-  init_node(not_term, "not");
+  init_node(unary_term, "unary");
+  init_node(binary_term, "binary");
   // Decls
   init_node(top_decl, "top-decl");
   init_node(def_decl, "def-decl");
@@ -174,6 +154,12 @@ template<typename T>
     debug_print(p, e->name());
   }
 
+void
+debug_operator(Printer& p, Operator_id* e) {
+  sexpr s(p, node_name(e));
+  print(p, e->op());
+}
+
 template<typename T>
   inline void
   debug_ref(Printer& p, T* t) {
@@ -252,6 +238,7 @@ debug_print(Printer& p, Expr* e) {
   switch (e->kind) {
   // Names
   case basic_id: return debug_terminal(p, as<Basic_id>(e));
+  case operator_id: return debug_operator(p, as<Operator_id>(e));
   case scoped_id: return debug_scoped_id(p, as<Scoped_id>(e));
   case decl_id: return debug_id(p, as<Decl_id>(e));
   // Types
@@ -278,29 +265,8 @@ debug_print(Printer& p, Expr* e) {
   case promo_term: return debug_binary(p, as<Promo>(e));
   case pred_term: return debug_binary(p, as<Pred>(e));
   case range_term: return debug_binary(p, as<Range>(e));
-
-  case add_term: return debug_binary(p, as<Add>(e));
-  case sub_term: return debug_binary(p, as<Sub>(e));
-  case mul_term: return debug_binary(p, as<Mul>(e));
-  case div_term: return debug_binary(p, as<Div>(e));
-  case mod_term: return debug_binary(p, as<Mod>(e));
-  case neg_term: return debug_unary(p, as<Neg>(e));
-  case band_term: return debug_binary(p, as<Band>(e));
-  case bor_term: return debug_binary(p, as<Bor>(e));
-  case bxor_term: return debug_binary(p, as<Bxor>(e));
-  case bnot_term: return debug_unary(p, as<Bnot>(e));
-  case lsh_term: return debug_binary(p, as<Lsh>(e));
-  case rsh_term: return debug_binary(p, as<Rsh>(e));
-
-  case eq_term: return debug_binary(p, as<Eq>(e));
-  case ne_term: return debug_binary(p, as<Ne>(e));
-  case lt_term: return debug_binary(p, as<Lt>(e));
-  case gt_term: return debug_binary(p, as<Gt>(e));
-  case le_term: return debug_binary(p, as<Le>(e));
-  case ge_term: return debug_binary(p, as<Ge>(e));
-  case and_term: return debug_binary(p, as<And>(e));
-  case or_term: return debug_binary(p, as<Or>(e));
-  case not_term: return debug_unary(p, as<Not>(e));
+  case unary_term: return debug_binary(p, as<Unary>(e));
+  case binary_term: return debug_ternary(p, as<Binary>(e));
   // Statements
   // Declarations
   case top_decl: return debug_nested_unary(p, as<Top>(e));

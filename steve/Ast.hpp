@@ -13,7 +13,8 @@ namespace steve {
 
 // Names
 constexpr Node_kind basic_id       = make_name_node(1);  // id
-constexpr Node_kind scoped_id      = make_name_node(2);  // scope.id
+constexpr Node_kind operator_id    = make_name_node(2);  // operator <op>
+constexpr Node_kind scoped_id      = make_name_node(3);  // scope.id
 constexpr Node_kind decl_id        = make_name_node(10); // x, referring to a decl
 // Types
 constexpr Node_kind typename_type   = make_type_node(1);  // typename
@@ -42,35 +43,9 @@ constexpr Node_kind call_term      = make_term_node(22); // f(a*) -- TODO: Shoul
 constexpr Node_kind promo_term     = make_term_node(23); // t as N for an integral type
 constexpr Node_kind pred_term      = make_term_node(24); // t as B for a boolean type
 constexpr Node_kind range_term     = make_term_node(28); // t1 .. t2
-// Arithmetic terms
-constexpr Node_kind add_term       = make_term_node(30); // t1 + t2
-constexpr Node_kind sub_term       = make_term_node(31); // t1 - t2
-constexpr Node_kind mul_term       = make_term_node(32); // t1 * t2
-constexpr Node_kind div_term       = make_term_node(33); // t1 / t2
-constexpr Node_kind mod_term       = make_term_node(34); // t1 % t2
-constexpr Node_kind neg_term       = make_term_node(35); // -t
-// Bitwise terms
-constexpr Node_kind band_term      = make_term_node(40); // t1 & t2
-constexpr Node_kind bor_term       = make_term_node(41); // t1 | t2
-constexpr Node_kind bxor_term      = make_term_node(42); // t1 ^ t2
-constexpr Node_kind bnot_term      = make_term_node(43); // ~t
-constexpr Node_kind lsh_term       = make_term_node(44); // t1 << t2
-constexpr Node_kind rsh_term       = make_term_node(45); // t1 >> t2
-// Relational terms
-constexpr Node_kind eq_term        = make_term_node(50); // t1 == t2
-constexpr Node_kind ne_term        = make_term_node(51); // t1 != t2
-constexpr Node_kind lt_term        = make_term_node(52); // t1 < t2
-constexpr Node_kind gt_term        = make_term_node(53); // t1 > t2
-constexpr Node_kind le_term        = make_term_node(54); // t1 <= t2
-constexpr Node_kind ge_term        = make_term_node(55); // t1 >= t2
-// Logical terms
-constexpr Node_kind imp_term       = make_term_node(60); // t1 -> t2
-constexpr Node_kind or_term        = make_term_node(61); // t1 or t2
-constexpr Node_kind and_term       = make_term_node(62); // t1 and t2
-constexpr Node_kind not_term       = make_term_node(63); // not t
-
+constexpr Node_kind unary_term     = make_term_node(30); // op t
+constexpr Node_kind binary_term    = make_term_node(31); // t1 op t2
 // Statements
-
 // Declarations
 constexpr Node_kind top_decl       = make_decl_node(1); // decl*
 constexpr Node_kind def_decl       = make_decl_node(2); // def n : t = e
@@ -163,6 +138,22 @@ struct Basic_id : Name, Kind_of<basic_id> {
     : Name(Kind, l), first(n) { }
 
   String value() const { return first; }
+
+  String first;
+};
+
+// An opeator-id is an identifier that designates an overloaded
+// operator. The operator is rendered as a string.
+//
+// TODO: It might be better to enumerate the set of overloadable
+// operators and define this in terms of those. Or maybe not...
+struct Operator_id : Name, Kind_of<operator_id> {
+  Operator_id(String n) 
+    : Name(Kind), first(n) { }
+  Operator_id(const Location& l, String n) 
+    : Name(Kind, l), first(n) { }
+
+  String op() const { return first; }
 
   String first;
 };
@@ -603,200 +594,40 @@ struct Range : Term, Kind_of<range_term> {
   Term* second;
 };
 
-// A unary term has a single sub-term.
-struct Unary_term : Term {
-  Unary_term(Node_kind k, Term* t1) 
-    : Term(k), first(t1) { }
-  Unary_term(Node_kind k, const Location& l, Term* t1) 
-    : Term(k, l), first(t1) { }
-  Term* first;
+// A unary term represents a unary expression whose operator is
+// overloaded. Note that arguments are expressions, allowing
+// for operations on types.
+struct Unary : Term, Kind_of<unary_term> {
+  Unary(Decl* op, Expr* t) 
+    : Term(Kind), first(op), second(t) { }
+  Unary(const Location& l, Decl* op, Expr* t) 
+    : Term(Kind, l), first(op), second(t) { }
+
+  Decl* op() const { return first; }
+  Expr* arg() const { return second; }
+
+  Decl* first;
+  Expr* second;
 };
 
-// A binary term has two sub-terms.
-struct Binary_term : Term {
-  Binary_term(Node_kind k, Term* t1, Term* t2) 
-    : Term(k), first(t1), second(t2) { }
-  Binary_term(Node_kind k, const Location& l, Term* t1, Term* t2) 
-    : Term(k, l), first(t1), second(t2) { }
-  Term* first;
-  Term* second;
+// A binary term represents a binary expression whose operator is
+// overloaded. Note that arguments are expressions, allowing
+// for operations on types.
+struct Binary : Term, Kind_of<binary_term> {
+  Binary(Decl* op, Expr* t1, Expr* t2) 
+    : Term(Kind), first(op), second(t1), third(t2) { }
+  Binary(const Location& l, Decl* op, Expr* t1, Expr* t2) 
+    : Term(Kind, l), first(op), second(t1), third(t2) { }
+
+  Decl* op() const { return first; }
+  Expr* left() const { return second; }
+  Expr* right() const { return third; }
+
+  Decl* first;
+  Expr* second;
+  Expr* third;
 };
 
-// Addition
-struct Add : Binary_term, Kind_of<add_term> { 
-  Add(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Add(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Subtraction
-struct Sub : Binary_term, Kind_of<sub_term> { 
-  Sub(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Sub(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Multiplication
-struct Mul : Binary_term, Kind_of<mul_term> { 
-  Mul(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Mul(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Division
-struct Div : Binary_term, Kind_of<div_term> { 
-  Div(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Div(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Modulus
-struct Mod : Binary_term, Kind_of<mod_term> { 
-  Mod(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Mod(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Logical not
-struct Neg : Unary_term, Kind_of<neg_term> {
-  Neg(Term* t1) 
-    : Unary_term(Kind, t1) { }
-  Neg(const Location& l, Term* t1) 
-    : Unary_term(Kind, l, t1) { }
-};
-
-// Bitwise and
-struct Band : Binary_term, Kind_of<band_term> { 
-  Band(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Band(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Bitwise or
-struct Bor : Binary_term, Kind_of<bor_term> { 
-  Bor(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Bor(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Bitwise xor
-struct Bxor : Binary_term, Kind_of<bxor_term> { 
-  Bxor(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Bxor(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Bitwise not (one's complement)
-struct Bnot : Unary_term, Kind_of<bnot_term> {
-  Bnot(Term* t1) 
-    : Unary_term(Kind, t1) { }
-  Bnot(const Location& l, Term* t1) 
-    : Unary_term(Kind, l, t1) { }
-};
-
-// Left shift
-struct Lsh : Binary_term, Kind_of<lsh_term> { 
-  Lsh(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Lsh(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Right shift
-struct Rsh : Binary_term, Kind_of<rsh_term> { 
-  Rsh(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Rsh(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Equality relation
-struct Eq : Binary_term, Kind_of<eq_term> {
-  Eq(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Eq(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Distinction relation
-struct Ne : Binary_term, Kind_of<ne_term> {
-  Ne(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Ne(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Less than relation
-struct Lt : Binary_term, Kind_of<lt_term> {
-  Lt(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Lt(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Greater than relation
-struct Gt : Binary_term, Kind_of<gt_term> {
-  Gt(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Gt(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Less than or equal to relation
-struct Le : Binary_term, Kind_of<le_term> {
-  Le(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Le(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Greater than or equal to relation
-struct Ge : Binary_term, Kind_of<ge_term> {
-  Ge(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Ge(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Logical if (material implication).
-struct Imp : Binary_term, Kind_of<imp_term> {
-  Imp(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Imp(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Logical and
-struct And : Binary_term, Kind_of<and_term> {
-  And(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  And(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Logical or
-struct Or : Binary_term, Kind_of<or_term> { 
-  Or(Term* t1, Term* t2) 
-    : Binary_term(Kind, t1, t2) { }
-  Or(const Location& l, Term* t1, Term* t2) 
-    : Binary_term(Kind, l, t1, t2) { }
-};
-
-// Logical not
-struct Not : Unary_term, Kind_of<not_term> {
-  Not(Term* t1) 
-    : Unary_term(Kind, t1) { }
-  Not(const Location& l, Term* t1) 
-    : Unary_term(Kind, l, t1) { }
-};
 
 // -------------------------------------------------------------------------- //
 // Declarations

@@ -111,17 +111,17 @@ def Error : typename = record {
   data : Data;
 }
 
-// def EchoReq : typename = Data;
-// def EchoRes : typename = Data;
+def EchoReq : typename = Data;
+def EchoRes : typename = Data;
 
-// def Vendor : typename = record {
-//   id : uint(32);
-//   data : Data;
-// }
+def Vendor : typename = record {
+  id : uint(32);
+  data : Data;
+}
 
-// def Empty : typename = record {}
+def Empty : typename = record {}
 
-// def FeatureReq : typename = Empty;
+def FeatureReq : typename = Empty;
 
 // def FeatureCapabilities : typename = enum(uint(32)) {
 //   0..(1 << 8 - 1),

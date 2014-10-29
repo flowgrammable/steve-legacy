@@ -36,9 +36,6 @@ main() {
   print_info(bool_term);
   print_info(int_term);
   print_info(fn_term);
-  print_info(and_term);
-  print_info(or_term);
-  print_info(not_term);
   // Decls
   print_info(def_decl);
   print_info(import_decl);

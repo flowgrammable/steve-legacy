@@ -401,6 +401,37 @@ elab_call(Call_tree* t) {
 
 
 // -------------------------------------------------------------------------- //
+// Elaboration of unary and binary expressions
+//
+// Unary and binary expressions are elabarted as unary and binary
+// terms by looking up a function having the same name as the
+// given operator.
+
+// Create a new operator from the given token.
+Name*
+elab_operator(const Token* k) {
+  return new Operator_id(k->loc, k->text);
+}
+
+Expr*
+elab_unary(Unary_tree* t) {
+  // Name* name = elab_operator(t->op());
+  return get_bool_type(); // WRONG
+}
+
+Expr*
+elab_binary(Binary_tree* t) {
+  // Expr* left = elab_expr(t->left());
+  // Expr* right = elab_expr(t->right());
+  // if (not left or not right)
+  //   return nullptr;
+
+  // Name* name = elab_operator(t->op());
+
+  return get_bool_type(); // WRONG
+}
+
+// -------------------------------------------------------------------------- //
 // Elaboration of ranges
 
 // Elaborate a range term. The type of a range term is the unified
@@ -914,8 +945,8 @@ elab_expr(Tree* t) {
   case lit_tree: return elab_lit(as<Lit_tree>(t));
   case call_tree: return elab_call(as<Call_tree>(t));
   case range_tree: return elab_range(as<Range_tree>(t));
-  case unary_tree: return elab_unimplemented(t);
-  case binary_tree: return elab_unimplemented(t);
+  case unary_tree: return elab_unary(as<Unary_tree>(t));
+  case binary_tree: return elab_binary(as<Binary_tree>(t));
   // Types
   case record_tree: return elab_record(as<Record_tree>(t));
   case variant_tree: return elab_variant_type(as<Variant_tree>(t));
@@ -923,7 +954,6 @@ elab_expr(Tree* t) {
   // Declarations
   case parm_tree: return elab_parm(as<Parm_tree>(t));
   case def_tree: return elab_def(as<Def_tree>(t));
-
   case field_tree: return elab_field(as<Field_tree>(t));
   case pad_tree: return elab_unimplemented(t);
   case alt_tree: return elab_alt(as<Alt_tree>(t));

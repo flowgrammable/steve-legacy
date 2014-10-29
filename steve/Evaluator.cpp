@@ -208,32 +208,8 @@ eval_expr(Expr* e) {
   case promo_term: return eval_promo(as<Promo>(e));
   case pred_term: return eval_pred(as<Pred>(e));
   case range_term: return e;
-  // Arithmetic terms
-  case add_term: return e;
-  case sub_term: return e;
-  case mul_term: return e;
-  case div_term: return e;
-  case mod_term: return e;
-  case neg_term: return e;
-  // Bitwise terms
-  case band_term: return e;
-  case bor_term: return e;
-  case bxor_term: return e;
-  case bnot_term: return e;
-  case lsh_term: return e;
-  case rsh_term: return e;
-  // Relational terms
-  case eq_term: return e;
-  case ne_term: return e;
-  case lt_term: return e;
-  case gt_term: return e;
-  case le_term: return e;
-  case ge_term: return e;
-  // Logical terms
-  case imp_term: return e;
-  case or_term: return e;
-  case and_term: return e;
-  case not_term: return e;
+  case unary_term: return e;
+  case binary_term: return e;
   default:
     break;
   }
