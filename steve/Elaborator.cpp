@@ -77,7 +77,7 @@ elab_type(Tree* t) {
   if (not e)
     return nullptr;
 
-  // See through type definitions.
+  // See through declaration references.
   if (Decl_id *id = as<Decl_id>(e))
     if (Def* def = as<Def>(id->decl()))
       e = def->init();
@@ -626,16 +626,16 @@ elab_range_ctor(Range_tree* t, Enum_of_type* enu) {
   return range;
 }
 
-// For an expression of the form 't1 t2', 't1' must be a basic-id
-// and 't2' must be a value whose type is convertible to the base
+// For an expression of the form 'n = t', 'n' must be a basic-id
+// and 't' must be a value whose type is convertible to the base
 // type of the enumeration.
 //
 // Note that enumerator is declared in the enclosing scope of
 // the enumeration type.
 Expr*
-elab_app_ctor(App_tree* t, Enum_of_type* enu) {
-  Name* name = elab_name(t->fn());
-  Expr* value = elab_expr(t->arg());
+elab_named_ctor(Binary_tree* t, Enum_of_type* enu) {
+  Name* name = elab_name(t->left());
+  Expr* value = elab_expr(t->right());
 
   if (not name || not value)
     return nullptr;
@@ -665,9 +665,12 @@ Expr*
 elab_enum_of_ctor(Tree* t, Enum_of_type* enu) {
   if (Range_tree* r = as<Range_tree>(t))
     return elab_range_ctor(r, enu);
-  if (App_tree* a = as<App_tree>(t))
-    return elab_app_ctor(a, enu);
-  error(t->loc) << format("invalid enum constructor '{}'", debug(t));
+  if (Binary_tree* b = as<Binary_tree>(t))
+    if (b->op()->kind == equal_tok)
+      return elab_named_ctor(b, enu);
+
+  // FIXME: This should probably be an assertion.
+  error(t->loc) << format("invalid enumerator '{}'", debug(t));
   return nullptr;
 }
 
@@ -741,6 +744,9 @@ elab_const(Value_tree* t, Tree* e) {
   if (not init)
     return nullptr;
   d->third = reduce(init);
+
+  // Bind the initializer to its definition.
+  d->third->od = d;
 
   return d;
 }

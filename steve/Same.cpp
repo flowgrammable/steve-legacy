@@ -22,6 +22,15 @@ template<typename T>
     return std::equal(t->begin(), t->end(), u->begin(), same_fn{});
   }
 
+inline bool
+is_same(bool t, bool u) { return t == u; }
+
+inline bool
+is_same(const Integer& t, const Integer& u) { return t == u; }
+
+inline bool
+is_same(String t, String u) { return t == u; }
+
 template<typename T>
   inline bool 
   same_unary(T* t, T* u) {
@@ -63,12 +72,17 @@ is_same(Expr* t, Expr* u) {
   
   // Both types are the same. Compare structurally.
   switch (t->kind) {
-  case typename_type: return true;
-  case unit_type: return true;
-  case bool_type: return true;
-  case nat_type: return true;
-  case int_type: return true;
-  case char_type: return true;
+  // Names
+  case basic_id: 
+    return same_unary(as<Basic_id>(t), as<Basic_id>(u));
+  // Types
+  case typename_type: 
+  case unit_type:
+  case bool_type:
+  case nat_type:
+  case int_type:
+  case char_type:
+    return true;
   case fn_type: 
     return same_binary(as<Fn_type>(t), as<Fn_type>(u));
   case range_type: 
@@ -86,8 +100,23 @@ is_same(Expr* t, Expr* u) {
   case enum_of_type:
     return same_binary(as<Enum_of_type>(t), as<Enum_of_type>(u));
   case module_type:
+    break; // FIXME: Make this work.
+
+  // Terms
+  case unit_term: 
+    return true;
+  case bool_term: 
+    return same_unary(as<Bool>(t), as<Bool>(u));
+  case int_term: 
+    return same_unary(as<Int>(t), as<Int>(u));
+
+  // Declarations
+  case enum_decl:
+    return same_binary(as<Enum>(t), as<Enum>(u));
+
   default: break;
   }
+  std::cout << "HERE: " << debug(t) << ' ' << debug(u) << '\n';
   steve_unreachable(format("equivalence of unknown node '{}'", node_name(t)));
 }
 

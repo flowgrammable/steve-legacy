@@ -97,7 +97,15 @@ struct Decl;
 // It is simply the union of all steve expression nodes.
 //
 // Every expression (except names) has an associated type. This is 
-// computed and assigned during elaboration.
+// computed and assigned during elaboration. 
+//
+// Additionally, each expression optionally tracks an originating 
+// declaration, which is also assigned during elaboration. Note that the 
+// originating declaration is always a definition, and is primarily used 
+// to improve diagnostics by allowing details to be elided with a name.
+//
+// TODO: If a term or type is derived as the evaluation of a function,
+// we should also track the originating calls. Right?
 //
 // TODO: Design a facility for creating programs that do not require
 // elaboration to assign the type of a node. Note that this could easily
@@ -107,6 +115,7 @@ struct Expr : Node {
   using Node::Node;
 
   Type* tr = nullptr; // The cached type or kind of the node.
+  Decl* od = nullptr; // An originating declaration for the expression
 };
 
 // A name designates a declaration.

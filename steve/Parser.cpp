@@ -687,13 +687,45 @@ parse_variant_type(Parser& p) {
   return nullptr;
 }
 
+// Returns true if t is an assignment expression.
+bool
+is_assignment_expr(Tree* t) {
+  if (Binary_tree* b = as<Binary_tree>(t))
+    return b->op()->kind == equal_tok;
+  return false;
+}
+
+// Returns true if t is a range expression.
+bool
+is_range_expr(Tree* t) {
+  return is<Range_tree>(t);
+}
+
+// Parse an enumerator. An enumerator specifies a valid value
+// of an enumeration type. 
+//
+//    enumerator ::= assignment-expr | range-expr
+//
+// TODO: Can I enumerate literals? Can I use a constructor to
+// enumerate values of of a user-defined type?
+Tree*
+parse_enumerator(Parser& p) {
+  extern Tree* parse_assignment_expr(Parser&);
+  if (Tree* t = parse_assignment_expr(p)) {
+    if (is_assignment_expr(t) || is_range_expr(t))
+      return t;
+    else
+      error(p) << format("invalid enumerator '{}'", debug(t));
+  }
+  return nullptr;
+}
+
 // Parse an enumerator list.
 //
-//    enumerator-list ::= comma-separated(assignment-expr)
+//    enumerator-list ::= comma-separated(enumerator)
 Tree_seq*
 parse_enumerator_list(Parser& p) {
-  extern Tree* parse_assignment_expr(Parser&);
-  return parse_comma_separated(p, parse_assignment_expr);
+  return parse_comma_separated(p, parse_enumerator);
 }
 
 // Parse an enum type.

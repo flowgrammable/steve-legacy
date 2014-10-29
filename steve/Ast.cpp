@@ -34,6 +34,7 @@ init_exprs() {
   init_node(enum_of_type, "enum-of-type");
   init_node(module_type, "module-type");
   // Terms
+  init_node(unit_term, "unit");
   init_node(bool_term, "bool");
   init_node(int_term, "int");
   init_node(fn_term, "fn");
@@ -65,6 +66,7 @@ init_exprs() {
   init_node(or_term, "or");
   init_node(not_term, "not");
   // Decls
+  init_node(top_decl, "top-decl");
   init_node(def_decl, "def-decl");
   init_node(parm_decl, "parm-decl");
   init_node(field_decl, "field-decl");
@@ -164,11 +166,13 @@ debug_scoped_id(Printer& p, Scoped_id* e) {
   sexpr s(p, "scoped-id");
 }
 
-void
-debug_decl_id(Printer& p, Decl_id* e) { 
-  sexpr s(p, node_name(e));
-  debug_print(p, e->name()); 
-}
+// Print a reference to a declaration.
+template<typename T>
+  void
+  debug_id(Printer& p, T* e) {
+    sexpr s(p, node_name(e));
+    debug_print(p, e->name());
+  }
 
 template<typename T>
   inline void
@@ -202,19 +206,39 @@ template<typename T>
     debug_print(p, e->second);
   }
 
-void
-debug_top(Printer& p, Top* e) {
-  sexpr s(p, "top");
-  indent(p);
-  print_newline(p);
-  for (Decl* s : *e->first) {
-    print_indent(p);
-    debug_print(p, s);
-    print_newline(p);
+template<typename T>
+  void
+  debug_print_nested(Printer& p, Seq<T>* seq) {
+    for (auto* s : *seq) {
+      print_indent(p);
+      debug_print(p, s);
+      print_newline(p);
+    }
   }
-  undent(p);
-  print_indent(p);
-}
+
+template<typename T>
+  void
+  debug_nested_unary(Printer& p, T* e) {
+    sexpr s(p, node_name(e));
+    indent(p);
+    print_newline(p);
+    debug_print_nested(p, e->first);
+    undent(p);
+    print_indent(p);
+  }
+
+
+template<typename T>
+  void
+  debug_nested_binary(Printer& p, T* e) {
+    sexpr s(p, node_name(e));
+    debug_print(p, e->first);
+    indent(p);
+    print_newline(p);
+    debug_print_nested(p, e->second);
+    undent(p);
+    print_indent(p);
+  }
 
 } // namespace
 
@@ -229,7 +253,7 @@ debug_print(Printer& p, Expr* e) {
   // Names
   case basic_id: return debug_terminal(p, as<Basic_id>(e));
   case scoped_id: return debug_scoped_id(p, as<Scoped_id>(e));
-  case decl_id: return debug_decl_id(p, as<Decl_id>(e));
+  case decl_id: return debug_id(p, as<Decl_id>(e));
   // Types
   case typename_type: return print(p, "typename");
   case unit_type: return print(p, "unit");
@@ -244,7 +268,7 @@ debug_print(Printer& p, Expr* e) {
   case variant_type: return debug_unary(p, as<Variant_type>(e));
   case variant_of_type: return debug_binary(p, as<Variant_of_type>(e));
   case enum_type: return debug_unary(p, as<Enum_type>(e));
-  case enum_of_type: return debug_binary(p, as<Enum_of_type>(e));
+  case enum_of_type: return debug_nested_binary(p, as<Enum_of_type>(e));
   // Terms
   case unit_term: return print(p, "<unit>");
   case bool_term: return debug_terminal(p, as<Bool>(e));
@@ -279,7 +303,7 @@ debug_print(Printer& p, Expr* e) {
   case not_term: return debug_unary(p, as<Not>(e));
   // Statements
   // Declarations
-  case top_decl: return debug_top(p, as<Top>(e));
+  case top_decl: return debug_nested_unary(p, as<Top>(e));
   case def_decl: return debug_ternary(p, as<Def>(e));
   case parm_decl: return debug_ternary(p, as<Parm>(e));
   case field_decl: return debug_ternary(p, as<Field>(e));
