@@ -22,6 +22,7 @@ add_library(steve-lib
   Type.cpp
   Decl.cpp
   Scope.cpp
+  Overload.cpp
   Subst.cpp
   Conv.cpp
   Intrinsic.cpp

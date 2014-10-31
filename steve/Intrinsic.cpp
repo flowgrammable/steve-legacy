@@ -200,12 +200,12 @@ init_intrinsics() {
     // Equality comparison: a == b
     { equal_equal_tok,    {unit_, unit_}, bool_, eq_unit },
     { equal_equal_tok,    {bool_, bool_}, bool_, eq_bool },
-    // { equal_equal_tok,    {nat_, nat_}, bool_, eq_nat },
-    // { equal_equal_tok,    {int_, int_}, bool_, eq_int },
+    { equal_equal_tok,    {nat_, nat_}, bool_, eq_nat },
+    { equal_equal_tok,    {int_, int_}, bool_, eq_int },
 
     { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield }
   };
-  (void)specs;
+  (void)specs; // Suppress unused variable
 
   // Extract the declared features
   bitfield_ = lookup_single(make_name("bitfield"));

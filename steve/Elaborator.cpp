@@ -866,8 +866,10 @@ elab_fn(Fn_tree* t, Tree* e) {
     return nullptr;
   fn->second = result;
 
-  // Compute the type of the function.
+  // Compute the type of the function and update
+  // the parsed function.
   Type* type = get_fn_type(parms, result);
+  fn->tr = type;
   
   // Emit the declaration of the (as-of-yet) incomplete function
   // into the enclosing scope (we pushed the function paramter

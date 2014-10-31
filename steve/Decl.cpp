@@ -1,5 +1,6 @@
 
 #include <steve/Decl.hpp>
+#include <steve/Ast.hpp>
 #include <steve/Debug.hpp>
 
 namespace steve {
@@ -26,5 +27,13 @@ get_name(Decl* d) {
   steve_unreachable(format("no declaration name for '{}'", node_name(d)));
 }
 
+// When 'd' declares a function, return that. Otherwise,
+// return nullptr.
+Fn*
+get_declared_fn(Decl* d) {
+  if (Def* def = as<Def>(d))
+    return as<Fn>(def->init());
+  return nullptr;
+}
 
 } // namespace steve

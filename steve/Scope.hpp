@@ -59,10 +59,10 @@ public:
 // Declarations
 
 Overload* lookup(Name*);
-Decl* lookup_single(Name*);
 Overload* declare(Name*, Decl*);
 Overload* declare(Decl*);
 Overload* declare_outside(Decl*);
+Decl* lookup_single(Name*);
 
 
 // -------------------------------------------------------------------------- //

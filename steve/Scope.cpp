@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <steve/Scope.hpp>
+#include <steve/Overload.hpp>
 #include <steve/Error.hpp>
 #include <steve/Debug.hpp>
 
@@ -57,22 +58,6 @@ Name_less::operator()(const Name* a, const Name* b) const {
 // Scope
 
 namespace {
-// Try to overload the definition d, given the existing overload
-// set ovl. Returns true on success and false on failure.
-//
-// TODO: This is going to be a big function. Move it into its own
-// module.
-//
-// TODO: Enforce the rule that all overloads must have the same
-// return type or kind. That is, a set of functions produces only
-// values or types.
-bool
-overload(Overload& ovl, Decl* d) {
-  error(d->loc) << format("redefinition of '{0}'", debug(d));
-  for (Decl* d : ovl)
-    note(d->loc) << format("previous definition is '{0}'", debug(d));
-  return false;
-}
 
 // Make sure that we've initialized the scope correctly.
 inline void
@@ -84,17 +69,20 @@ check_scope_and_context(Scope_kind k, Expr* c) {
     // FIXME: What should this do?
     return;
   case record_scope:
-    steve_assert(is<Record_type>(c), format("context '{}' is not a record type", debug(c)));
+    steve_assert(is<Record_type>(c), 
+                 format("context '{}' is not a record type", debug(c)));
     break;
   case variant_scope:
     steve_assert(is<Variant_type>(c) || is<Variant_of_type>(c),
                  format("context '{}' is not a kind of variant", debug(c)));
     break;
   case enum_scope:
-    steve_assert(is<Enum_type>(c), format("context '{}' is not a enum type", debug(c)));
+    steve_assert(is<Enum_type>(c), 
+                 format("context '{}' is not a enum type", debug(c)));
     break;
   case function_scope:
-    steve_assert(is<Fn>(c), format("context '{}' is not a function", debug(c)));
+    steve_assert(is<Fn>(c), 
+                 format("context '{}' is not a function", debug(c)));
     break;
   case block_scope:
     // FIXME: Do something here...
@@ -135,6 +123,9 @@ Overload*
 Scope::declare(Name* n, Decl* d) {
   auto result = insert({n, {d}});
   Overload& ovl = result.first->second;
+  
+  // If this didn't succeed, ovl is non-empty, so we need to
+  // determine if we can add d to that set.
   if (not result.second) {
     if (overload(ovl, d))
       return &ovl;

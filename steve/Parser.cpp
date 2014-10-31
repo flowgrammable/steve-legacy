@@ -1210,7 +1210,6 @@ parse_def_decl(Parser& p) {
         return nullptr;
       }
 
-
       // Parse the initializer.
       if (Tree* e = parse_required_initializer_clause(p))
         return new Def_tree(k, d1, e);
