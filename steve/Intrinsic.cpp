@@ -69,6 +69,15 @@ make_parms(Typenames ts) {
   return rs;
 }
 
+inline Builtin*
+make_builtin(Arity1 f) { return new Builtin(1, f); }
+
+inline Builtin*
+make_builtin(Arity2 f) { return new Builtin(2, f); }
+
+inline Builtin*
+make_builtin(Arity3 f) { return new Builtin(3, f); }
+
 // The Spec class provides a partial constructor for a builtin
 // function. That is, it partially allocates many of the resources
 // based on simplified inputs, and these are used to complete
@@ -76,26 +85,15 @@ make_parms(Typenames ts) {
 //
 // FIXME: Factor common initializations?
 struct Spec {
-  template<typename N>
-    Spec(N n, Typenames ps, Typename r, Arity3 f)
+  template<typename N, typename F>
+    Spec(N n, Typenames ps, Typename r, F f)
       : name(make_name(n))
       , parms(make_parms(ps))
       , result(make_type(r))
-      , fn(new Builtin(3, f))
+      , fn(make_builtin(f))
       , def()
       , ovl()
      { complete(); }
-
-  template<typename N>
-    Spec(N n, Typenames ps, Typename r, Arity2 f)
-      : name(make_name(n))
-      , parms(make_parms(ps))
-      , result(make_type(r))
-      , fn(new Builtin(2, f))
-      , def()
-      , ovl()
-     { complete(); }
-
 
   void complete();
   
@@ -201,7 +199,7 @@ init_intrinsics() {
   Spec specs[] = {
     // Equality comparison: a == b
     { equal_equal_tok,    {unit_, unit_}, bool_, eq_unit },
-    // { equal_equal_tok,    {bool_, bool_}, bool_, eq_bool },
+    { equal_equal_tok,    {bool_, bool_}, bool_, eq_bool },
     // { equal_equal_tok,    {nat_, nat_}, bool_, eq_nat },
     // { equal_equal_tok,    {int_, int_}, bool_, eq_int },
 
