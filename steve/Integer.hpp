@@ -6,6 +6,7 @@
 
 #include <steve/String.hpp>
 #include <steve/Memory.hpp>
+#include <steve/Debug.hpp>
 
 namespace steve {
 
@@ -35,14 +36,26 @@ public:
   Integer& operator/=(const Integer&);
   Integer& operator%=(const Integer&);
 
+  Integer& operator<<=(const Integer&);
+  Integer& operator>>=(const Integer&);
+
   Integer& neg();
   Integer& abs();
 
   // Observers
+  int sign() const;
+  bool is_positive() const;
+  bool is_negative() const;
+  bool is_nonpositive() const;
+  bool is_nonnegative() const;
+
+
   int bits() const;
   int base() const;
+  std::uintmax_t getu() const;
+  std::intmax_t gets() const;
   const mpz_t& data() const;
-  
+
 private:
   mpz_t value_;
   int   base_;
@@ -66,6 +79,9 @@ Integer operator/(const Integer&, const Integer&);
 Integer operator%(const Integer&, const Integer&);
 Integer operator-(const Integer&);
 Integer operator+(const Integer&);
+
+Integer operator<<(const Integer&, const Integer&);
+Integer operator>>(const Integer&, const Integer&);
 
 // Streaming
 std::ostream& operator<<(std::ostream&, const Integer&);

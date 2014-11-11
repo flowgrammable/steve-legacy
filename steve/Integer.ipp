@@ -70,6 +70,23 @@ Integer::operator%=(const Integer& x) {
   return *this;
 }
 
+// Left-shift the integer value by the specified amount.
+inline Integer&
+Integer::operator<<=(const Integer& x) {
+  mpz_mul_2exp(value_, value_, x.getu());
+  return *this;
+}
+
+// Right-shift the integer value by the specified amount. This will
+// just "do the right thing" and preserves the sign bit when shifting.
+// It is appropriate for both signed and unsigned integer 
+// representations.
+inline Integer&
+Integer::operator>>=(const Integer& x) {
+  mpz_fdiv_q_2exp(value_, value_, x.getu());
+  return *this;
+}
+
 // Negate this value.
 inline Integer&
 Integer::neg() {
@@ -84,6 +101,26 @@ Integer::abs() {
   return *this;
 }
 
+// Returns the signum of the value.
+inline int
+Integer::sign() const { return mpz_sgn(value_); }
+
+// Returns true if the value is strictly positive.
+inline bool
+Integer::is_positive() const { return sign() > 0; }
+
+// Returns true if the value is strictly negative.
+inline bool
+Integer::is_negative() const { return sign() < 0; }
+
+// Returns true if the value is nonpositive.
+inline bool
+Integer::is_nonpositive() const { return sign() <= 0; }
+
+// Returns true if the value is nonnegative.
+inline bool
+Integer::is_nonnegative() const { return sign() >= 0; }
+
 // Returns the number of bits in the integer representation.
 inline int
 Integer::bits() const { return mpz_sizeinbase(value_, 2); }
@@ -92,6 +129,20 @@ Integer::bits() const { return mpz_sizeinbase(value_, 2); }
 inline int
 Integer::base() const { return base_; }
 
+// Returns the value as an unsigned integer.
+inline std::uintmax_t
+Integer::getu() const { 
+  steve_assert(is_nonnegative(), "get signed value as unsigned");
+  return mpz_get_ui(value_);
+}
+
+// Returns the value as a signed integer.
+inline std::intmax_t
+Integer::gets() const { 
+  return mpz_get_si(value_);
+}
+
+// Returns a reference to the underlying data.
 inline const mpz_t& 
 Integer::data() const { return value_; }
 
@@ -165,5 +216,14 @@ operator+(const Integer& x) {
   return x; 
 }
 
+inline Integer
+operator<<(const Integer& a, const Integer& b) {
+  return Integer(a) <<= b;
+}
+
+inline Integer
+operator>>(const Integer& a, const Integer& b) {
+  return Integer(a) >>= b;
+}
 
 } // namespace

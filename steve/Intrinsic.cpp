@@ -178,6 +178,34 @@ eq_int(Expr* a, Expr* b) {
 }
 
 
+// Left shift
+
+Expr*
+lsh_nat(Expr* a, Expr* b) {
+  Value result = get_value(a).as_integer() << get_value(b).as_integer();
+  return to_expr(result, get_nat_type());
+}
+
+Expr*
+lsh_int(Expr* a, Expr* b) {
+  Value result = get_value(a).as_integer() << get_value(b).as_integer();
+  return to_expr(result, get_int_type());
+}
+
+// Right shift
+
+Expr*
+rsh_nat(Expr* a, Expr* b) {
+  Value result = get_value(a).as_integer() >> get_value(b).as_integer();
+  return to_expr(result, get_nat_type());
+}
+
+Expr*
+rsh_int(Expr* a, Expr* b) {
+  Value result = get_value(a).as_integer() >> get_value(b).as_integer();
+  return to_expr(result, get_int_type());
+}
+
 // -------------------------------------------------------------------------- //
 // Globals
 
@@ -202,6 +230,17 @@ init_intrinsics() {
     { equal_equal_tok,    {bool_, bool_}, bool_, eq_bool },
     { equal_equal_tok,    {nat_, nat_}, bool_, eq_nat },
     { equal_equal_tok,    {int_, int_}, bool_, eq_int },
+
+    // Left shift
+    // Note that the 2nd argument is nat.
+    { langle_langle_tok,  {nat_, nat_}, nat_, lsh_nat },
+    { langle_langle_tok,  {int_, nat_}, int_, lsh_int },
+
+    // Left shift
+    // Note that the 2nd argument is nat.
+    { rangle_rangle_tok,  {nat_, nat_}, nat_, rsh_nat },
+    { rangle_rangle_tok,  {int_, nat_}, int_, rsh_int },
+
 
     { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield }
   };
