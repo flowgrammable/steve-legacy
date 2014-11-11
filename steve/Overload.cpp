@@ -15,18 +15,8 @@ equivalent_parameters(Fn_type* t1, Fn_type* t2) {
   Type_seq* p2 = t2->parms();
   if (p1->size() != p2->size())
     return true;
-  return std::equal(p1->begin(), p1->end(), p2->begin(), is_same);
-}
 
-// Returns true if t1 and t2 have equivalent parameter type lists
-// and result types, that is, their signatures are effectively
-// indifferentiable.
-bool
-equivalent_signatures(Fn_type* t1, Fn_type* t2) {
-  if (equivalent_parameters(t1, t2))
-    return is_same(t1->result(), t2->result());
-  else
-    return false;
+  return std::equal(p1->begin(), p1->end(), p2->begin(), is_same);
 }
 
 // Check if d1 can be overloaded with d2. Note that, d1 is the 
@@ -48,28 +38,38 @@ check_overloadable(Decl* d1, Decl* d2) {
   Fn_type* t1 = as<Fn_type>(get_type(d1));
   Fn_type* t2 = as<Fn_type>(get_type(d2));
 
-  // Only functions can be overloaded
+  // Only functions can be overloaded.
   if (not t1) {
-    error(d1->loc) << format("overload of non-function '{}' ", debug(d1));
+    error(d1->loc) << format("cannot overload '{}' becausse "
+                             "it is not a function", 
+                             debug(d1));
     return false;
   }
+
+  // Redeclaration of a different kind.
   if (not t2) {
-    error(d1->loc) << format("redeclaring '{}' as a different kind of symbol",
+    error(d1->loc) << format("redefining '{}' as a different kind of symbol",
                              debug(d1));
-    note(d2->loc) << format("previous declaration is '{}'", debug(d2));
+    note(d2->loc) << format("  previous definition is '{}'", debug(d2));
     return false;
   }
 
   // Functions whose signatures differ only in their result types
   // cannot be overloaded.
-  if (equivalent_signatures(t1, t2)) {
-    error(d1->loc) << format("cannot overload '{}' with '{}' because "
-                             "signatures are equivalent",
-                             debug(d1), debug(d2));
+  //
+  // TODO: Allow exceptions in the case where a result type depends
+  // on a deduced parameter.
+  if (equivalent_parameters(t1, t2)) {
+    if (is_same(t1->result(), t2->result())) {
+      error(d1->loc) << format("redefinition of '{}'", debug(d1));
+      note(d2->loc) << format("  previous definition is '{}'", debug(d2));
+    } else {
+      error(d1->loc) << format("cannot overload '{}' and '{}' because "
+                               "they differ only their result types",
+                               debug(d1), debug(d2));
+    }
     return false;
   }
-
-  // TODO: Anything else that makes things incomparable?
 
   return true;
 }
