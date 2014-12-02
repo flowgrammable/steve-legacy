@@ -11,9 +11,10 @@ namespace steve {
 namespace {
 
 // Return a textual representation of the scope kind.
-String
+const char*
 scope_name(Scope_kind k) {
   switch (k) {
+  case builtin_scope: return "builtin scope";
   case module_scope: return "module scope";
   case record_scope: return "record scope";
   case variant_scope: return "variant scope";
@@ -35,7 +36,9 @@ namespace {
 
 template<typename T>
   inline bool 
-  literal_less(const T* a, const T* b) { return a->first < b->first; }
+  literal_less(const T* a, const T* b) { 
+    return a->first < b->first; 
+  }
 
 } // namespace
 
@@ -65,6 +68,7 @@ check_scope_and_context(Scope_kind k, Expr* c) {
   if (not c)
     return;
   switch (k) {
+  case builtin_scope:
   case module_scope:
     // FIXME: What should this do?
     return;
@@ -105,7 +109,7 @@ Scope::lookup(Name* n) {
   auto iter = find(n);
   if (iter != end())
     return &iter->second;
-  
+
   // TODO: There might be some scope-specific lookup rules here.
   // For example, in class scope, we might search through base
   // classes if we had them.
@@ -227,5 +231,32 @@ current_variant() { return as<Variant_type>(current_scope()->context); }
 
 Enum_type* 
 current_enumeration() { return as<Enum_type>(current_scope()->context); }
+
+// -------------------------------------------------------------------------- //
+// Debugging support
+//
+// FIXME: Use the pretty printer to manage indentation.
+
+std::ostream&
+operator<<(std::ostream& os, debug_scope d) {
+  Scope* s = d.s;
+  for (auto& x : *s)
+    os << debug(x.first) << " : " << debug(&x.second) << '\n';
+  return os;
+}
+
+std::ostream&
+operator<<(std::ostream& os, debug_overload d) {
+  Overload* o = d.o;
+  if (o->singleton()) {
+    os << debug(o->front());
+  } else {
+    os << "{\n";
+    for (auto* x : *o)
+      os << "  " << debug(x) << '\n';
+    os << "}";
+  }
+  return os;
+}
 
 } // namespace steve

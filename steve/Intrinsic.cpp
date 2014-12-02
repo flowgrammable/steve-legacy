@@ -30,7 +30,8 @@ enum Typename {
   unit_,
   bool_,
   nat_,
-  int_
+  int_,
+  type_
 };
 
 using Typenames = std::initializer_list<Typename>;
@@ -56,6 +57,7 @@ make_type(Typename t) {
   case bool_: return get_bool_type();
   case nat_: return get_nat_type();
   case int_: return get_int_type();
+  case type_: return get_typename_type();
   default: steve_unreachable("unspecified builtin type.");
   }
 }
@@ -150,60 +152,259 @@ eval_bitfield(Expr* t, Expr* n, Expr* b) {
   return make_expr<Bitfield_type>(no_location, get_typename_type(), t1, n1, b1);
 }
 
+// Returns the the value of the expression e. Bahavior is undefined if
+// e is not fully evaluated.
 inline Value
 get_value(Expr* e) { return eval(e).as_value(); }
 
+// Returns the boolean value of e.
+inline bool
+get_bool_value(Expr* e) { return get_value(e).as_bool(); }
+
+// Returns the integer value of e.
+inline const Integer&
+get_integer_value(Expr* e) { return get_value(e).as_integer(); }
+
+// Returns the type value of e.
+inline Type*
+get_type_value(Expr* e) { return get_value(e).as_type(); }
+
+
+// -------------------------------------------------------------------------- //
+// Constant values
+
+// Returns true.
+inline Expr*
+truth() { return to_expr(Value(true), get_bool_type()); }
+
+
+// Returns false.
+inline Expr*
+falsity() { return to_expr(Value(false), get_bool_type()); }
+
+
+// -------------------------------------------------------------------------- //
+// Equality and inequality
+
+// Returns the truth value.
 Expr*
-eq_unit(Expr* a, Expr* b) {
-  Value result = true;
+unit_equal(Expr*, Expr*) { return truth(); }
+
+// Returns the false value.
+Expr*
+unit_not_equal(Expr*, Expr*) { return falsity(); }
+
+// Returns true when the boolean values a and b are the same.
+Expr*
+boolean_equal(Expr* a, Expr* b) {
+  Value result = get_bool_value(a) == get_bool_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when the boolean values a and b are different.
+Expr*
+boolean_not_equal(Expr* a, Expr* b) {
+  Value result = get_bool_value(a) != get_bool_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when the integer expressions a and b have the
+// same value.
+Expr*
+integer_equal(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) == get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when the integer expressions a and b have different
+// values.
+Expr*
+integer_not_equal(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) != get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when two types are the same.
+Expr*
+type_equal(Expr* a, Expr* b) {
+  Value result = is_same(get_type(a), get_type(b));
+  return to_expr(result, get_bool_type());
+}
+
+// Returns true when two types are different.
+Expr*
+type_not_equal(Expr* a, Expr* b) {
+  Value result = not is_same(get_type(a), get_type(b));
+  return to_expr(result, get_bool_type());
+}
+
+// -------------------------------------------------------------------------- //
+// Ordering
+
+// Returns true when the integer expressions a is less than the
+// integer expression b.
+Expr*
+integer_less(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) < get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when the integer expressions a is greater than the
+// integer expression b.
+Expr*
+integer_greater(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) > get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when the integer expressions a is less than or
+// equal to the integer expression b.
+Expr*
+integer_less_equal(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) <= get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns true when the integer expressions a is greater than or
+// equal to the integer expression b.
+Expr*
+integer_greater_equal(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) >= get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// -------------------------------------------------------------------------- //
+// Arithmetic operators
+//
+// TODO: These values need to be adjusted for overflow. Currently,
+// they are computed in arbitary precision, which is not correct.
+// See Integer.hpp for comments on how to fix this.
+
+// Returns the sum of the integer expressions a and b.
+Expr*
+integer_addition(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) + get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns the difference of the integer expressions a and b.
+Expr*
+integer_subtraction(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) - get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns the product of the integer expressions a and b.
+Expr*
+integer_multiplication(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) * get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns the floor division of the integer expression
+// a divided by the integer expression b.
+Expr*
+integer_division(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) / get_integer_value(b);
+  return to_expr(result, get_bool_type()); 
+}
+
+// Returns the remainder of floor division of the integer expression
+// a divided by the integer expression b.
+Expr*
+integer_remainder(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) % get_integer_value(b);
   return to_expr(result, get_bool_type()); 
 }
 
 Expr*
-eq_bool(Expr* a, Expr* b) {
-  Value result = get_value(a).as_bool() == get_value(b).as_bool();
+integer_negation(Expr* e) {
+  Value result = -get_integer_value(e);
+  return to_expr(result, get_bool_type());
+}
+
+// -------------------------------------------------------------------------- //
+// Bitwise operators
+
+Expr*
+integer_bitwise_and(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) & get_integer_value(b);
   return to_expr(result, get_bool_type()); 
 }
 
 Expr*
-eq_nat(Expr* a, Expr* b) {
-  Value result = get_value(a).as_integer() == get_value(b).as_integer();
+integer_bitwise_or(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) | get_integer_value(b);
   return to_expr(result, get_bool_type()); 
 }
 
 Expr*
-eq_int(Expr* a, Expr* b) {
-  Value result = get_value(a).as_integer() == get_value(b).as_integer();
+integer_bitwise_xor(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) ^ get_integer_value(b);
   return to_expr(result, get_bool_type()); 
 }
 
-
-// Left shift
-
 Expr*
-lsh_nat(Expr* a, Expr* b) {
-  Value result = get_value(a).as_integer() << get_value(b).as_integer();
+integer_bitwise_complement(Expr* e) {
+  Value result = ~get_integer_value(e);
+  return to_expr(result, get_bool_type()); 
+}
+
+// -------------------------------------------------------------------------- //
+// Left and right shift
+//
+// Behavior is undefined when the right operand is negative or greater
+// than or equal to the number of bits in the representation of the
+// left operand.
+
+// In an arithmetic left shift, 0's are inserted into the low
+// order bit. Note that this is the same as a logical left shift.
+Expr*
+arithmetic_left_shift(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) << get_integer_value(b);
   return to_expr(result, get_nat_type());
 }
 
+// In an arithmetic left shift, the sign bit is preserved.
 Expr*
-lsh_int(Expr* a, Expr* b) {
-  Value result = get_value(a).as_integer() << get_value(b).as_integer();
-  return to_expr(result, get_int_type());
-}
-
-// Right shift
-
-Expr*
-rsh_nat(Expr* a, Expr* b) {
-  Value result = get_value(a).as_integer() >> get_value(b).as_integer();
+arithmetic_right_shift(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) >> get_integer_value(b);
   return to_expr(result, get_nat_type());
 }
 
+// In a logical right shift, 0 is inserted into the high-order bit.
 Expr*
-rsh_int(Expr* a, Expr* b) {
-  Value result = get_value(a).as_integer() >> get_value(b).as_integer();
+logical_right_shift(Expr* a, Expr* b) {
+  Value result = get_integer_value(a) >> get_integer_value(b);
   return to_expr(result, get_int_type());
+}
+
+// -------------------------------------------------------------------------- //
+// Logical operators
+
+// Short-circuiting boolean and.
+Expr*
+bool_and(Expr* a, Expr* b) {
+  if (not get_bool_value(a))
+    return falsity();
+  else
+    return reduce(b);
+}
+
+// Short-circuiting boolean or.
+Expr*
+bool_or(Expr* a, Expr* b) {
+  if (get_bool_value(a))
+    return truth();
+  else
+    return reduce(b);
+}
+
+// Logical not.
+Expr*
+bool_not(Expr* e) {
+  Value result = not get_bool_value(e);
+  return to_expr(result, get_bool_type());
 }
 
 // -------------------------------------------------------------------------- //
@@ -221,32 +422,73 @@ Decl* bitfield_;
 void
 init_intrinsics() {
   Diagnostics_guard diags;
-  Scope_guard scope(module_scope);
 
   // FIXME: Re-enable and finish all of the various builtin operators.
-  Spec specs[] = {
-    // Equality comparison: a == b
-    { equal_equal_tok,    {unit_, unit_}, bool_, eq_unit },
-    { equal_equal_tok,    {bool_, bool_}, bool_, eq_bool },
-    { equal_equal_tok,    {nat_, nat_}, bool_, eq_nat },
-    { equal_equal_tok,    {int_, int_}, bool_, eq_int },
-
+  Spec specs[] __attribute__ ((unused)) = {
+    // equal to (a == b)
+    { equal_equal_tok,    {unit_, unit_}, bool_, unit_equal},
+    { equal_equal_tok,    {bool_, bool_}, bool_, boolean_equal},
+    { equal_equal_tok,    {nat_, nat_}, bool_, integer_equal},
+    { equal_equal_tok,    {int_, int_}, bool_, integer_equal},
+    { equal_equal_tok,    {type_, type_}, bool_, type_equal},
+    // not equal to (a != b)
+    { bang_equal_tok,     {unit_, unit_}, bool_, unit_not_equal},
+    { bang_equal_tok,     {bool_, bool_}, bool_, boolean_not_equal},
+    { bang_equal_tok,     {nat_, nat_}, bool_, integer_not_equal},
+    { bang_equal_tok,     {int_, int_}, bool_, integer_not_equal},
+    { bang_equal_tok,     {type_, type_}, bool_, type_not_equal},
+    // Less than (a < b)
+    { langle_tok,         {nat_, nat_}, bool_, integer_less},
+    { langle_tok,         {int_, int_}, bool_, integer_less},
+    // Greater than (a > b)
+    { rangle_tok,         {nat_, nat_}, bool_, integer_greater},
+    { rangle_tok,         {int_, int_}, bool_, integer_greater},
+    // Less than or equal to (a <= b)
+    { langle_equal_tok,   {nat_, nat_}, bool_, integer_less_equal},
+    { langle_equal_tok,   {int_, int_}, bool_, integer_less_equal},
+    // Greater than or equal to (a >= b)
+    { rangle_equal_tok,   {nat_, nat_}, bool_, integer_greater_equal},
+    { rangle_equal_tok,   {int_, int_}, bool_, integer_greater_equal},
+    // Addition
+    { plus_tok,           {nat_, nat_}, nat_, integer_addition},
+    { plus_tok,           {int_, int_}, int_, integer_addition},
+    // Subtraction
+    { minus_tok,          {nat_, nat_}, nat_, integer_subtraction},
+    { minus_tok,          {int_, int_}, int_, integer_subtraction},
+    // Multiplication
+    { star_tok,           {nat_, nat_}, nat_, integer_multiplication},
+    { star_tok,           {int_, int_}, int_, integer_multiplication},
+    // Division
+    { slash_tok,          {nat_, nat_}, nat_, integer_division},
+    { slash_tok,          {int_, int_}, int_, integer_division},
+    // Remainder
+    { percent_tok,        {nat_, nat_}, nat_, integer_remainder},
+    { percent_tok,        {int_, int_}, int_, integer_remainder},
+    // Negation
+    { minus_tok,          {nat_}, nat_, integer_negation},
+    // Bitwise operations
+    { ampersand_tok,      {nat_, nat_}, nat_, integer_bitwise_and},
+    { pipe_tok,           {nat_, nat_}, nat_, integer_bitwise_or},
+    { caret_tok,          {nat_, nat_}, nat_, integer_bitwise_xor},
+    { tilde_tok,          {nat_, nat_}, nat_, integer_bitwise_complement},
     // Left shift
-    // Note that the 2nd argument is nat.
-    { langle_langle_tok,  {nat_, nat_}, nat_, lsh_nat },
-    { langle_langle_tok,  {int_, nat_}, int_, lsh_int },
+    { langle_langle_tok,  {nat_, nat_}, nat_, arithmetic_left_shift},
+    { langle_langle_tok,  {int_, nat_}, int_, arithmetic_left_shift},
+    // Right shift
+    { rangle_rangle_tok,  {nat_, nat_}, nat_, logical_right_shift},
+    { rangle_rangle_tok,  {int_, nat_}, int_, arithmetic_right_shift},
+    // Logical operators
+    { and_tok,            {bool_, bool_}, bool_, bool_and},
+    { or_tok,             {bool_, bool_}, bool_, bool_or},
+    { not_tok,            {bool_, bool_}, bool_, bool_not},
 
-    // Left shift
-    // Note that the 2nd argument is nat.
-    { rangle_rangle_tok,  {nat_, nat_}, nat_, rsh_nat },
-    { rangle_rangle_tok,  {int_, nat_}, int_, rsh_int },
-
-
-    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield }
+    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield}
   };
-  (void)specs; // Suppress unused variable
+
+  std::cout << debug(current_scope()) << '\n';
 
   // Extract the declared features
+  // TODO: Actually do this, or just allow lookups in the usual way?
   bitfield_ = lookup_single(make_name("bitfield"));
 
   // FIXME: This could be improved.
@@ -256,8 +498,6 @@ init_intrinsics() {
     steve_unreachable("");
   }
 }
-
-
 
 // -------------------------------------------------------------------------- //
 // Builtin accessors

@@ -70,6 +70,24 @@ Integer::operator%=(const Integer& x) {
   return *this;
 }
 
+inline Integer&
+Integer::operator&=(const Integer& x) {
+  mpz_and(value_, value_, x.value_);
+  return *this;
+}
+
+inline Integer&
+Integer::operator|=(const Integer& x) {
+  mpz_ior(value_, value_, x.value_);
+  return *this;
+}
+
+inline Integer&
+Integer::operator^=(const Integer& x) {
+  mpz_xor(value_, value_, x.value_);
+  return *this;
+}
+
 // Left-shift the integer value by the specified amount.
 inline Integer&
 Integer::operator<<=(const Integer& x) {
@@ -98,6 +116,13 @@ Integer::neg() {
 inline Integer&
 Integer::abs() {
   mpz_abs(value_, value_);
+  return *this;
+}
+
+// Set this value to its one's complement.
+inline Integer&
+Integer::comp() {
+  mpz_com(value_, value_);
   return *this;
 }
 
@@ -154,9 +179,7 @@ operator==(const Integer& a, const Integer& b) {
 }
 
 inline bool 
-operator!=(const Integer& a, const Integer& b) {
-  return not(a == b);
-}
+operator!=(const Integer& a, const Integer& b) { return not(a == b); }
 
 // Ordering
 // Returns true when a is less than b.
@@ -166,64 +189,52 @@ operator<(const Integer& a, const Integer& b) {
 }
 
 inline bool
-operator>(const Integer& a, const Integer& b) {
-  return b < a;
-}
+operator>(const Integer& a, const Integer& b) { return b < a; }
 
 inline bool
-operator<=(const Integer& a, const Integer& b) {
-  return not(b < a);
-}
+operator<=(const Integer& a, const Integer& b) { return not(b < a); }
 
 inline bool
-operator>=(const Integer& a, const Integer& b) {
-  return not(a < b);
-}
+operator>=(const Integer& a, const Integer& b) { return not(a < b); }
 
 // Arithmetic
 inline Integer
-operator+(const Integer& a, const Integer& b) {
-  return Integer(a) += b;
-}
+operator+(const Integer& a, const Integer& b) { return Integer(a) += b; }
 
 inline Integer
-operator-(const Integer& a, const Integer& b) {
-  return Integer(a) -= b;
-}
+operator-(const Integer& a, const Integer& b) { return Integer(a) -= b; }
 
 inline Integer
-operator*(const Integer& a, const Integer& b) {
-  return Integer(a) *= b;
-}
+operator*(const Integer& a, const Integer& b) { return Integer(a) *= b; }
 
 inline Integer
-operator/(const Integer& a, const Integer& b) {
-  return Integer(a) /= b;
-}
+operator/(const Integer& a, const Integer& b) { return Integer(a) /= b; }
 
 inline Integer
-operator%(const Integer& a, const Integer& b) {
-  return Integer(a) %= b;
-}
+operator%(const Integer& a, const Integer& b) { return Integer(a) %= b; }
 
 inline Integer 
-operator-(const Integer& x) { 
-  return Integer(x).neg(); 
-}
+operator-(const Integer& x) { return Integer(x).neg(); }
 
 inline Integer 
-operator+(const Integer& x) { 
-  return x; 
-}
+operator+(const Integer& x) { return x; }
 
 inline Integer
-operator<<(const Integer& a, const Integer& b) {
-  return Integer(a) <<= b;
-}
+operator&(const Integer& a, const Integer& b) { return Integer(a) &= b; }
 
 inline Integer
-operator>>(const Integer& a, const Integer& b) {
-  return Integer(a) >>= b;
-}
+operator|(const Integer& a, const Integer& b) { return Integer(a) |= b; }
+
+inline Integer
+operator^(const Integer& a, const Integer& b) { return Integer(a) ^= b; }
+
+inline Integer
+operator~(const Integer& x) { return Integer(x).comp(); }
+
+inline Integer
+operator<<(const Integer& a, const Integer& b) { return Integer(a) <<= b; }
+
+inline Integer
+operator>>(const Integer& a, const Integer& b) { return Integer(a) >>= b; }
 
 } // namespace

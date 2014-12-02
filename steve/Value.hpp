@@ -21,7 +21,7 @@ enum Value_kind {
   type_value
 };
 
-// Internal represntation of the a value.
+// Internal representation of the a value.
 union Value_data {
   Value_data() { }
   Value_data(unit_t u) : u(u) { }
@@ -64,7 +64,7 @@ struct Value {
   // Extraction
   unit_t as_unit() const;
   bool as_bool() const;
-  Integer as_integer() const;
+  const Integer& as_integer() const;
   Fn* as_function() const;
   Type* as_type() const;
 
@@ -92,7 +92,7 @@ union Eval_data {
   Expr* e;
 };
 
-// The evaluatoin class embodies the result of partially evaluating
+// The evaluation class embodies the result of partially evaluating
 // an expression. It allows the evaluator to opportunistically evaluate
 // some parts of an expression while leaving other aspects unevaluated.
 struct Eval {
@@ -118,7 +118,7 @@ struct Eval {
   Data data;
 };
 
-// A sequence of evluations. This is used, for example to store
+// A sequence of evaluations. This is used, for example to store
 // the results of evaluating function arguments.
 using Eval_seq = std::vector<Eval>;
 

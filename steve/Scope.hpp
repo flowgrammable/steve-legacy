@@ -2,6 +2,7 @@
 #ifndef STEVE_SCOPE_HPP
 #define STEVE_SCOPE_HPP
 
+#include <iosfwd>
 #include <map>
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace steve {
 // The scope kind defines the various kinds of scopes within the
 // steve language.
 enum Scope_kind {
+  builtin_scope,
   module_scope,
   record_scope,
   variant_scope,
@@ -87,6 +89,22 @@ struct Scope_guard {
   Scope_guard(Scope_kind, Expr* = nullptr);
   ~Scope_guard();
 };
+
+
+// -------------------------------------------------------------------------- //
+// Debugging support
+
+struct debug_scope { Scope* s; };
+struct debug_overload { Overload* o; };
+
+inline debug_scope
+debug(Scope* s) { return {s}; }
+
+inline debug_overload
+debug(Overload* o) { return {o}; }
+
+std::ostream& operator<<(std::ostream&, debug_scope);
+std::ostream& operator<<(std::ostream&, debug_overload);
 
 } // namespace steve
 

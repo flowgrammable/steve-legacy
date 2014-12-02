@@ -29,7 +29,9 @@ extern void init_exprs();
 extern void init_types();
 extern void init_intrinsics();
 
-Language::Language() {
+Language::Language() 
+  : Scope_guard(builtin_scope)
+{
   init_lang();
   init_tokens();
   init_trees();

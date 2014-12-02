@@ -14,9 +14,9 @@ equivalent_parameters(Fn_type* t1, Fn_type* t2) {
   Type_seq* p1 = t1->parms();
   Type_seq* p2 = t2->parms();
   if (p1->size() != p2->size())
-    return true;
-
-  return std::equal(p1->begin(), p1->end(), p2->begin(), is_same);
+    return false;
+  else
+    return std::equal(p1->begin(), p1->end(), p2->begin(), is_same);
 }
 
 // Check if d1 can be overloaded with d2. Note that, d1 is the 

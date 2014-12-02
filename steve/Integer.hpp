@@ -2,6 +2,10 @@
 #ifndef STEVE_INTEGER_HPP
 #define STEVE_INTEGER_HPP
 
+// TODO: We need a fixed precision integer whose bounds can be set
+// dynamically. This may rule out Boost.Multiprecision since its
+// bounds are static.
+
 #include <gmp.h>
 
 #include <steve/String.hpp>
@@ -36,11 +40,16 @@ public:
   Integer& operator/=(const Integer&);
   Integer& operator%=(const Integer&);
 
+  Integer& operator&=(const Integer&);
+  Integer& operator|=(const Integer&);
+  Integer& operator^=(const Integer&);
+
   Integer& operator<<=(const Integer&);
   Integer& operator>>=(const Integer&);
 
   Integer& neg();
   Integer& abs();
+  Integer& comp();
 
   // Observers
   int sign() const;
@@ -48,7 +57,6 @@ public:
   bool is_negative() const;
   bool is_nonpositive() const;
   bool is_nonnegative() const;
-
 
   int bits() const;
   int base() const;
@@ -79,6 +87,11 @@ Integer operator/(const Integer&, const Integer&);
 Integer operator%(const Integer&, const Integer&);
 Integer operator-(const Integer&);
 Integer operator+(const Integer&);
+
+Integer operator&(const Integer&, const Integer&);
+Integer operator|(const Integer&, const Integer&);
+Integer operator^(const Integer&, const Integer&);
+Integer operator~(const Integer&);
 
 Integer operator<<(const Integer&, const Integer&);
 Integer operator>>(const Integer&, const Integer&);

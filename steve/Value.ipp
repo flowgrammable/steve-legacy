@@ -139,7 +139,7 @@ Value::as_bool() const {
   return data.b;
 }
 
-inline Integer
+inline const Integer&
 Value::as_integer() const {
   check_value_kind(*this, integer_value);
   return data.n;
@@ -177,10 +177,6 @@ is_function(const Value& v) { return v.kind == function_value; }
 inline bool
 is_type(const Value& v) { return v.kind == type_value; }
 
-
-
-// -------------------------------------------------------------------------- //
-// Value expressions
 
 namespace {
 

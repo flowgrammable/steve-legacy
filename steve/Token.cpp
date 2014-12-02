@@ -151,7 +151,7 @@ as_boolean(const Token& k) {
 Integer
 as_integer(const Token& k) {
   steve_assert(token::get_type(k.kind) == token_int_type,
-               format("token '{0}' is not a boolean value", k));
+               format("token '{0}' is not an integer token", k));
   switch (k.kind) {
   case binary_literal_tok: return {k.text, 2};
   case octal_literal_tok: return {k.text, 8};

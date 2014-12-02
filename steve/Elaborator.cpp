@@ -425,10 +425,20 @@ elab_unary(Unary_tree* t) {
 
 Expr*
 elab_binary(Binary_tree* t) {
-  // Expr* left = elab_expr(t->left());
-  // Expr* right = elab_expr(t->right());
-  // if (not left or not right)
-  //   return nullptr;
+  Expr* left = elab_expr(t->left());
+  Expr* right = elab_expr(t->right());
+  Name* name = elab_operator(t->op());
+  if (not left or not right or not name)
+    return nullptr;
+
+  std::cout << "LEFT: " << debug(left) << '\n';
+  std::cout << "RIGHT:" << debug(right) << '\n';
+  std::cout << debug(current_scope()) << '\n';
+
+  Overload* ovl = lookup(name);
+  std::cout << ovl << '\n';
+  std::cout << "HERE: " << ovl->size() << '\n';
+
 
   // Name* name = elab_operator(t->op());
 
