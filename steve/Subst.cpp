@@ -74,9 +74,7 @@ subst_decl_id(Decl_id* e, const Subst& sub) {
 // Evaluate the intrinsic function.
 Expr*
 subst_builtin(Builtin* e, const Subst& s) {
-  std::cout << "HERE?\n";
   return e;
-  // return e->subst(s);
 }
 
 // Substitute into a function of the form \(p*).e.
@@ -86,9 +84,6 @@ subst_builtin(Builtin* e, const Subst& s) {
 // FIXME: Do I need to substitute into the paramter list? Probably.
 Expr*
 subst_fn(Fn* e, const Subst& s) {
-  // if (e->is_intrinsic())
-  //   return subst_intrinsic(as<Intrinsic>(e), s);
-  // else
   return subst(e->body(), s);
 }
 
@@ -100,7 +95,7 @@ subst_fn(Fn* e, const Subst& s) {
 Expr*
 subst_call(Call* e, const Subst& sub) {
   // Get the target function. 
-  Fn* fn = as<Fn>(e->fn());
+  Term* fn = e->fn();
 
   // Substitute through all arguments.
   Expr_seq* args = new Expr_seq();

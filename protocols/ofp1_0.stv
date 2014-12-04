@@ -1,5 +1,6 @@
 
 def uint(n : nat) -> typename = bitfield(nat, n, 1);
+def array(t : typename, n : nat) -> typename = unit;
 
 def vector(t : typename) -> typename = nat;
 
@@ -123,93 +124,93 @@ def Empty : typename = record {}
 
 def FeatureReq : typename = Empty;
 
-// def FeatureCapabilities : typename = enum(uint(32)) {
-//   0..(1 << 8 - 1),
-//   FLOW_STATS   = 1 << 0,
-//   TABLE_STATS  = 1 << 1,
-//   PORT_STATS   = 1 << 2,
-//   STP          = 1 << 3,
-//   RESERVED     = 1 << 4,
-//   IP_REASM     = 1 << 5,
-//   QUEUE_STATS  = 1 << 6,
-//   ARP_MATCH_IP = 1 << 7,
-// }
+def FeatureCapabilities : typename = enum(uint(32)) {
+  0..(1 << 8 - 1),
+  FLOW_STATS   = 1 << 0,
+  TABLE_STATS  = 1 << 1,
+  PORT_STATS   = 1 << 2,
+  STP          = 1 << 3,
+  RESERVED     = 1 << 4,
+  IP_REASM     = 1 << 5,
+  QUEUE_STATS  = 1 << 6,
+  ARP_MATCH_IP = 1 << 7,
+}
 
-// def FeatureActions : typename = enum(uint(32)) {
-//   0..(1 << 12 - 1),
-//   OUTPUT       = 1 << 0,
-//   SET_VLAN_VID = 1 << 1,
-//   SET_VLAN_PCP = 1 << 2,
-//   STRIP_VLAN   = 1 << 3,
-//   SET_DL_SRC   = 1 << 4,
-//   SET_DL_DST   = 1 << 5,
-//   SET_NW_SRC   = 1 << 6,
-//   SET_NW_DST   = 1 << 7,
-//   SET_NW_TOS   = 1 << 8,
-//   SET_TP_SRC   = 1 << 9,
-//   SET_TP_DST   = 1 << 10,
-//   ENQUEUE      = 1 << 11
-// }
+def FeatureActions : typename = enum(uint(32)) {
+  0..(1 << 12 - 1),
+  OUTPUT       = 1 << 0,
+  SET_VLAN_VID = 1 << 1,
+  SET_VLAN_PCP = 1 << 2,
+  STRIP_VLAN   = 1 << 3,
+  SET_DL_SRC   = 1 << 4,
+  SET_DL_DST   = 1 << 5,
+  SET_NW_SRC   = 1 << 6,
+  SET_NW_DST   = 1 << 7,
+  SET_NW_TOS   = 1 << 8,
+  SET_TP_SRC   = 1 << 9,
+  SET_TP_DST   = 1 << 10,
+  ENQUEUE      = 1 << 11
+}
 
-// def Port_Id : typename = enum(uint(16)) {
-//   0..0xFEFF
-//   MAX        = 0xFF00,
-//   IN_PORT    = 0xFFF8,
-//   TABLE      = 0xFFF9,
-//   NORMAL     = 0xFFFA,
-//   FLOOD      = 0xFFFB,
-//   ALL        = 0xFFFC,
-//   CONTROLLER = 0xFFFD,
-//   LOCAL      = 0xFFFE,
-//   NONE       = 0xFFFF
-// }
+def PortId : typename = enum(uint(16)) {
+  // 0..0xFEFF
+  MAX        = 0xFF00,
+  IN_PORT    = 0xFFF8,
+  TABLE      = 0xFFF9,
+  NORMAL     = 0xFFFA,
+  FLOOD      = 0xFFFB,
+  ALL        = 0xFFFC,
+  CONTROLLER = 0xFFFD,
+  LOCAL      = 0xFFFE,
+  NONE       = 0xFFFF
+}
 
-// def PortConfig : typename = enum(uint(32)) {
-//   0..(1 << 7 - 1),
-//   PORT_DOWN	  = 1 << 0,
-//   NO_STP      = 1 << 1,
-//   NO_RECV     = 1 << 2,
-//   NO_RECV_STP = 1 << 3,
-//   NO_FLOOD    = 1 << 4,
-//   NO_FWD      = 1 << 5,
-//   NO_PACKETIN = 1 << 6
-// }
+def PortConfig : typename = enum(uint(32)) {
+  0..(1 << 7 - 1),
+  PORT_DOWN	  = 1 << 0,
+  NO_STP      = 1 << 1,
+  NO_RECV     = 1 << 2,
+  NO_RECV_STP = 1 << 3,
+  NO_FLOOD    = 1 << 4,
+  NO_FWD      = 1 << 5,
+  NO_PACKETIN = 1 << 6
+}
 
-// def PortState : typename = enum(uint(32)) {
-//   0..(1 << 5 - 1),
-//   STP_LISTEN  = 0 << 0,
-//   LINK_DOWN   = 1 << 0,
-//   STP_LEARN   = 1 << 1,
-//   STP_FORWARD = 1 << 2,
-//   STP_BLOCK   = 1 << 3,
-//   STP_MASK    = 1 << 4
-// }
+def PortState : typename = enum(uint(32)) {
+  // 0..(1 << 5 - 1),
+  STP_LISTEN  = 0 << 0,
+  LINK_DOWN   = 1 << 0,
+  STP_LEARN   = 1 << 1,
+  STP_FORWARD = 1 << 2,
+  STP_BLOCK   = 1 << 3,
+  STP_MASK    = 1 << 4
+}
 
-// def PortFeature : typename = enum(uint(32)) {
-//   0..(1 << 12 - 1),
-//   10MB_HD    = 1 << 0,
-//   10MB_FD    = 1 << 1,
-//   100MD_HD   = 1 << 2,
-//   100MD_FD   = 1 << 3,
-//   1GB_HD     = 1 << 4,
-//   1GB_FD     = 1 << 5,
-//   10GB_FD    = 1 << 6,
-//   COPPER     = 1 << 7,
-//   FIBER      = 1 << 8,
-//   AUTO_NEG   = 1 << 9,
-//   PAUSE      = 1 << 10,
-//   PAUSE_ASYM = 1 << 11
-// }
+def PortFeature : typename = enum(uint(32)) {
+  // 0..(1 << 12 - 1),
+  _10MB_HD    = 1 << 0,
+  _10MB_FD    = 1 << 1,
+  _100MD_HD   = 1 << 2,
+  _100MD_FD   = 1 << 3,
+  _1GB_HD     = 1 << 4,
+  _1GB_FD     = 1 << 5,
+  _10GB_FD    = 1 << 6,
+  COPPER     = 1 << 7,
+  FIBER      = 1 << 8,
+  AUTO_NEG   = 1 << 9,
+  PAUSE      = 1 << 10,
+  PAUSE_ASYM = 1 << 11
+}
 
-// def Port : typename = record {
-//   port_id    : Port_id;
-//   hw_addr    : uint(48);
-//   name       : array(char, 16);
-//   config     : PortConfig;
-//   state      : PortState;
-//   curr       : PortFeature;
-//   advertised : PortFeature;
-// }
+def Port : typename = record {
+  port_id    : PortId;
+  hw_addr    : uint(48);
+  name       : array(char, 16);
+  config     : PortConfig;
+  state      : PortState;
+  curr       : PortFeature;
+  advertised : PortFeature;
+}
 
 // def FeatureRes : typename = record {
 //   datapath-id  : uint(64);
@@ -342,7 +343,7 @@ def FeatureReq : typename = Empty;
 // }
 
 // def ActionOutput : typename = record {
-//   port    : Port_id;
+//   port    : PortId;
 //   max_len : uint(16);
 // }
 
@@ -380,7 +381,7 @@ def FeatureReq : typename = Empty;
 // def ActionSetTpDst : typename = Action1;
 
 // def ActionEnqueue : typename = record {
-//   port     : Port_id;
+//   port     : PortId;
 //            : uint(48);
 //   queue_id : uint(32);
 // }

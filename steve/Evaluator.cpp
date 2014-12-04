@@ -105,7 +105,6 @@ eval_fn_call(Fn* fn, Expr_seq* args) {
   return eval_expr(r);
 }
 
-
 Eval
 eval_builtin_call(Builtin* b, Expr_seq* args) {
   Expr_seq& a = *args;
@@ -123,7 +122,6 @@ eval_builtin_call(Builtin* b, Expr_seq* args) {
 Eval
 eval_call(Call* e) {
   // Reduce the function.
-  std::cout << "HERE: " << e->loc << ":" << debug(e->fn()) << '\n';
   Term* tgt = as<Term>(reduce(e->fn()));
 
   // Evaluate the function arguments first.
@@ -138,7 +136,7 @@ eval_call(Call* e) {
       return eval_fn_call(fn, args);
     if (Builtin* b = as<Builtin>(tgt))
       return eval_builtin_call(b, args);
-    steve_unreachable(format("{}: evalutaion failure: invalid call target"));
+    steve_unreachable(format("{}: evalutaion failure: invalid call target", e->loc));
   } else {
     // Rewrite the call expression with the reduced function and
     // arguments.
