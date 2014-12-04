@@ -99,19 +99,15 @@ eval_args(Expr_seq* args) {
 }
 
 Eval
-eval_fn_call(Call*, Fn* fn, Expr_seq* args) {
+eval_fn_call(Fn* fn, Expr_seq* args) {
   Subst s {fn->parms(), args};
   Expr* r = subst(fn, s);
   return eval_expr(r);
 }
 
 
-// FIXME: Use the call to re-establish the source location of the
-// evaluated term.
-//
-// FIXME: This is kind of gross. Can we make it prettier?
 Eval
-eval_builtin_call(Call* e, Builtin* b, Expr_seq* args) {
+eval_builtin_call(Builtin* b, Expr_seq* args) {
   Expr_seq& a = *args;
   if (b->arity() == 1)
     return eval_expr(b->fn().f1(a[0]));
@@ -127,6 +123,7 @@ eval_builtin_call(Call* e, Builtin* b, Expr_seq* args) {
 Eval
 eval_call(Call* e) {
   // Reduce the function.
+  std::cout << "HERE: " << e->loc << ":" << debug(e->fn()) << '\n';
   Term* tgt = as<Term>(reduce(e->fn()));
 
   // Evaluate the function arguments first.
@@ -138,9 +135,9 @@ eval_call(Call* e) {
   // the partially evaluated results.
   if (all_values(evals)) {
     if (Fn* fn = as<Fn>(tgt))
-      return eval_fn_call(e, fn, args);
+      return eval_fn_call(fn, args);
     if (Builtin* b = as<Builtin>(tgt))
-      return eval_builtin_call(e, b, args);
+      return eval_builtin_call(b, args);
     steve_unreachable(format("{}: evalutaion failure: invalid call target"));
   } else {
     // Rewrite the call expression with the reduced function and
@@ -162,8 +159,7 @@ void
 check_overflow(const Integer& n, Type* t, Expr* e) {
   if (n.bits() > size_in_bits(t))
     error(e->loc) << format("promotion of '{}' exceeds size of '{}'",
-                             n, 
-                             debug(t));
+                             n, debug(t));
 }
 
 // Evlauate the term promote(e, N) where e has integral type and
@@ -209,6 +205,39 @@ eval_pred(Pred* e) {
   return value(test);
 }
 
+// FIXME: Unify this with the basic function call mechanism.
+Eval
+eval_binary(Binary* e) {
+  // Reduce the function.
+  Term* tgt = as<Term>(reduce(e->fn()));
+
+  // Evaluate the function arguments first.
+  Expr_seq init {e->left(), e->right()};
+  Eval_seq evals = eval_args(&init);
+  Expr_seq* args = to_exprs(evals, &init);
+
+  // If all of the arguments are fully reduced, then evaluate the
+  // function call. Otherwise, replace the call's arguments with
+  // the partially evaluated results.
+  if (all_values(evals)) {
+    if (Fn* fn = as<Fn>(tgt))
+      return eval_fn_call(fn, args);
+    if (Builtin* b = as<Builtin>(tgt))
+      return eval_builtin_call(b, args);
+    steve_unreachable(format("{}: evalutaion failure: invalid call target"));
+  } else {
+    // Build a new partially evalutaed term.
+    e->first = tgt;
+    e->second = (*args)[0];
+    e->third = (*args)[1];
+    return partial(e);
+  }
+
+  steve_unreachable(format("{}: evaluation failure: '{}' is not a function", 
+                    e->loc,
+                    debug(e->fn())));
+}
+
 
 Eval
 eval_expr(Expr* e) {
@@ -235,7 +264,7 @@ eval_expr(Expr* e) {
   case pred_term: return eval_pred(as<Pred>(e));
   case range_term: return e;
   case unary_term: return e;
-  case binary_term: return e;
+  case binary_term: return eval_binary(as<Binary>(e));
   case builtin_term: return e;
   default:
     break;

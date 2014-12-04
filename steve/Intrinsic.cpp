@@ -162,7 +162,7 @@ inline bool
 get_bool_value(Expr* e) { return get_value(e).as_bool(); }
 
 // Returns the integer value of e.
-inline const Integer&
+inline Integer
 get_integer_value(Expr* e) { return get_value(e).as_integer(); }
 
 // Returns the type value of e.

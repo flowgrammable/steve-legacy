@@ -640,16 +640,16 @@ struct Unary : Term, Kind_of<unary_term> {
 // overloaded. Note that arguments are expressions, allowing
 // for operations on types.
 struct Binary : Term, Kind_of<binary_term> {
-  Binary(Decl* op, Expr* t1, Expr* t2) 
-    : Term(Kind), first(op), second(t1), third(t2) { }
-  Binary(const Location& l, Decl* op, Expr* t1, Expr* t2) 
-    : Term(Kind, l), first(op), second(t1), third(t2) { }
+  Binary(Term* f, Expr* t1, Expr* t2) 
+    : Term(Kind), first(f), second(t1), third(t2) { }
+  Binary(const Location& l, Term* f, Expr* t1, Expr* t2) 
+    : Term(Kind, l), first(f), second(t1), third(t2) { }
 
-  Decl* op() const { return first; }
+  Term* fn() const { return first; }
   Expr* left() const { return second; }
   Expr* right() const { return third; }
 
-  Decl* first;
+  Term* first;
   Expr* second;
   Expr* third;
 };

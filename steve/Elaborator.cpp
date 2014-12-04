@@ -412,19 +412,21 @@ elab_binary(Binary_tree* t) {
   Overload* ovl = lookup(name);
   Resolution res = resolve_binary(t->loc, *ovl, left, right);
 
-  std::cout << "EXPR: " << debug(t) << '\n';
-  std::cout << "CONSIDER: " << debug(ovl) << '\n';
+  // TODO: List candidates.
+  if (not res.is_unique()) {
+    if (res.is_empty())
+      error(t->loc) << format("no matching function for '{}'", debug(name));
+    else
+      error(t->loc) << format("multiple matching functions for '{}'", debug(name));
+  }
 
-  if (res.is_unique())
-    std::cout << "GOT: " << debug(res.solution()) << '\n';
-  else if (res.is_empty())
-    error(t->loc) << format("no matching function for '{}'", debug(name));
-  else if (res.is_ambiguous())
-    error(t->loc) << format("multiple matching functions for '{}'", debug(name));
+  Decl* decl = res.solution();
+  Term* fn = as<Term>(as<Def>(decl)->init()); // FIXME: Gross
+  Type* type = get_type(fn);
+  Type* result = as<Fn_type>(type)->result();
 
-  // Name* name = elab_operator(t->op());
-
-  return get_bool_type(); // WRONG
+  Binary* bin = make_expr<Binary>(t->loc, result, fn, left, right);
+  return bin;
 }
 
 // -------------------------------------------------------------------------- //
