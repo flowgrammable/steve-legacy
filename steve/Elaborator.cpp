@@ -6,6 +6,7 @@
 #include <steve/Scope.hpp>
 #include <steve/Type.hpp>
 #include <steve/Conv.hpp>
+#include <steve/Overload.hpp>
 #include <steve/Intrinsic.hpp>
 #include <steve/Debug.hpp>
 
@@ -14,29 +15,6 @@
 namespace steve {
 
 namespace {
-
-// -------------------------------------------------------------------------- //
-// Diagnostic helper
-//
-// We define the following print manipulators to support diagnostics
-//
-//    typed(e) -- prints "e (of type T)"
-//    ...
-
-
-struct typed_printer { Expr* e; };
-
-inline typed_printer 
-typed(Expr* e) { return {e}; }
-
-template<typename C, typename T>
-  std::basic_ostream<C, T>&
-  operator<<(std::basic_ostream<C, T>& os, typed_printer p) {
-    Expr* e = p.e;
-    Type* t = get_type(p.e);
-    return os << format("'{}' (of type '{}')", debug(e), debug(t));
-  }
-
 
 // -------------------------------------------------------------------------- //
 // Elaborate as kind
@@ -431,14 +409,18 @@ elab_binary(Binary_tree* t) {
   if (not left or not right or not name)
     return nullptr;
 
-  std::cout << "LEFT: " << debug(left) << '\n';
-  std::cout << "RIGHT:" << debug(right) << '\n';
-  std::cout << debug(current_scope()) << '\n';
-
   Overload* ovl = lookup(name);
-  std::cout << ovl << '\n';
-  std::cout << "HERE: " << ovl->size() << '\n';
+  Resolution res = resolve_binary(t->loc, *ovl, left, right);
 
+  std::cout << "EXPR: " << debug(t) << '\n';
+  std::cout << "CONSIDER: " << debug(ovl) << '\n';
+
+  if (res.is_unique())
+    std::cout << "GOT: " << debug(res.solution()) << '\n';
+  else if (res.is_empty())
+    error(t->loc) << format("no matching function for '{}'", debug(name));
+  else if (res.is_ambiguous())
+    error(t->loc) << format("multiple matching functions for '{}'", debug(name));
 
   // Name* name = elab_operator(t->op());
 

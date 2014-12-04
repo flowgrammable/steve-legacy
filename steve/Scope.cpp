@@ -131,7 +131,7 @@ Scope::declare(Name* n, Decl* d) {
   // If this didn't succeed, ovl is non-empty, so we need to
   // determine if we can add d to that set.
   if (not result.second) {
-    if (overload(ovl, d))
+    if (declare_overload(ovl, d))
       return &ovl;
     else
       return nullptr;

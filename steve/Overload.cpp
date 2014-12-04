@@ -1,10 +1,14 @@
 
 #include <steve/Overload.hpp>
+#include <steve/Algorithm.hpp>
 #include <steve/Scope.hpp>
 #include <steve/Ast.hpp>
 #include <steve/Type.hpp>
+#include <steve/Conv.hpp>
 #include <steve/Error.hpp>
 #include <steve/Debug.hpp>
+
+#include <iostream>
 
 namespace steve {
 
@@ -98,12 +102,248 @@ check_overloadable(Overload& ovl, Decl* d) {
 // return type or kind. That is, a set of functions produces only
 // values or types.
 bool
-overload(Overload& ovl, Decl* d) {
+declare_overload(Overload& ovl, Decl* d) {
   if (check_overloadable(ovl, d)) {
     ovl.push_back(d);
     return true;
   }
   return false;
+}
+
+// -------------------------------------------------------------------------- //
+// Overload resultion
+
+// If def defines a function, return that.
+Term*
+get_function_candidate(Def* def) {
+  return as<Fn>(def->init());
+}
+
+// If def defines a builtin function, return that.
+Term*
+get_builtin_candidate(Def* def) {
+  if (Builtin* b = as<Builtin>(def->init()))
+    if (as<Fn_type>(get_type(b)))
+      return b;
+  return nullptr;
+}
+
+// Build the candidate list. A candidate is a function declaration or
+// builtin function declaration.
+//
+// TODO: Ultimately, overload resolution chooses a function. It
+// may, in the future, be possible that we have some declarations
+// for which we go in search of other functions to call (e.g.,
+// constructors of a type).
+Candidate_list
+gather_candidates(Location loc, Overload& ovl, Expr_seq* args) { 
+  Candidate_list cands;
+  for (Decl* d : ovl) {
+    if (Def* def = as<Def>(d)) {
+      if (Term* f = get_function_candidate(def))
+        cands.emplace_back(def, f, args);
+      else if (Term* f = get_builtin_candidate(def))
+        cands.emplace_back(def, f, args);
+      else
+        ; // This is not a candidate.
+    } else {
+      // This is also not a candidate; It's probably an error.
+    }
+  }
+  return cands;
+}
+
+
+// Match a sequence of arguments against a sequence of parameters.
+// The arguments do not match if the number of arguments is not
+// the same as the number of parameters.
+//
+// An argument A matches a parameter type P if and only if A can be 
+// converted to P.
+//
+// The result of matching arguments against parameters is a new
+// sequence of arguments, possibly with conversions.
+Expr_seq*
+match_arguments(Location loc, Def* fn, Expr_seq* args, Type_seq* parms) {
+  auto first1 = args->begin();
+  auto last1 = args->end();
+  auto first2 = parms->begin();
+  auto last2 = parms->end();
+
+  // Check each argument. If it doesn't match, then skip it so we
+  // can diagnose all failures.
+  //
+  // TODO: Are there any kinds of parameters that consume multiple
+  // arguments? E.g., variadic or sized parameter packs? Not yet,
+  // but conceivably. Note that this would affect the check(s) below.
+  Expr_seq* result = new Expr_seq();
+  while (first1 != last1 and first2 != last2) {
+    Expr* arg = *first1;
+    Type* parm = *first2;
+    if (Expr* a = convert(arg, parm))
+      result->push_back(a);
+    ++first1;
+    ++first2;
+  }
+
+  // If we didn't elaborate all of the args, then bail.
+  if (result->size() != args->size())
+    return nullptr;
+
+  // Too few arguments were given for the function.
+  //
+  // TODO: This is where would would instantiate default arguments.
+  if (first1 == last1 and first2 != last2) {
+    error(loc) << format("too few arguments for '{}'", debug(fn->name()));
+    return nullptr;
+  }
+
+  // Too many arguments were given for the function.
+  //
+  // TODO: Unless the last argument is variadic, then all remaining
+  // arguments would be placed into an argument pack.
+  if (first2 == last2 and first1 != last1) {
+    error(loc) << format("too many arguments for '{}'", debug(fn->name()));
+    return nullptr;
+  }
+
+  return result;  
+}
+
+// A funtion F is viable if and only if the sequence of arguments
+// matches the types of its parameters.
+//
+// Note that diagnostics are suppressed (but saved) during overload 
+// resolution. Each candidate saves any diagnostics that were
+// generated during its analysis.
+Candidate
+viable_candidate(Location loc, Candidate& c, Expr_seq* args) {
+  Diagnostics_guard guard(c.diags);
+
+  Fn_type* ft = as<Fn_type>(get_type(c.fn));
+  steve_assert(ft, "candidate with non-function type");
+  
+  // If the arguments match, update the candidate with the new
+  // arguments and mark the candidate viable.
+  args = match_arguments(loc, c.def, args, ft->parms());
+  if (args) {
+    c.args = args;
+    c.convs = rank_conversions(args);
+    c.viable = true;
+  }
+
+  return c;
+}
+
+// Remove, from the candidate set, all those declarations that are
+// not viable. 
+Candidate_list
+viable_candidates(Location loc, Candidate_list& cands, Expr_seq* args) {
+  Candidate_list viable;
+  for (Candidate& c1 : cands) {
+    if (Candidate c2 = viable_candidate(loc, c1, args))
+      viable.push_back(std::move(c1));
+  }
+  return viable;
+}
+
+// A 3-way comparison of ranked conversions. This returns 1 if a is
+// better than b, -1 if b is better than a, and 0 otherwise.
+//
+// Currently conversions are ranked simply as integer values. However,
+// this may, in the future, expand to C++-like conversion sequences.
+int
+better_conversion(int a, int b) {
+  int result = 0;
+  if (not a) ++result;
+  if (not b) --result;
+  return result;    
+}
+
+// A 3-way comparison over the conversion given conversion sequences.
+//
+// FIXME: Cache the conversion sequences when matching arguments.
+int
+better_conversions(const Conversion_list& a, const Conversion_list& b) {
+  int result = 0;
+  for (std::size_t i = 0; i < a.size(); ++i)
+    result += better_conversion(a[i], b[i]); // ???
+  return result;
+}
+
+// Rank the conversion sequences of the candidates a and b, returning
+// 1 if a has better conversion sequence than b, -1 if the opposite
+// is true, and 0 if neither is better than the other.
+int
+better_candidate(const Candidate& a, const Candidate& b) {
+  return better_conversions(a.convs, b.convs);
+}
+
+
+// Determine which of the viable candidates is the best. This comparison
+// is based on the relationship between arguments and their corresponding
+// parameters.
+//
+// FIXME: This is not correct.
+Candidate_list
+best_candidates(Candidate_list& viable) {
+
+  // Find a candidate that ranks better than all of its successor
+  // candidates, but not its predecessors.
+  auto first = viable.begin();
+  auto last = viable.end();
+  auto best = suggest_best(first, last, better_candidate);
+  if (best == last)
+    return Candidate_list{};
+
+  // Seed the candidate list.
+  Candidate_list bests;
+  bests.push_back(*best);
+
+  // Make sure that the selected candoidate is actually better than
+  // all preceding candidates. If there are any incomparable candidates
+  // save those. Otherwise, if there is a better candidate, then
+  // there is no best, and we can just return.
+  for (auto iter = first; iter != best; ++iter) {
+    int n = better_candidate(*best, *iter);
+    if (n == 0)
+      bests.push_back(*iter);
+    if (n == -1)
+      return Candidate_list{};
+  }
+
+  return bests;
+}
+
+// Perform overload resolution by finding a unique declaration in
+// the overload set that can be called with the given sequence
+// of arguments.
+//
+// TODO: The results should include all candidates and their viability.
+// In fact, it might actually be better to use linked lists and then
+// resplice viable and non-viable candidates.
+Resolution
+resolve_call(Location loc, Overload& ovl, Expr_seq* args) {
+  Candidate_list cands = gather_candidates(loc, ovl, args);
+  Candidate_list viable = viable_candidates(loc, cands, args);
+  Candidate_list best = best_candidates(viable);
+
+  if (best.empty())
+    return {};
+  if (best.size() == 1)
+    return {best.front().def};
+  else
+    return {std::move(best)};
+}
+
+Resolution
+resolve_unary(Location loc, Overload& ovl, Expr* arg) {
+  return resolve_call(loc, ovl, new Expr_seq {arg});
+}
+
+Resolution
+resolve_binary(Location loc, Overload& ovl, Expr* arg1, Expr* arg2) {
+  return resolve_call(loc, ovl, new Expr_seq {arg1, arg2});
 }
 
 } // namespace steve

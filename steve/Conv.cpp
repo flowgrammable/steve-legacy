@@ -2,11 +2,12 @@
 #include <steve/Conv.hpp>
 #include <steve/Ast.hpp>
 #include <steve/Type.hpp>
+#include <steve/Error.hpp>
 
 namespace steve {
 
 // -------------------------------------------------------------------------- //
-// Conversion relattion
+// Conversion relation
 //
 // Find a conversion from the expression e to the type t according to
 // the following rules:
@@ -17,7 +18,7 @@ namespace steve {
 
 namespace {
 
-// If e has type t, no conversion is reuqired.
+// If e has type t, no conversion is required.
 Expr*
 identity(Expr* e, Type* t) {
   Type* u = get_type(e);
@@ -48,20 +49,43 @@ predicate(Expr* e, Type* t) {
 
 } // namespace
 
-// Find a rule that allows the conversion of e to T.
+// Find a rule that allows the conversion of e to T.  If no conversion is 
+// possible, emit a diagnostic.
 Expr*
 convert(Expr* e, Type* t) {
-  // Identity conversions
   if (Expr* c = identity(e, t))
     return c;
-
-  // Integral promotion, boolean predication
   if (Expr* c = promote(e, t))
     return c;
   if (Expr* c = predicate(e, t))
     return c;
+
+  error(e->loc) << format("no known conversion from {} to '{}'", 
+                          typed(e), 
+                          debug(t));
+
   return nullptr;
 }
+
+// Rank an expression based on its top-level conversions.
+Conversion
+rank_conversion(Expr* e) { return is<Promo>(e) or is<Pred>(e); }
+
+
+// Get the ranked list of conversions from the arguments. This
+// is a list of integers ranking the "difficulty" of each
+// conversion.
+//
+// Currently, there are only two ranks: either a conversion is
+// needed or it is not.
+Conversion_list
+rank_conversions(Expr_seq* args) {
+  Conversion_list convs(args->size());
+  for (std::size_t n = 0; n < args->size(); ++n)
+    convs[n] = rank_conversion((*args)[n]);
+  return convs;
+}
+
 
 } // naemspace steve
 

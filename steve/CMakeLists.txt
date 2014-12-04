@@ -6,6 +6,7 @@ set(contrib_src ${cppformat_src})
 add_library(steve-lib
   Meta.cpp
   Debug.cpp
+  Algorithm.cpp
   Memory.cpp
   String.cpp
   Integer.cpp

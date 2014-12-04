@@ -782,6 +782,8 @@ template<typename T, typename... Args>
 bool is_same(Expr*, Expr*);
 bool is_less(Expr*, Expr*);
 
+Type* get_type(Expr*);
+
 // -------------------------------------------------------------------------- //
 // Printing
 
@@ -794,6 +796,27 @@ struct debug_node { Expr* e; };
 debug_node debug(Expr*);
 
 std::ostream& operator<<(std::ostream&, debug_node);
+
+
+// We define the following print manipulators to support diagnostics
+//
+//    typed(e) -- prints "e (of type T)"
+//    ...
+
+struct typed_printer { Expr* e; };
+
+inline typed_printer 
+typed(Expr* e) { return {e}; }
+
+// FIXME: This should call out to the pretty printer, not the
+// debug printer.
+template<typename C, typename T>
+  std::basic_ostream<C, T>&
+  operator<<(std::basic_ostream<C, T>& os, typed_printer p) {
+    Expr* e = p.e;
+    Type* t = get_type(p.e);
+    return os << format("'{}' (of type '{}')", debug(e), debug(t));
+  }
 
 } // namespace steve
 

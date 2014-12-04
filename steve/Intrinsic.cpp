@@ -421,7 +421,8 @@ Decl* bitfield_;
 
 void
 init_intrinsics() {
-  Diagnostics_guard diags;
+  Diagnostics diags;
+  Diagnostics_guard guard(diags);
 
   // FIXME: Re-enable and finish all of the various builtin operators.
   Spec specs[] __attribute__ ((unused)) = {
@@ -484,8 +485,6 @@ init_intrinsics() {
 
     { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield}
   };
-
-  std::cout << debug(current_scope()) << '\n';
 
   // Extract the declared features
   // TODO: Actually do this, or just allow lookups in the usual way?
