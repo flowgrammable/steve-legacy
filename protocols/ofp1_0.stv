@@ -1,8 +1,9 @@
 
 def uint(n : nat) -> typename = bitfield(nat, n, 1);
-def array(t : typename, n : nat) -> typename = unit;
+def array(t : typename, n : nat) -> typename = nat;
 
 def vector(t : typename) -> typename = nat;
+def constrain(n : nat) -> bool = true;
 
 def Version : typename = enum(uint(8)) {
   OFP_1_0 = 1
@@ -212,496 +213,494 @@ def Port : typename = record {
   advertised : PortFeature;
 }
 
-// def FeatureRes : typename = record {
-//   datapath-id  : uint(64);
-//   n_buffers    : uint(32);
-//   n_tables     : uint(8);
-//                : uint(24);
-//   capabilities : FeatureCapabilities;
-//   actions      : FeatureActions;
-//   ports        : vector(Port);
-// }
+def FeatureRes : typename = record {
+  datapath_id  : uint(64);
+  n_buffers    : uint(32);
+  n_tables     : uint(8);
+  __pad        : uint(24);
+  capabilities : FeatureCapabilities;
+  actions      : FeatureActions;
+  ports        : vector(Port);
+}
 
-// def GetConfigReq : typename = Empty;
+def GetConfigReq : typename = Empty;
 
-// def ConfigFlags : typename = enum(uint(16)) {
-//   FRAG_NORMAL = 0,
-//   FRAG_DROP   = 1,
-//   FRAG_REASM  = 2,
-//   FRAG_MASK   = 3
-// }
+def ConfigFlags : typename = enum(uint(16)) {
+  FRAG_NORMAL = 0,
+  FRAG_DROP   = 1,
+  FRAG_REASM  = 2,
+  FRAG_MASK   = 3
+}
 
-// def GetConfigRes : typename = record {
-//   flags         : ConfigFlags;
-//   miss_send_len : uint(16);
-// }
+def GetConfigRes : typename = record {
+  flags         : ConfigFlags;
+  miss_send_len : uint(16);
+}
 
-// def SetConfig : typename = record {
-//   flags         : ConfigFlags;
-//   miss_send_len : uint(16);
-// }
+def SetConfig : typename = record {
+  flags         : ConfigFlags;
+  miss_send_len : uint(16);
+}
 
-// def PacketInReason : typename = enum(uint(8)) {
-//   NO_MACTH = 0,
-//   ACTION   = 1
-// }
+def PacketInReason : typename = enum(uint(8)) {
+  NO_MACTH = 0,
+  ACTION   = 1
+}
 
-// def PacketIn : typename = record {
-//   buffer_id : uint(32);
-//   total_len : uint(16);
-//   in_port   : uint(16);
-//   reason    : PacketInReason;
-//             : uint(8);
-//   data      : Data;
-// }
+def PacketIn : typename = record {
+  buffer_id : uint(32);
+  total_len : uint(16);
+  in_port   : uint(16);
+  reason    : PacketInReason;
+  __pad     : uint(8);
+  data      : Data;
+}
 
-// def MatchWildcards : typename = enum(uint(32)) {
-//   0..(1 << 23 - 1),
-//   IN_PORT     = 1 << 0, 
-//   DL_VLAN     = 1 << 1, 
-//   DL_SRC      = 1 << 2,
-//   DL_DST      = 1 << 3,
-//   DL_TYPE     = 1 << 4,
-//   NW_PROT     = 1 << 5,
-//   TP_SRC      = 1 << 6,
-//   TP_DST      = 1 << 7,
-//   NW_SRC      = 0 | 1 << (40 - subnet_length),
-//   NW_DST      = 0 | 1 << (46 - subnet_length),
-//   DL_VLAN_PCP = 1 << 20,
-//   NW_TOS      = 1 << 21,
-//   ALL         = 1 << 23 - 1
-// }
+def subnet_length : nat = 16;
 
-// def MatchInPort : typename = enum(uint(16, msbf)) {
-//   0..0xFEFF
-// }
+def MatchWildcards : typename = enum(uint(32)) {
+  // 0..(1 << 23 - 1),
+  MATCH_IN_PORT     = 1 << 0, 
+  MATCH_DL_VLAN     = 1 << 1, 
+  MATCH_DL_SRC      = 1 << 2,
+  MATCH_DL_DST      = 1 << 3,
+  MATCH_DL_TYPE     = 1 << 4,
+  MATCH_NW_PROT     = 1 << 5,
+  MATCH_TP_SRC      = 1 << 6,
+  MATCH_TP_DST      = 1 << 7,
+  MATCH_NW_SRC      = 0 | 1 << (40 - subnet_length),
+  MATCH_NW_DST      = 0 | 1 << (46 - subnet_length),
+  MATCH_DL_VLAN_PCP = 1 << 20,
+  MATCH_NW_TOS      = 1 << 21,
+  MATCH_ALL         = 1 << 23 - 1
+}
 
-// def Match : typename = record {
-//   wildcards : MatchWildcards;
-//   in_port   : MatchInPort;
-//   dl_src    : uint(48); 
-//   dl_dst    : uint(48);  
-//   dl_vlan   : uint(16);  
-//   dl_pcp    : uint(8);  
-//             : uint(8);
-//   dl_type   : uint(16); 
-//   nw_tos    : uint(8);
-//   nw_proto  : uint(8);  
-//             : uint(16);
-//   nw_src    : uint(32); 
-//   nw_dst    : uint(32); 
-//   tp_src    : uint(16); 
-//   tp_dst    : uint(16); 
-// }
+def MatchInPort : typename = enum(uint(16)) {
+  0..0xFEFF
+}
 
-// def FlowRemovedReason : typename = enum(uint(8)) {
-//   IDLE_TIMEOUT = 0,
-//   HARD_TIMEOUT = 1,
-//   DELETE       = 2
-// }
+def Match : typename = record {
+  wildcards : MatchWildcards;
+  in_port   : MatchInPort;
+  dl_src    : uint(48); 
+  dl_dst    : uint(48);  
+  dl_vlan   : uint(16);  
+  dl_pcp    : uint(8);  
+  __pad1    : uint(8);
+  dl_type   : uint(16); 
+  nw_tos    : uint(8);
+  nw_proto  : uint(8);  
+  __pad2    : uint(16);
+  nw_src    : uint(32); 
+  nw_dst    : uint(32); 
+  tp_src    : uint(16); 
+  tp_dst    : uint(16); 
+}
 
-// def FlowRemoved : typename = record {
-//   match         : Match;
-//   cookie        : uint(64); 
-//   reason    	: FlowRemovedReason;
-//                 : uint(8);
-//   priority      : uint(16);
-//   duration_sec  : uint(32); 
-//   duration_nsec : uint(32);   
-//   idle_timeout  : uint(16);
-//                 : uint(16);
-//   packet_count  : uint(64); 
-//   byte_count    : uint(64); 
-// }
+def FlowRemovedReason : typename = enum(uint(8)) {
+  IDLE_TIMEOUT = 0,
+  HARD_TIMEOUT = 1,
+  DELETE       = 2
+}
 
-// def PortStatusReason : typename = enum(uint(8)) {
-//   ADD 	 = 0,
-//   DELETE = 1,
-//   MODIFY = 2
-// }
+def FlowRemoved : typename = record {
+  match         : Match;
+  cookie        : uint(64); 
+  reason    	  : FlowRemovedReason;
+  __pad1        : uint(8);
+  priority      : uint(16);
+  duration_sec  : uint(32); 
+  duration_nsec : uint(32);   
+  idle_timeout  : uint(16);
+  __pad         : uint(16);
+  packet_count  : uint(64); 
+  byte_count    : uint(64); 
+}
 
-// def PortStatus : typename = record {
-//   reason : PortStatusReason;
-//          : uint(56);  
-//   port   : Port		 
-// }
+def PortStatusReason : typename = enum(uint(8)) {
+  PSR_ADD 	 = 0,
+  PSR_DELETE = 1,
+  PSR_MODIFY = 2
+}
 
-// def ActionType : typename = enum(uint(16)) {
-//   OUTPUT       = 0,
-//   SET_VLAN_VID = 1,
-//   SET_VLAN_PCP = 2,
-//   STRIP_VLAN   = 3,
-//   SET_DL_SRC   = 4,
-//   SET_DL_DST   = 5,
-//   SET_NW_SRC   = 6,
-//   SET_NW_DST   = 7,
-//   SET_NW_TOS   = 8,
-//   SET_TP_SRC   = 9,
-//   SET_TP_DST   = 10,
-//   ENQUEUE      = 11,
-//   VENDOR       = 0xFF
-// }
+def PortStatus : typename = record {
+  reason : PortStatusReason;
+  __pad  : uint(56);  
+  port   : Port;
+}
 
-// def ActionOutput : typename = record {
-//   port    : PortId;
-//   max_len : uint(16);
-// }
+def ActionType : typename = enum(uint(16)) {
+  ACTION_OUTPUT       = 0,
+  ACTION_SET_VLAN_VID = 1,
+  ACTION_SET_VLAN_PCP = 2,
+  ACTION_STRIP_VLAN   = 3,
+  ACTION_SET_DL_SRC   = 4,
+  ACTION_SET_DL_DST   = 5,
+  ACTION_SET_NW_SRC   = 6,
+  ACTION_SET_NW_DST   = 7,
+  ACTION_SET_NW_TOS   = 8,
+  ACTION_SET_TP_SRC   = 9,
+  ACTION_SET_TP_DST   = 10,
+  ACTION_ENQUEUE      = 11,
+  ACTION_VENDOR       = 0xFF
+}
 
-// def Action1 : typename = record {
-//   data : uint(16);
-//        : uint(16);
-// }
+def ActionOutput : typename = record {
+  port    : PortId;
+  max_len : uint(16);
+}
 
-// def ActionSetVlanVid : typename = Action1;
-// def ActionSetVlanPcp : typename = Action1;
+def Action1 : typename = record {
+  data  : uint(16);
+  __pad : uint(16);
+}
 
-// def ActionStripVlan : typename = Empty;
+def ActionSetVlanVid : typename = Action1;
+def ActionSetVlanPcp : typename = Action1;
 
-// def Action2: typename = record {
-//   data : uint(48);
-//        : uint(48);
-// }
+def ActionStripVlan : typename = Empty;
 
-// def ActionSetDlSrc : typename = Action2;
-// def ActionSetDlDst : typename = Action2;
+def Action2: typename = record {
+  data  : uint(48);
+  __pad : uint(48);
+}
 
-// def Action3: typename = record {
-//   data : uint(32);
-// }
+def ActionSetDlSrc : typename = Action2;
+def ActionSetDlDst : typename = Action2;
 
-// def ActionSetNwSrc : typename = Action3;
-// def ActionSetNwDst : typename = Action3;
+def Action3: typename = record {
+  data : uint(32);
+}
 
-// def ActionSetNwTos : typename = record {
-//   set_nw_tos : uint(8);
-//              : uint(24);
-// }
+def ActionSetNwSrc : typename = Action3;
+def ActionSetNwDst : typename = Action3;
 
-// def ActionSetTpSrc : typename = Action1;
-// def ActionSetTpDst : typename = Action1;
+def ActionSetNwTos : typename = record {
+  set_nw_tos : uint(8);
+  __pad      : uint(24);
+}
 
-// def ActionEnqueue : typename = record {
-//   port     : PortId;
-//            : uint(48);
-//   queue_id : uint(32);
-// }
+def ActionSetTpSrc : typename = Action1;
+def ActionSetTpDst : typename = Action1;
 
-// def ActionVendor : typename = Action3;
+def ActionEnqueue : typename = record {
+  port     : PortId;
+  __pad    : uint(48);
+  queue_id : uint(32);
+}
 
-// def ActionPayload(t:ActionType):typename = variant {
-//   ActionOutput     if t == OUTPUT;
-//   ActionSetVlanVid if t == SET_VLAN_VID;
-//   ActionSetVlanPcp if t == SET_VLAN_PCP;
-//   ActionStripVlan  if t == STRIP_VLAN;
-//   ActionSetDlSrc   if t == SET_DL_SRC;
-//   ActionSetDlDst   if t == SET_DL_DST;
-//   ActionSetNwSrc   if t == SET_NW_SRC;
-//   ActionSetNwDst   if t == SET_NW_DST;
-//   ActionSetNwTos   if t == SET_NW_TOS;
-//   ActionSetTpSrc   if t == SET_TP_SRC;
-//   ActionSetTpDst   if t == SET_TP_DST;
-//   ActionEnqueue    if t == ENQUEUE;
-//   ActionVendor     if t == VENDOR;
-// }
+def ActionVendor : typename = Action3;
 
-// def Action : typename = record {
-//   type    : ActionType;
-//   length  : uint(16);
-//   payload : constrain(length - 4, ActionPayload(type));
-// }
+def ActionPayload : typename = variant(ActionType) {
+  ACTION_OUTPUT       : ActionOutput;
+  ACTION_SET_VLAN_VID : ActionSetVlanVid;
+  ACTION_SET_VLAN_PCP : ActionSetVlanPcp;
+  ACTION_STRIP_VLAN   : ActionStripVlan;
+  ACTION_SET_DL_SRC   : ActionSetDlSrc;
+  ACTION_SET_DL_DST   : ActionSetDlDst;
+  ACTION_SET_NW_SRC   : ActionSetNwSrc;
+  ACTION_SET_NW_DST   : ActionSetNwDst;
+  ACTION_SET_NW_TOS   : ActionSetNwTos;
+  ACTION_SET_TP_SRC   : ActionSetTpSrc;
+  ACTION_SET_TP_DST   : ActionSetTpDst;
+  ACTION_ENQUEUE      : ActionEnqueue;
+  ACTION_VENDOR       : ActionVendor;
+}
 
-// def PortID : typename = enum(uint(16)) {
-//   0..65280
-// }
+def Action : typename = record {
+  type    : ActionType;
+  length  : uint(16);
+  payload : ActionPayload where constrain(length - 4);
+}
 
-// def PacketOut : typename = record {
-//   buffer_id   : uint(32);
-//   in_port     : PortID;
-//   actions_len : uint(16);
-//   actions     : vector(Action);
-//   data        : constrain(actions_len, Data);
-// }
+def PacketOut : typename = record {
+  buffer_id   : uint(32);
+  in_port     : PortId;
+  actions_len : uint(16);
+  actions     : vector(Action);
+  data        : Data where constrain(actions_len);
+}
 
-// def FlowModCommand : typename = enum(uint(16)) {
-//   ADD           = 0,
-//   MODIFY        = 1,
-//   MODIFY_STRICT = 2,
-//   DELETE        = 3,
-//   DELETE_STRICT = 4,
-// }
+def FlowModCommand : typename = enum(uint(16)) {
+  FMC_ADD           = 0,
+  FMC_MODIFY        = 1,
+  FMC_MODIFY_STRICT = 2,
+  FMC_DELETE        = 3,
+  FMC_DELETE_STRICT = 4,
+}
 
-// def FlowModFlags : typename = enum(uint(16)) {
-//   SEND_FLOW_REM	= 0,
-//   CHECK_OVERLAP = 1,
-//   EMERG         = 2
-// }
+def FlowModFlags : typename = enum(uint(16)) {
+  FMF_SEND_FLOW_REM	= 0,
+  FMF_CHECK_OVERLAP = 1,
+  FMF_EMERG         = 2
+}
 
-// def FlowMod : typename = record {
-//   match        : Match;
-//   cookie       : uint(64); 
-//   command      : FlowModCommand;
-//   idle_timeout : uint(16);
-//   hard_timeout : uint(16);
-//   priority     : uint(16); 
-//   buffer_id    : uint(32);
-//   out_port     : uint(16);
-//   flags        : FlowModFlags;
-//   actions      : vector(Action);	
-// }
+def FlowMod : typename = record {
+  match        : Match;
+  cookie       : uint(64); 
+  command      : FlowModCommand;
+  idle_timeout : uint(16);
+  hard_timeout : uint(16);
+  priority     : uint(16); 
+  buffer_id    : uint(32);
+  out_port     : uint(16);
+  flags        : FlowModFlags;
+  actions      : vector(Action);	
+}
 
-// def PortModConfig : typename = enum(uint(32)) {	
-//   PORT_DOWN	  = 1 << 0,
-//   NO_RECV     = 1 << 2,
-//   NO_FWD      = 1 << 5,
-//   NO_PACKETIN = 1 << 6
-// }
+def PortModConfig : typename = enum(uint(32)) {	
+  PMC_PORT_DOWN	  = 1 << 0,
+  PMC_NO_RECV     = 1 << 2,
+  PMC_NO_FWD      = 1 << 5,
+  PMC_NO_PACKETIN = 1 << 6
+}
 
-// def PortMod : typename = record {
-//   port      : PortID;
-//   hw_addr   : uint(48);
-//   config    : PortModConfig;
-//   mask      : PortConfig;
-//   advertise : PortFeature;
-//             : uint(32);
-// }
+def PortMod : typename = record {
+  port      : PortId;
+  hw_addr   : uint(48);
+  config    : PortModConfig;
+  mask      : PortConfig;
+  advertise : PortFeature;
+  __pad     : uint(32);
+}
 
-// def StatsType : typename = enum(uint(16)) {	
-//   DESC      = 0,
-//   FLOW      = 1,
-//   AGGREGATE = 2,
-//   TABLE     = 3,
-//   PORT      = 4,
-//   QUEUE     = 5,
-//   VENDOR    = 0xFF
-// }
+def StatsType : typename = enum(uint(16)) {	
+  STATS_DESC      = 0,
+  STATS_FLOW      = 1,
+  STATS_AGGREGATE = 2,
+  STATS_TABLE     = 3,
+  STATS_PORT      = 4,
+  STATS_QUEUE     = 5,
+  STATS_VENDOR    = 0xFF
+}
 
-// def StatsReqDesc : typename = Empty;
+def StatsReqDesc : typename = record { };
 
-// def StatsReqFlow : typename = record {
-//   match    : Match;
-//   table_id : uint(8);
-//            : uint(8);
-//   out_port : Port_Id;
-// }
+def StatsReqFlow : typename = record {
+  match    : Match;
+  table_id : uint(8);
+  __pad    : uint(8);
+  out_port : PortId;
+}
 
-// def StatsReqAggregate : typename = record {
-//   match    : Match;
-//   table_id : uint(8);
-//            : uint(8);
-//   out_port : Port_Id;
-// }
+def StatsReqAggregate : typename = record {
+  match    : Match;
+  table_id : uint(8);
+  __pad    : uint(8);
+  out_port : PortId;
+}
 
-// def StatsReqTable : typename = Empty;
+def StatsReqTable : typename = record { };
 
-// def StatsReqPort : typename = record {
-//   port_no : Port_Id;
-//           : uint(48);
-// }
+def StatsReqPort : typename = record {
+  port_no : PortId;
+  __pad   : uint(48);
+}
 
-// def StatsReqQueue : typename = record {
-//   port_no  : Port_Id;
-//            : uint(16);
-//   queue_id : uint(32);	  
-// }
+def StatsReqQueue : typename = record {
+  port_no  : PortId;
+  __pad    : uint(16);
+  queue_id : uint(32);	  
+}
 
-// def StatsReqVendor : typename = record {
-//   vendor_id : uint(32);
-//   data      : Data;
-// }
+def StatsReqVendor : typename = record {
+  vendor_id : uint(32);
+  data      : Data;
+}
 
-// def StatsReqPayload(t:StatsType):typename = variant {
-//   StatsReqDesc      if t == DESC;
-//   StatsReqFlow      if t == FLOW;
-//   StatsReqAggregate if t == AGGREGATE;
-//   StatsReqPort      if t == PORT;
-//   StatsReqTable     if t == TABLE;
-//   StatsReqQueue     if t == QUEUE;
-//   StatsReqVendor    if t == VENDOR;
-// }
+def StatsReqPayload : typename = variant(StatsType) {
+  STATS_DESC : StatsReqDesc;
+  STATS_FLOW : StatsReqFlow;
+  STATS_AGGREGATE : StatsReqAggregate;
+  STATS_PORT : StatsReqPort;
+  STATS_TABLE : StatsReqTable;
+  STATS_QUEUE : StatsReqQueue;
+  STATS_VENDOR : StatsReqVendor;
+}
   
-// def StatsReq : typename = record {
-//   type    : StatsType;
-//   flags   : uint(16);
-//   payload : StatsReqPayload(type);
-// }
+def StatsReq : typename = record {
+  type    : StatsType;
+  flags   : uint(16);
+  payload : StatsReqPayload;
+}
 
-// def StatsResDesc : typename = record {
-//   mfr_desc   : array(char, 256);
-//   hw_desc    : array(char, 256);
-//   sw_desc    : array(char, 256);
-//   serial_num : array(char, 32);
-//   dp_desc    : array(char, 256);
-// }
+def StatsResDesc : typename = record {
+  mfr_desc   : array(char, 256);
+  hw_desc    : array(char, 256);
+  sw_desc    : array(char, 256);
+  serial_num : array(char, 32);
+  dp_desc    : array(char, 256);
+}
 
-// def StatsResFlow : typename = record {
-//   length        : uint(16);
-//   table_id      : uint(8);
-//                 : uint(8);
-//   match         : Match;
-//   duration_sec  : uint(32); 	
-//   duration_nsec : uint(32);
-//   priority      : uint(16);
-//   idle_timeout  : uint(16); 
-//   hard_timeout  : uint(16);  
-//                 : uint(48);
-//   cookie        : uint(64);  
-//   packet_count  : uint(64); 
-//   byte_count    : uint(64); 
-//   actions       : vector(Action);
-// }
+def StatsResFlow : typename = record {
+  length        : uint(16);
+  table_id      : uint(8);
+  __pad1        : uint(8);
+  match         : Match;
+  duration_sec  : uint(32); 	
+  duration_nsec : uint(32);
+  priority      : uint(16);
+  idle_timeout  : uint(16); 
+  hard_timeout  : uint(16);  
+  __pad2        : uint(48);
+  cookie        : uint(64);  
+  packet_count  : uint(64); 
+  byte_count    : uint(64); 
+  actions       : vector(Action);
+}
 
-// def StatsResFlows : typename = record {
-//   flows : vector(StatsResFlow);
-// }
+def StatsResFlows : typename = record {
+  flows : vector(StatsResFlow);
+}
 
-// def StatsResAggregate : typename = record {
-//   packet_count : uint(64); 
-//   byte_count   : uint(64); 
-//   flow_count   : uint(32); 
-//                : uint(32);
-// }
+def StatsResAggregate : typename = record {
+  packet_count : uint(64); 
+  byte_count   : uint(64); 
+  flow_count   : uint(32); 
+  __pad        : uint(32);
+}
 
-// def StatsResTable : typename = record {
-//   table_id      : uint(8);
-//                 : uint(24);
-//   name          : array(char, 16);
-//   wildcards     : uint(32);
-//   max_entries   : uint(32);
-//   active_count  : uint(32);
-//   lookup_count  : uint(64);
-//   matched_count : uint(64);  
-// }
+def StatsResTable : typename = record {
+  table_id      : uint(8);
+  __pad         : uint(24);
+  name          : array(char, 16);
+  wildcards     : uint(32);
+  max_entries   : uint(32);
+  active_count  : uint(32);
+  lookup_count  : uint(64);
+  matched_count : uint(64);  
+}
 
-// def StatsResTables : typename = record {
-//   tables : vector(StatsResTable);
-// }
+def StatsResTables : typename = record {
+  tables : vector(StatsResTable);
+}
 
-// def StatsResPort : typename = record {
-//   port_no      : PortID;
-//                : uint(48);
-//   rx_packets   : uint(64); 
-//   tx_packets   : uint(64);   
-//   rx_bytes     : uint(64); 
-//   tx_bytes     : uint(64); 
-//   rx_dropped   : uint(64); 
-//   tx_dropped   : uint(64);
-//   rx_errors    : uint(64); 
-//   tx_errors    : uint(64);   
-//   rx_frame_err : uint(64);  
-//   rx_over_err  : uint(64);  
-//   rx_crc_err   : uint(64);  
-//   collisions   : uint(64);  
-// }
+def StatsResPort : typename = record {
+  port_no      : PortId;
+  __pad        : uint(48);
+  rx_packets   : uint(64); 
+  tx_packets   : uint(64);   
+  rx_bytes     : uint(64); 
+  tx_bytes     : uint(64); 
+  rx_dropped   : uint(64); 
+  tx_dropped   : uint(64);
+  rx_errors    : uint(64); 
+  tx_errors    : uint(64);   
+  rx_frame_err : uint(64);  
+  rx_over_err  : uint(64);  
+  rx_crc_err   : uint(64);  
+  collisions   : uint(64);  
+}
 
-// def StatsResPorts : typename = record {
-//   ports : vector(StatsResPort);
-// }
+def StatsResPorts : typename = record {
+  ports : vector(StatsResPort);
+}
 
-// def StatsResQueue : typename = record {
-//   length     : uint(16);
-//              : uint(16);
-//   queue_id   : uint(32);	
-//   tx_bytes   : uint(64); 
-//   tx_packets : uint(64); 
-//   tx_errors  : uint(64);   
-// }
+def StatsResQueue : typename = record {
+  length     : uint(16);
+  __pad      : uint(16);
+  queue_id   : uint(32);	
+  tx_bytes   : uint(64); 
+  tx_packets : uint(64); 
+  tx_errors  : uint(64);   
+}
 
-// def StatsResQueues : typename = record {
-//   queues : vector(StatsResQueue);
-// }
+def StatsResQueues : typename = record {
+  queues : vector(StatsResQueue);
+}
 
-// def StatsResVendor : typename = record {
-//   vendor_id : uint(32);
-//   data      : Data;
-// }
+def StatsResVendor : typename = record {
+  vendor_id : uint(32);
+  data      : Data;
+}
 
-// def StatsResPayload(t:StatsType):typename = variant {
-//   StatsResDesc      if t == DESC;
-//   StatsResFlows     if t == FLOW;
-//   StatsResAggregate if t == AGGREGATE;
-//   StatsResPorts     if t == PORT;
-//   StatsResTables    if t == TABLE;
-//   StatsResQueues    if t == QUEUE;
-//   StatsResVendor    if t == VENDOR;
-// }
+def StatsResPayload : typename = variant(StatsType) {
+  STATS_DESC : StatsResDesc;
+  STATS_FLOW : StatsResFlows;
+  STATS_AGGREGATE : StatsResAggregate;
+  STATS_PORT : StatsResPorts;
+  STATS_TABLE : StatsResTables;
+  STATS_QUEUE : StatsResQueues;
+  STATS_VENDOR : StatsResVendor;
+}
 
-// def StatsRes : typename = record {
-//   type    : StatsType;
-//   flags   : uint(16);
-//   payload : StatsResPayload(type);
-// }
+def StatsRes : typename = record {
+  type    : StatsType;
+  flags   : uint(16);
+  payload : StatsResPayload;
+}
 
-// def BarrierReq : typename = Empty;
-// def BarrierRes : typename = Empty;
+def BarrierReq : typename = record { };
+def BarrierRes : typename = record { };
 
-// def QueueGetConfigReq : typename = record {
-//   port : PortID;
-//        : uint(16);
-// }
+def QueueGetConfigReq : typename = record {
+  port  : PortId;
+  __pad : uint(16);
+}
 
-// def Property : typename = enum(uint(16)) {	
-//   MIN_RATE = 1
-// }
+def Property : typename = enum(uint(16)) {	
+  MIN_RATE = 1
+}
 
-// def QueuePropertyMinRate : typename = record {
-//   rate : uint(16);
-//        : uint(48);
-// }
+def QueuePropertyMinRate : typename = record {
+  rate  : uint(16);
+  __pad : uint(48);
+}
 
-// def QueueProperyPayload(t:Property):typename = variant {
-//   QueuePropertyMinRate if t == MIN_RATE;
-// }
+def QueueProperyPayload : typename = variant(Property) {
+  MIN_RATE : QueuePropertyMinRate;
+}
 
-// def QueueProperty : typename = record {
-//   property : Property;
-//   length   : uint(16);
-//            : uint(32);
-//   payload  : constrain(length - 8, QueueProperyPayload(property));
-// }
+def QueueProperty : typename = record {
+  property : Property;
+  length   : uint(16);
+  __pad    : uint(32);
+  payload  : QueueProperyPayload where constrain(length - 8);
+}
 
-// def Queue : typename = record {
-//   queue_id   : uint(32);
-//   length     : uint(16);
-//              : uint(16);
-//   properties : constrain(length - 8, vector(QueueProperty));
-// }
+def Queue : typename = record {
+  queue_id   : uint(32);
+  length     : uint(16);
+  __pad      : uint(16);
+  properties : vector(QueueProperty) where constrain(length - 8);
+}
 
-// def QueueGetConfigRes : typename = record {
-//   port   : PortID;
-//          : uint(48);
-//   queues : vector(Queue);	   
-// }
+def QueueGetConfigRes : typename = record {
+  port   : PortId;
+  __pad  : uint(48);
+  queues : vector(Queue);	   
+}
 
-// def Payload(t:Type):typename = variant {
-//   Hello             if t == HELLO;
-//   Error             if t == ERROR;
-//   EchoReq           if t == ECHO_REQ;
-//   EchoRes           if t == ECHO_RES;
-//   Vendor            if t == VENDOR;
-//   FeatureReq        if t == FEATURE_REQ;
-//   FeatureRes        if t == FEATURE_RES;
-//   GetConfigReq      if t == GET_CONFIG_REQ;
-//   GetConfigRes      if t == GET_CONFIG_RES;
-//   SetConfig         if t == SET_CONFIG;
-//   PacketIn          if t == PACKET_IN;
-//   FlowRemoved       if t == FLOW_REMOVED;
-//   PortStatus        if t == PORT_STATUS;
-//   PacketOut         if t == PACKET_OUT;
-//   FlowMod           if t == FLOW_MOD;
-//   PortMod           if t == PORT_MOD;
-//   StatsReq          if t == STATS_REQ;
-//   StatsRes          if t == STATS_RES;
-//   BarrierReq        if t == BARRIER_REQ;
-//   BarrierRes        if t == BARRIER_RES;
-//   QueueGetConfigReq if t == QUEUE_GET_CONFIG_REQ;
-//   QueueGetConfigRes if t == QUEUE_GET_CONFIG_RES;
-// }
+def Payload : typename = variant(Type) {
+  HELLO : Hello;
+  ERROR : Error;
+  ECHO_REQ : EchoReq;
+  ECHO_RES : EchoRes;
+  VENDOR : Vendor;
+  FEATURE_REQ : FeatureReq;
+  FEATURE_RES : FeatureRes;
+  GET_CONFIG_REQ : GetConfigReq;
+  GET_CONFIG_RES : GetConfigRes;
+  SET_CONFIG : SetConfig;
+  PACKET_IN : PacketIn;
+  FLOW_REMOVED : FlowRemoved;
+  PORT_STATUS : PortStatus;
+  PACKET_OUT : PacketOut;
+  FLOW_MOD : FlowMod;
+  PORT_MOD : PortMod;
+  STATS_REQ : StatsReq;
+  STATS_RES : StatsRes;
+  BARRIER_REQ : BarrierReq;
+  BARRIER_RES : BarrierRes;
+  QUEUE_GET_CONFIG_REQ : QueueGetConfigReq;
+  QUEUE_GET_CONFIG_RES : QueueGetConfigRes;
+}
 
-// def Message : typename = record {
-//   version : Version;
-//   type    : Type;
-//   length  : uint(16);
-//   xid     : uint(32);
-//   payload : constrain(length - 8, Payload(type));
-// }
+def Message : typename = record {
+  version : Version;
+  type    : Type;
+  length  : uint(16);
+  xid     : uint(32);
+  payload : Payload where constrain(length - 8);
+}
 

@@ -44,7 +44,7 @@ check_overloadable(Decl* d1, Decl* d2) {
 
   // Only functions can be overloaded.
   if (not t1) {
-    error(d1->loc) << format("cannot overload '{}' becausse "
+    error(d1->loc) << format("cannot overload '{}' because "
                              "it is not a function", 
                              debug(d1));
     return false;
@@ -283,21 +283,24 @@ better_candidate(const Candidate& a, const Candidate& b) {
 // Determine which of the viable candidates is the best. This comparison
 // is based on the relationship between arguments and their corresponding
 // parameters.
-//
-// FIXME: This is not correct.
 Candidate_list
 best_candidates(Candidate_list& viable) {
+  Candidate_list bests;
 
   // Find a candidate that ranks better than all of its successor
   // candidates, but not its predecessors.
   auto first = viable.begin();
   auto last = viable.end();
   auto best = suggest_best(first, last, better_candidate);
-  if (best == last)
-    return Candidate_list{};
+
+  // FIXME: This is not especially good. What I'd really like to do
+  // is partitiion the set of candidates into those that are categorically
+  // better than all others, but not better than each other.
+  if (best == last) {
+    return viable;
+  }
 
   // Seed the candidate list.
-  Candidate_list bests;
   bests.push_back(*best);
 
   // Make sure that the selected candoidate is actually better than

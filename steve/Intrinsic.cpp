@@ -439,31 +439,31 @@ init_intrinsics() {
     { bang_equal_tok,     {int_, int_}, bool_, integer_not_equal},
     { bang_equal_tok,     {type_, type_}, bool_, type_not_equal},
     // Less than (a < b)
-    { langle_tok,         {nat_, nat_}, bool_, integer_less},
+    // { langle_tok,         {nat_, nat_}, bool_, integer_less},
     { langle_tok,         {int_, int_}, bool_, integer_less},
     // Greater than (a > b)
-    { rangle_tok,         {nat_, nat_}, bool_, integer_greater},
+    // { rangle_tok,         {nat_, nat_}, bool_, integer_greater},
     { rangle_tok,         {int_, int_}, bool_, integer_greater},
     // Less than or equal to (a <= b)
-    { langle_equal_tok,   {nat_, nat_}, bool_, integer_less_equal},
+    // { langle_equal_tok,   {nat_, nat_}, bool_, integer_less_equal},
     { langle_equal_tok,   {int_, int_}, bool_, integer_less_equal},
     // Greater than or equal to (a >= b)
-    { rangle_equal_tok,   {nat_, nat_}, bool_, integer_greater_equal},
+    // { rangle_equal_tok,   {nat_, nat_}, bool_, integer_greater_equal},
     { rangle_equal_tok,   {int_, int_}, bool_, integer_greater_equal},
     // Addition
-    { plus_tok,           {nat_, nat_}, nat_, integer_addition},
+    // { plus_tok,           {nat_, nat_}, nat_, integer_addition},
     { plus_tok,           {int_, int_}, int_, integer_addition},
     // Subtraction
-    { minus_tok,          {nat_, nat_}, nat_, integer_subtraction},
+    // { minus_tok,          {nat_, nat_}, nat_, integer_subtraction},
     { minus_tok,          {int_, int_}, int_, integer_subtraction},
     // Multiplication
-    { star_tok,           {nat_, nat_}, nat_, integer_multiplication},
+    // { star_tok,           {nat_, nat_}, nat_, integer_multiplication},
     { star_tok,           {int_, int_}, int_, integer_multiplication},
     // Division
-    { slash_tok,          {nat_, nat_}, nat_, integer_division},
+    // { slash_tok,          {nat_, nat_}, nat_, integer_division},
     { slash_tok,          {int_, int_}, int_, integer_division},
     // Remainder
-    { percent_tok,        {nat_, nat_}, nat_, integer_remainder},
+    // { percent_tok,        {nat_, nat_}, nat_, integer_remainder},
     { percent_tok,        {int_, int_}, int_, integer_remainder},
     // Negation
     { minus_tok,          {nat_}, nat_, integer_negation},

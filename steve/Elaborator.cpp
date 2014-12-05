@@ -126,12 +126,14 @@ elab_id(Id_tree* t) {
 // -------------------------------------------------------------------------- //
 // Elaboration of literals
 
-// Return an elaborated boolean literal.
-//
-//    --------------- E-bool
-//    G |- {B} : bool
-//
-// Here, [B] denotes the set of boolean values.
+// Return an elaborated unit literal. A unit literal has type unit.
+Expr*
+elab_unit(Lit_tree* t, const Token* k) {
+  return make_expr<Unit>(t->loc, get_unit_type());
+}
+
+// Return an elaborated boolean literal. The boolean literals include
+// the 'true' and 'false' tokens. A boolean literal has type 'bool'.
 Expr*
 elab_bool(Lit_tree* t, const Token* k) {
   return make_expr<Bool>(t->loc, get_bool_type(), (k->text == "true"));
@@ -181,7 +183,9 @@ elab_lit(Lit_tree* t) {
   case bool_tok: return make_bool_type(t->loc);
   case nat_tok: return make_nat_type(t->loc);
   case int_tok: return make_int_type(t->loc);
+  case char_tok: return make_char_type(t->loc);
   case bitfield_tok: return elab_intrinsic(t, get_bitfield);
+  case unit_tok: return elab_unit(t, k);
   case boolean_literal_tok: return elab_bool(t, k);
   case binary_literal_tok: return elab_int(t, k);
   case octal_literal_tok: return elab_int(t, k);
@@ -414,10 +418,16 @@ elab_binary(Binary_tree* t) {
 
   // TODO: List candidates.
   if (not res.is_unique()) {
+    error(t->loc) << format("no matching function for '{}' with arguments "
+                            "{} and {}", 
+                            debug(name), 
+                            typed(left), 
+                            typed(right));
     if (res.is_empty())
-      error(t->loc) << format("no matching function for '{}'", debug(name));
+      note(t->loc) << "no viable candidates";
     else
-      error(t->loc) << format("multiple matching functions for '{}'", debug(name));
+      note(t->loc) << "resolution is ambiguous";
+    return nullptr;
   }
 
   Decl* decl = res.solution();
