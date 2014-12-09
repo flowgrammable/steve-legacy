@@ -93,8 +93,10 @@ is_same(Expr* t, Expr* u) {
     return same_unary(as<Record_type>(t), as<Record_type>(u));
   case variant_type:
     return same_unary(as<Variant_type>(t), as<Variant_type>(u));
-  case variant_of_type:
-    return same_binary(as<Variant_of_type>(t), as<Variant_of_type>(u));
+  case desc_variant_type:
+    return same_binary(as<Desc_variant_type>(t), as<Desc_variant_type>(u));
+  case dep_variant_type:
+    return same_binary(as<Dep_variant_type>(t), as<Dep_variant_type>(u));
   case enum_type:
     return same_unary(as<Enum_type>(t), as<Enum_type>(u));
   case enum_of_type:

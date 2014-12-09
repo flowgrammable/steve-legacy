@@ -77,7 +77,7 @@ check_scope_and_context(Scope_kind k, Expr* c) {
                  format("context '{}' is not a record type", debug(c)));
     break;
   case variant_scope:
-    steve_assert(is<Variant_type>(c) || is<Variant_of_type>(c),
+    steve_assert(is<Variant_type>(c) || is<Desc_variant_type>(c),
                  format("context '{}' is not a kind of variant", debug(c)));
     break;
   case enum_scope:

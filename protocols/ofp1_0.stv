@@ -109,7 +109,7 @@ def ErrorCode : typename = variant(ErrorType) {
 
 def Error : typename = record {
   type : ErrorType;
-  code : ErrorCode;
+  code : ErrorCode(type);
   data : Data;
 }
 
@@ -410,7 +410,7 @@ def ActionPayload : typename = variant(ActionType) {
 def Action : typename = record {
   type    : ActionType;
   length  : uint(16);
-  payload : ActionPayload where constrain(length - 4);
+  payload : ActionPayload(type) where constrain(length - 4);
 }
 
 def PacketOut : typename = record {
@@ -521,7 +521,7 @@ def StatsReqPayload : typename = variant(StatsType) {
 def StatsReq : typename = record {
   type    : StatsType;
   flags   : uint(16);
-  payload : StatsReqPayload;
+  payload : StatsReqPayload(type);
 }
 
 def StatsResDesc : typename = record {
@@ -627,7 +627,7 @@ def StatsResPayload : typename = variant(StatsType) {
 def StatsRes : typename = record {
   type    : StatsType;
   flags   : uint(16);
-  payload : StatsResPayload;
+  payload : StatsResPayload(type);
 }
 
 def BarrierReq : typename = record { };
@@ -655,7 +655,7 @@ def QueueProperty : typename = record {
   property : Property;
   length   : uint(16);
   __pad    : uint(32);
-  payload  : QueueProperyPayload where constrain(length - 8);
+  payload  : QueueProperyPayload(property) where constrain(length - 8);
 }
 
 def Queue : typename = record {
@@ -701,6 +701,6 @@ def Message : typename = record {
   type    : Type;
   length  : uint(16);
   xid     : uint(32);
-  payload : Payload where constrain(length - 8);
+  payload : Payload(type) where constrain(length - 8);
 }
 

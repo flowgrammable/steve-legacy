@@ -17,25 +17,27 @@ constexpr Node_kind operator_id    = make_name_node(2);  // operator <op>
 constexpr Node_kind scoped_id      = make_name_node(3);  // scope.id
 constexpr Node_kind decl_id        = make_name_node(10); // x, referring to a decl
 // Types
-constexpr Node_kind typename_type   = make_type_node(1);  // typename
-constexpr Node_kind unit_type       = make_type_node(2);  // unit
-constexpr Node_kind bool_type       = make_type_node(3);  // bool
-constexpr Node_kind nat_type        = make_type_node(4);  // nat
-constexpr Node_kind int_type        = make_type_node(5);  // int
-constexpr Node_kind char_type       = make_type_node(6);  // int
-constexpr Node_kind fn_type         = make_type_node(7);  // (T*) -> T
-constexpr Node_kind range_type      = make_type_node(8);  // .. T
-constexpr Node_kind bitfield_type   = make_type_node(9);  // bitfield(T, N, B)
-constexpr Node_kind record_type     = make_type_node(10); // record { ... }
-constexpr Node_kind variant_type    = make_type_node(11); // variant { ... }
-constexpr Node_kind variant_of_type = make_type_node(12); // variant(T) { ... }
-constexpr Node_kind enum_type       = make_type_node(13); // enum { ... }
-constexpr Node_kind enum_of_type    = make_type_node(14); // enum(T) { ... }
-constexpr Node_kind module_type     = make_type_node(16); // module
+constexpr Node_kind typename_type     = make_type_node(1);  // typename
+constexpr Node_kind unit_type         = make_type_node(2);  // unit
+constexpr Node_kind bool_type         = make_type_node(3);  // bool
+constexpr Node_kind nat_type          = make_type_node(4);  // nat
+constexpr Node_kind int_type          = make_type_node(5);  // int
+constexpr Node_kind char_type         = make_type_node(6);  // int
+constexpr Node_kind fn_type           = make_type_node(7);  // (T*) -> T
+constexpr Node_kind range_type        = make_type_node(8);  // .. T
+constexpr Node_kind bitfield_type     = make_type_node(9);  // bitfield(T, N, B)
+constexpr Node_kind record_type       = make_type_node(10); // record { ... }
+constexpr Node_kind variant_type      = make_type_node(11); // variant { ... }
+constexpr Node_kind desc_variant_type = make_type_node(12); // variant(T) { ... }
+constexpr Node_kind dep_variant_type  = make_type_node(13); // variant(e) { ... }
+constexpr Node_kind enum_type         = make_type_node(14); // enum { ... }
+constexpr Node_kind enum_of_type      = make_type_node(15); // enum(T) { ... }
+constexpr Node_kind module_type       = make_type_node(16); // module
 // Terms
 constexpr Node_kind unit_term      = make_term_node(1);  // ()
 constexpr Node_kind bool_term      = make_term_node(2);  // {true, false}
 constexpr Node_kind int_term       = make_term_node(3);  // {0, 1, 2, ..., n}
+constexpr Node_kind default_term   = make_term_node(4);  // default
 // Misc terms
 constexpr Node_kind block_term     = make_term_node(20); // { ... }
 constexpr Node_kind fn_term        = make_term_node(21); // fn(p*)->t.e
@@ -43,16 +45,18 @@ constexpr Node_kind call_term      = make_term_node(22); // f(a*) -- TODO: Shoul
 constexpr Node_kind promo_term     = make_term_node(23); // t as N for an integral type
 constexpr Node_kind pred_term      = make_term_node(24); // t as B for a boolean type
 constexpr Node_kind range_term     = make_term_node(28); // t1 .. t2
-constexpr Node_kind unary_term     = make_term_node(30); // op t
-constexpr Node_kind binary_term    = make_term_node(31); // t1 op t2
-constexpr Node_kind builtin_term   = make_term_node(40); // <intrinsic>
+constexpr Node_kind variant_term   = make_term_node(30); // <e:t> (value of a variant)
+constexpr Node_kind unary_term     = make_term_node(40); // op t
+constexpr Node_kind binary_term    = make_term_node(41); // t1 op t2
+constexpr Node_kind builtin_term   = make_term_node(50); // <intrinsic>
+
 // Statements
 // Declarations
 constexpr Node_kind top_decl       = make_decl_node(1); // decl*
 constexpr Node_kind def_decl       = make_decl_node(2); // def n : t = e
 constexpr Node_kind parm_decl      = make_decl_node(3); // n : t = e
 constexpr Node_kind field_decl     = make_decl_node(4); // n : t | c
-constexpr Node_kind alt_decl       = make_decl_node(5); // n [if t] (in a variant)
+constexpr Node_kind alt_decl       = make_decl_node(5); // n : t
 constexpr Node_kind enum_decl      = make_decl_node(6); // n [= t] (in an enum)
 constexpr Node_kind import_decl    = make_decl_node(7); // import n;
 
@@ -87,6 +91,9 @@ struct Decl;
 // elaboration to assign the type of a node. Note that this could easily
 // be done by using the elaborator, and then asserting if the resulting
 // diagnostics indicate failure.
+//
+// TODO: Allow every term and type (but not a name) to be constructed 
+// with a type.
 struct Expr : Node {
   using Node::Node;
 
@@ -280,6 +287,8 @@ struct Range_type : Type, Kind_of<range_type> {
 // type (one of bool, nat, int, or char), 'n' is the number of bits 
 // allocated to the bitfield, and o is a boolean flag determining
 // the byte-ordering of the bitfield representation.
+//
+// FIXME: Rename to binary.
 struct Bitfield_type : Type, Kind_of<bitfield_type> {
   Bitfield_type(Type* b, Term* n, Term* o) 
     : Type(Kind), first(b), second(n), third(o) { }
@@ -305,16 +314,13 @@ struct Record_type : Type, Kind_of<record_type> {
   Decl_seq* first;
 };
 
-// A variant type of the for 'variant { as* }' where 'as' is a sequenc
+// A variant type of the for `variant { a }` where `a` is a sequence
 // of alternatives. A variant type provides a mechanism for conveying
-// a single value of a set of types, which can be unrapped at a later
+// a single value of a set of types, which can be unwrapped at a later
 // time. Each alternative defines a tag which constructs a wrapped
 // version of the variant. For example:
 //
 //    def V:typename = variant { b:bool; n:nat;  z:int; }
-//
-// TODO: How do we construct variants of these types? Presumably through
-// implicit conversion?
 //
 //    def v1:V = true; // v1 has value <b=true>
 //    def v2:V = 0;    // v2 has value <z=0>
@@ -329,35 +335,44 @@ struct Variant_type : Type, Kind_of<variant_type> {
   Decl_seq* first;
 };
 
-// A variant-of type of the form 'variant of t { as* }' where 't' is
-// the descriminator type and 'as*' is a sequence of alternatives. In
-// a variant-of type, the alternative tags are given as named values
-// of the descriminator type (often enumerators). The 'default' label
-// matches any other tag not explicitly given in the list of 
+// A discriminated variant type has the form `variant(T) { a }` where 't' 
+// is a discriminator type and 'a' is a sequence of alternatives. In
+// a dependent variant type, the alternative tags are given as named 
+// values of the discriminator type (often enumerators). The 'default' 
+// label matches any other tag not explicitly given in the list of
 // alternatives. For example:
 //
-//    def V:typenae = variant(nat) { 0:bool; 1:nat; 2:int; default:unit; }
+//    def V:typenae = variant(nat) { 
+//        0 : bool; 
+//        1 : nat; 
+//        2 : int; 
+//        default : unit; 
+//    }
 //
-// TODO: The following is all wild speculation.
-//
-// When constructing a variant of this type, a descriminator must be
-// given. For example:
+// When constructing a variant of this type, a discriminator must be
+// given or deduced. For example:
 //
 //    def v1:V(0) = true; // has value <0=true>
 //    def v2:V = 0;       // deduced value <2=0>
 //    def v3:V = nat 0;   // deduced value <1=0>
 //
-//    var x : nat; // dynamic value
-//    var v4:V(x); // OK: dependent type???
+// Note that binding a dependent variant to a field of a record is
+// also allowed.
 //
-//    record R { 
-//      type : nat; 
-//      value : V(type); // OK: 
-//    }
-struct Variant_of_type : Type, Kind_of<variant_of_type> {
-  Variant_of_type(Type* t, Decl_seq* as) 
-    : Type(Kind), first(t), second(as) { }
-  Variant_of_type(const Location& l, Type* t, Decl_seq* as) 
+//     record R { 
+//       type : nat; 
+//       value : V(type); // OK: value discriminated by type
+//     }
+//
+// Here, `value` has dependent variant type. That is, the discriminator
+// depends on the value of `type`. All operations on `value` are
+// require that value as input.
+//
+// TODO: What kinds of types can we use as the discriminator?
+struct Desc_variant_type : Type, Kind_of<desc_variant_type>  {
+   Desc_variant_type(Type* t, Decl_seq* as) 
+     : Type(Kind), first(t), second(as) { }
+   Desc_variant_type(const Location& l, Type* t, Decl_seq* as) 
     : Type(Kind, l), first(t), second(as) { }
   
   Type* desc() const { return first; }
@@ -365,6 +380,22 @@ struct Variant_of_type : Type, Kind_of<variant_of_type> {
   
   Type* first;
   Decl_seq* second;
+};
+
+// A dependent variant type is the result of deducing or specifying
+// a discriminator of a dependent variant type. Note that this is
+// not the same as instantiation.
+struct Dep_variant_type : Type, Kind_of<dep_variant_type> {
+  Dep_variant_type(Type* t, Decl* d)
+    : Type(Kind), first(t), second(d) { }
+  Dep_variant_type(const Location& l, Type* t, Decl* d)
+    : Type(Kind, l), first(t), second(d) { }
+
+  Type* variant() const { return first; }
+  Decl* decl() const {return second; }
+
+  Type* first;
+  Decl* second;
 };
 
 
@@ -493,6 +524,18 @@ struct Int : Term, Kind_of<int_term> {
   Integer first;
 };
 
+// The default term is a placeholder for an expression to
+// instantiated by various language rules or some other synthesis
+// mechanism.
+struct Default : Term, Kind_of<default_term> {
+  Default() 
+    : Term(Kind) { }
+  Default(const Location& l) 
+    : Term(Kind, l) { }
+};
+
+
+
 // A compound expression of the form '{ s* }' where 's*' are a 
 // sequence of statements.
 struct Block : Term, Kind_of<block_term> {
@@ -617,6 +660,21 @@ struct Range : Term, Kind_of<range_term> {
   Term* upper() const { return second; }
 
   Term* first;
+  Term* second;
+};
+
+// A variant term binds together a labeling expression and
+// a value of some type. These are the values of variant types.
+struct Variant : Term, Kind_of<variant_term> {
+  Variant(Expr* e, Term* v)
+    : Term(Kind), first(e), second(v) { }
+  Variant(const Location& l, Expr* e, Term* v)
+    : Term(Kind), first(e), second(v) { }
+
+  Expr* label() const { return first; }
+  Term* value() const { return second; }
+
+  Expr* first;
   Term* second;
 };
 

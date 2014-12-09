@@ -30,7 +30,8 @@ init_exprs() {
   init_node(bitfield_type, "bitfield-type");
   init_node(record_type, "record-type");
   init_node(variant_type, "variant-type");
-  init_node(variant_of_type, "variant-of-type");
+  init_node(desc_variant_type, "desc-variant-type");
+  init_node(dep_variant_type, "dep-variant-type");
   init_node(enum_type, "enum-type");
   init_node(enum_of_type, "enum-of-type");
   init_node(module_type, "module-type");
@@ -38,11 +39,13 @@ init_exprs() {
   init_node(unit_term, "unit");
   init_node(bool_term, "bool");
   init_node(int_term, "int");
+  init_node(default_term, "default");
   init_node(fn_term, "fn");
   init_node(call_term, "call");
   init_node(promo_term, "promo");
   init_node(pred_term, "pred");
   init_node(range_term, "range");
+  init_node(variant_term, "variant");
   init_node(unary_term, "unary");
   init_node(binary_term, "binary");
   init_node(builtin_term, "builtin");
@@ -255,18 +258,21 @@ debug_print(Printer& p, Expr* e) {
   case range_type: return debug_unary(p, as<Range_type>(e));
   case record_type: return debug_unary(p, as<Record_type>(e));
   case variant_type: return debug_unary(p, as<Variant_type>(e));
-  case variant_of_type: return debug_binary(p, as<Variant_of_type>(e));
+  case desc_variant_type: return debug_binary(p, as<Desc_variant_type>(e));
+  case dep_variant_type: return debug_binary(p, as<Dep_variant_type>(e));
   case enum_type: return debug_unary(p, as<Enum_type>(e));
   case enum_of_type: return debug_nested_binary(p, as<Enum_of_type>(e));
   // Terms
   case unit_term: return print(p, "<unit>");
   case bool_term: return debug_terminal(p, as<Bool>(e));
   case int_term: return debug_terminal(p, as<Int>(e));
+  case default_term: return print(p, "default");
   case fn_term: return debug_fn(p, as<Fn>(e));
   case call_term: return debug_binary(p, as<Call>(e));
   case promo_term: return debug_binary(p, as<Promo>(e));
   case pred_term: return debug_binary(p, as<Pred>(e));
   case range_term: return debug_binary(p, as<Range>(e));
+  case variant_term: return debug_binary(p, as<Variant>(e));
   case unary_term: return debug_binary(p, as<Unary>(e));
   case binary_term: return debug_ternary(p, as<Binary>(e));
   case builtin_term: return print(p, "<builtin>");

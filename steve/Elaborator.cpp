@@ -7,6 +7,7 @@
 #include <steve/Type.hpp>
 #include <steve/Conv.hpp>
 #include <steve/Overload.hpp>
+#include <steve/Variant.hpp>
 #include <steve/Intrinsic.hpp>
 #include <steve/Debug.hpp>
 
@@ -316,6 +317,51 @@ check_arguments(Call_tree* t, Def* fn, Expr_seq* args, Type_seq* parms) {
   return result;  
 }
 
+// Elaborate the binding of a variant to its dependent descriminator,
+// producing a new type.
+Expr*
+elab_variant_binding(Call_tree* t, Desc_variant_type* type) {
+  Tree_seq* exprs = t->args();
+  if (exprs->size() != 1) {
+    if (exprs->size() == 0)
+      error(t->loc) << format("too few arguments for descriminated "
+                              "variant type '{}'", debug(type));
+    else
+      error(t->loc) << format("too many arguments for descriminated "
+                              "variant type '{}'", debug(type));
+    return nullptr;
+  }
+
+  // Elaborate the argument and convert it to the descriminator type.
+  Expr* arg = elab_expr(exprs->front());
+  if (not arg)
+    return nullptr;
+  arg = convert(arg, type->desc());
+  if (not arg)
+    return nullptr;
+  arg = reduce(arg);
+  if (not arg)
+    return nullptr;
+  return instantiate_variant(type, arg);
+}
+
+
+// In some cases, we can apply arguments directly to types. The
+// meaning depends on the type being called. For example:
+//
+//    def var : typename = variant(int) { 0 : nat; 1: int; }
+//    def s : typename = record { n : int; v : var(n); };
+//
+// In the definition of `s`, the variant member `v` is bound
+// to its discriminator `n`.
+Expr*
+elab_type_call(Call_tree* t, Type* target) {
+  if (Desc_variant_type* v = as<Desc_variant_type>(target))
+    return elab_variant_binding(t, v);
+  error (t->loc) << format("cannot call the type '{}'", debug(target));
+  return nullptr;
+}
+
 
 // Elaborate a function call. The argument types must agree with
 // the parameter types of the given function.
@@ -358,10 +404,15 @@ elab_call(Call_tree* t) {
   // TODO: What other kinds of targets can we find here.
   if (Decl_id* ref = as<Decl_id>(tgt)) {
     def = as<Def>(ref->decl());
-    if (def)
-      fn = as<Term>(def->init());
-    if (fn)
-      ft = as<Fn_type>(get_type(fn));
+    if (def) {
+      Expr* init = def->init();
+      if (Term* f = as<Term>(init)) {
+        fn = f;
+        ft = as<Fn_type>(get_type(fn));
+      } else if (Type* ty = as<Type>(init)) {
+        return elab_type_call(t, ty);
+      }
+    }
   }
 
   // Make sure we have a callable expression.
@@ -435,8 +486,7 @@ elab_binary(Binary_tree* t) {
   Type* type = get_type(fn);
   Type* result = as<Fn_type>(type)->result();
 
-  Binary* bin = make_expr<Binary>(t->loc, result, fn, left, right);
-  return bin;
+  return make_expr<Binary>(t->loc, result, fn, left, right);
 }
 
 // -------------------------------------------------------------------------- //
@@ -470,9 +520,7 @@ elab_range(Range_tree* t) {
 // -------------------------------------------------------------------------- //
 // Elaboration of record types
 
-// Elaborate a record type. 
-//
-// TODO: Document the elaboration rules.
+// A record type is an aggregate type comprised of named fields.
 Expr*
 elab_record(Record_tree* t) {
   Type* kind = get_typename_type();
@@ -487,7 +535,7 @@ elab_record(Record_tree* t) {
     else
       return nullptr;
   }
-  return make_expr<Record_type>(t->loc, get_typename_type(), fields);
+  return make_expr<Record_type>(t->loc, kind, fields);
 }
 
 // Elaborate a field declaration.
@@ -555,8 +603,8 @@ elab_alt_tag(Tree* t, Type* v) {
 // then it should be given a special name (this?).
 Expr*
 elab_alt(Alt_tree* t) {
-  // Get the context for a variant-of type.
-  Variant_of_type* var = as<Variant_of_type>(current_context());
+  // Get the context for a descriminated variant type.
+  Desc_variant_type* var = as<Desc_variant_type>(current_context());
 
   // Elaborate the tag and type.
   Expr* tag = elab_alt_tag(t->tag(), var);
@@ -582,8 +630,8 @@ elab_alt(Alt_tree* t) {
   return make_expr<Alt>(t->loc, type, tag, type);
 }
 
-// Elaborate a sequence of alternatives for the variant or variant-of
-// type var.
+// Elaborate a sequence of alternatives for the variant type.
+// Note that alternatives are never declared.
 Expr*
 elab_alts(Variant_tree* t, Type* var, Decl_seq* alts) {
   Scope_guard scope(variant_scope, var);
@@ -610,13 +658,19 @@ elab_variant(Variant_tree* t) {
   return elab_alts(t, var, alts);
 }
 
-// Elaborate the variant-of type.
+// Elaborate a descriminated variant of the form `variant(T) {a}`.
+// The expression `T` denote a type, and `a` shall be a sequence
+// of alternatives matching one of the following forms:
 //
-//    G |- t : T   for each ai in as G |- ai : Ti
-//    ------------------------------------------- T-variant-of
-//         G |- variant(t) { as } : typename
+//    't:e' where `t` is a term that is convertible to 'T'
+//    `t1..t2:e` where `t1..t2` is a range of values of type `T`
+//    `default`
+//
+// TODO: Clarify what types can be used as a descriminator. In the
+// the range case for example, `T` needs to define a successor
+// function that we can use to enumerate cases.
 Expr*
-elab_variant_of(Variant_tree* t) {
+elab_desc_variant(Variant_tree* t) {
   Type* type = elab_type(t->desc());
   if (not type)
     return nullptr;
@@ -624,7 +678,7 @@ elab_variant_of(Variant_tree* t) {
   // Stub out the variant.
   Decl_seq* alts = new Decl_seq();
   Type* kind = get_typename_type();
-  Type* var = make_expr<Variant_of_type>(t->loc, kind, type, alts);
+  Type* var = make_expr<Desc_variant_type>(t->loc, kind, type, alts);
   return elab_alts(t, var, alts);
 }
 
@@ -633,7 +687,7 @@ elab_variant_of(Variant_tree* t) {
 Expr*
 elab_variant_type(Variant_tree* t) {
   if (t->desc())
-    return elab_variant_of(t);
+    return elab_desc_variant(t);
   else
     return elab_variant(t);
 }
@@ -788,6 +842,7 @@ elab_const(Value_tree* t, Tree* e) {
   if (not init)
     return nullptr;
   d->third = reduce(init);
+
 
   // Bind the initializer to its definition.
   d->third->od = d;
