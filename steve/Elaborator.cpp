@@ -1040,6 +1040,22 @@ elab_def(Def_tree* t) {
   steve_unreachable(format("{}: elaboration failure", t->loc));
 }
 
+// -------------------------------------------------------------------------- //
+// Elaboration of imports
+
+
+Expr*
+elab_import(Import_tree* t) {
+  std::cout << "HERE: " << debug(t->module()) << '\n';
+  // Expr* m = elab_module_name(t->module());
+
+  // Make a fake declaration.
+  // Name* name = new Basic_id(t->loc, "x");
+  // Type* type = get_unit_type();
+  // return make_expr<Def>(t->loc, type, name, type, nullptr);
+  return nullptr;
+}
+
 // Elaborate each declaration in turn. Note that declarations are
 // never replaced. The elaboration operates in-place.
 Expr*
@@ -1083,6 +1099,7 @@ elab_expr(Tree* t) {
   case field_tree: return elab_field(as<Field_tree>(t));
   case pad_tree: return elab_unimplemented(t);
   case alt_tree: return elab_alt(as<Alt_tree>(t));
+  case import_tree: return elab_import(as<Import_tree>(t));
     break;
   // Misc
   case top_tree: return elab_top(as<Top_tree>(t));

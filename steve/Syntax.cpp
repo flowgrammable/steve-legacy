@@ -175,6 +175,7 @@ debug_print(Printer& p, Tree* t) {
   case call_tree: return debug_binary(p, as<Call_tree>(t));
   case index_tree: return debug_binary(p, as<Index_tree>(t));
   case app_tree: return debug_binary(p, as<App_tree>(t));
+  case dot_tree: return debug_binary(p, as<Dot_tree>(t));
   case range_tree: return debug_binary(p, as<Range_tree>(t));
   case unary_tree: return debug_unary(p, as<Unary_tree>(t));
   case binary_tree: return debug_binary(p, as<Binary_tree>(t));
