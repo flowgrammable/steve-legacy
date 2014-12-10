@@ -63,6 +63,7 @@ init_tokens() {
   // Keywords
   init_token(alias_tok, "alias");
   init_token(and_tok, "and");
+  init_token(array_tok, "array");
   init_token(bool_tok, "bool");
   init_token(bitfield_tok, "bitfield");
   init_token(char_tok, "char");

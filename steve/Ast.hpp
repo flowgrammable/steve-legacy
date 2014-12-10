@@ -32,6 +32,7 @@ constexpr Node_kind desc_variant_type = make_type_node(12); // variant(T) { ... 
 constexpr Node_kind dep_variant_type  = make_type_node(13); // variant(e) { ... }
 constexpr Node_kind enum_type         = make_type_node(14); // enum { ... }
 constexpr Node_kind enum_of_type      = make_type_node(15); // enum(T) { ... }
+constexpr Node_kind array_type        = make_type_node(16); // T[n]
 constexpr Node_kind module_type       = make_type_node(16); // module
 // Terms
 constexpr Node_kind unit_term      = make_term_node(1);  // ()
@@ -473,6 +474,23 @@ struct Enum_of_type : Type, Kind_of<enum_of_type> {
   Expr_seq* second;
 };
 
+// An array type is the type of a fixed-length sequence of values and
+// has the form `T[N]` where `T` is a type and `N` is an integer value.
+//
+// Note that array types can compound: `T[M][N]` is an `N` dimensional
+// array whose elements are arrays of `M` elements of `T`.
+struct Array_type : Type, Kind_of<array_type> {
+  Array_type(Type* t, Term* n)
+    : Type(Kind), first(t), second(n) { }
+  Array_type(const Location& l, Type* t, Term* n)
+    : Type(Kind, l), first(t), second(n) { }
+
+  Type* elem() const { return first; }
+  Term* bound() const { return second; }
+
+  Type* first;
+  Term* second;
+};
 
 // The module type represents the type of an imported module. 
 //
