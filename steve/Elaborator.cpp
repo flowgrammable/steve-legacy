@@ -1083,7 +1083,6 @@ elab_expr(Tree* t) {
   case field_tree: return elab_field(as<Field_tree>(t));
   case pad_tree: return elab_unimplemented(t);
   case alt_tree: return elab_alt(as<Alt_tree>(t));
-  case nv_tree: return elab_unimplemented(t);
     break;
   // Misc
   case top_tree: return elab_top(as<Top_tree>(t));

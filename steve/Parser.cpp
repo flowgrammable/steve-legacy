@@ -860,9 +860,20 @@ parse_index_expr(Parser& p, Tree* t) {
   return nullptr;
 }
 
+// Parse a dot expression.
+//
+//    dot-expr ::= postfix-expr '.' postfix-expr
+Tree*
+parse_dot_expr(Parser& p, Tree* t) {
+  if (accept(p, dot_tok))
+    if (Tree* t2 = parse_primary_expr(p))
+      return new Dot_tree(t, t2);
+  return nullptr;
+}
+
 // Parse a postfix-expression.
 //
-//    range-expr :: = postfix-expr .. postfix-expr
+//    range-expr :: = postfix-expr '..' postfix-expr
 Tree*
 parse_range_expr(Parser& p, Tree* t1) {
   if (accept(p, dot_dot_tok)) {
@@ -902,6 +913,8 @@ parse_postfix_expr(Parser& p) {
         t = c;
       else if (Tree* i = parse_index_expr(p, t))
         t = i;
+      else if (Tree* d = parse_dot_expr(p, t))
+        t = d;
       else if (Tree* r = parse_range_expr(p, t))
         t = r;
       else if (Tree* a = parse_app_expr(p, t))
@@ -1237,9 +1250,12 @@ parse_def_decl(Parser& p) {
 
 // Parse an import-decl.
 //
-//    import-decl ::= 'import' name
+//    import-decl ::= 'import' expr
 Tree*
 parse_import_decl(Parser& p) {
+  if (const Token* k = accept(p, import_tok))
+    if (Tree* t = parse_expr(p))
+      return new Import_tree(k, t);
   return nullptr;
 }
 

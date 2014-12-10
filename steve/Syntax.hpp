@@ -8,29 +8,30 @@
 namespace steve {
 
 // Expressions
-constexpr Node_kind id_tree      = make_tree_node(1);
-constexpr Node_kind lit_tree     = make_tree_node(2);
-constexpr Node_kind call_tree    = make_tree_node(10);
-constexpr Node_kind index_tree   = make_tree_node(11);
-constexpr Node_kind app_tree     = make_tree_node(12);
-constexpr Node_kind unary_tree   = make_tree_node(13);
-constexpr Node_kind binary_tree  = make_tree_node(14);
+constexpr Node_kind id_tree      = make_tree_node(1);  // identfiers
+constexpr Node_kind lit_tree     = make_tree_node(2);  // literals
+constexpr Node_kind call_tree    = make_tree_node(10); // e1(e*)
+constexpr Node_kind index_tree   = make_tree_node(11); // e1[e2]
+constexpr Node_kind dot_tree     = make_tree_node(12); // e1.e2
+constexpr Node_kind range_tree   = make_tree_node(13); // e1..e2
+constexpr Node_kind app_tree     = make_tree_node(14); // e1 e2
+constexpr Node_kind unary_tree   = make_tree_node(15); // op e
+constexpr Node_kind binary_tree  = make_tree_node(16); // e1 op e2
 // Types
-constexpr Node_kind record_tree  = make_tree_node(20);
-constexpr Node_kind variant_tree = make_tree_node(21);
-constexpr Node_kind enum_tree    = make_tree_node(22);
-// Declarations
-constexpr Node_kind value_tree   = make_tree_node(30);
-constexpr Node_kind parm_tree    = make_tree_node(31);
-constexpr Node_kind fn_tree      = make_tree_node(32);
-constexpr Node_kind def_tree     = make_tree_node(33);
-constexpr Node_kind field_tree   = make_tree_node(34);
-constexpr Node_kind pad_tree     = make_tree_node(35);
-constexpr Node_kind alt_tree     = make_tree_node(36);
-constexpr Node_kind nv_tree      = make_tree_node(37);
-constexpr Node_kind range_tree   = make_tree_node(38);
+constexpr Node_kind record_tree  = make_tree_node(20); // record { ... }
+constexpr Node_kind variant_tree = make_tree_node(21); // variant { ... }
+constexpr Node_kind enum_tree    = make_tree_node(22); // enum { ... }
+// Statements and declarations
+constexpr Node_kind value_tree   = make_tree_node(30); // x : T (in def)
+constexpr Node_kind parm_tree    = make_tree_node(31); // x : T (in parms)
+constexpr Node_kind fn_tree      = make_tree_node(32); // f(p)->T (in def)
+constexpr Node_kind def_tree     = make_tree_node(33); // def n = e
+constexpr Node_kind field_tree   = make_tree_node(34); // x : T where (in record)
+constexpr Node_kind pad_tree     = make_tree_node(35); // FIXME: remove?
+constexpr Node_kind alt_tree     = make_tree_node(36); // e1 : e2 (in variant)
+constexpr Node_kind import_tree  = make_tree_node(50); // import e
 // Misc
-constexpr Node_kind top_tree     = make_tree_node(50);
+constexpr Node_kind top_tree     = make_tree_node(100);
 
 // The base class of all tree nodes.
 struct Tree : Node { 
@@ -81,6 +82,32 @@ struct Index_tree : Tree, Kind_of<index_tree> {
 
   Tree* elem() const { return first; }
   Tree* index() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+// A projection or access expression of the form `e1.e2`. These
+// expressions are used to access a nested member `e2`, nested 
+// within the scope of `e1`.
+struct Dot_tree : Tree, Kind_of<dot_tree> {
+  Dot_tree(Tree* e1, Tree* e2)
+    : Tree(Kind, e1->loc), first(e1), second(e2) { }
+
+  Tree* scope() const { return first; }
+  Tree* member() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+// An expression of the form `e1..e2`.
+struct Range_tree : Tree, Kind_of<range_tree> {
+  Range_tree(Tree* l, Tree* u)
+    : Tree(Kind, l->loc), first(l), second(u) { }
+
+  Tree* lower() const { return first; }
+  Tree* upper() const { return second; }
 
   Tree* first;
   Tree* second;
@@ -254,16 +281,14 @@ struct Alt_tree : Tree, Kind_of<alt_tree> {
   Tree* second;
 };
 
-// A range expression.
-struct Range_tree : Tree, Kind_of<range_tree> {
-  Range_tree(Tree* l, Tree* u)
-    : Tree(Kind, l->loc), first(l), second(u) { }
+// A declaration of the form `import e`.
+struct Import_tree : Tree, Kind_of<import_tree> {
+  Import_tree(const Token* k, Tree* t)
+    : Tree(Kind, k->loc), first(t) { }
 
-  Tree* lower() const { return first; }
-  Tree* upper() const { return second; }
+  Tree* module() const { return first; }
 
   Tree* first;
-  Tree* second;
 };
 
 // Represents a top-level sequence of declarations.

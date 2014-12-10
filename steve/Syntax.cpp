@@ -12,6 +12,8 @@ init_trees() {
   init_node(lit_tree, "lit-tree");
   init_node(call_tree, "call-tree");
   init_node(index_tree, "index-tree");
+  init_node(dot_tree, "dot-tree");
+  init_node(range_tree, "range-tree");
   init_node(app_tree, "app-tree");
   init_node(unary_tree, "unary-tree");
   init_node(binary_tree, "binary-tree");
@@ -27,8 +29,7 @@ init_trees() {
   init_node(field_tree, "field-tree");
   init_node(pad_tree, "pad-tree");
   init_node(alt_tree, "alt-tree");
-  init_node(nv_tree, "nv-tree");
-  init_node(range_tree, "range-tree");
+  init_node(import_tree, "import-tree");
   // Misc
   init_node(top_tree, "top-tree");
 
@@ -189,7 +190,7 @@ debug_print(Printer& p, Tree* t) {
   case field_tree: return debug_ternary(p, as<Field_tree>(t));
   case pad_tree: return debug_unimplemented(t);
   case alt_tree: return debug_binary(p, as<Alt_tree>(t));
-  case nv_tree: return debug_unimplemented(t);
+  case import_tree: return debug_unary(p, as<Import_tree>(t));
   // Misc
   case top_tree: return debug_top(p, as<Top_tree>(t));
   // Unhandled
