@@ -11,9 +11,10 @@ namespace steve {
 constexpr Node_kind id_tree      = make_tree_node(1);
 constexpr Node_kind lit_tree     = make_tree_node(2);
 constexpr Node_kind call_tree    = make_tree_node(10);
-constexpr Node_kind app_tree     = make_tree_node(11);
-constexpr Node_kind unary_tree   = make_tree_node(12);
-constexpr Node_kind binary_tree  = make_tree_node(13);
+constexpr Node_kind index_tree   = make_tree_node(11);
+constexpr Node_kind app_tree     = make_tree_node(12);
+constexpr Node_kind unary_tree   = make_tree_node(13);
+constexpr Node_kind binary_tree  = make_tree_node(14);
 // Types
 constexpr Node_kind record_tree  = make_tree_node(20);
 constexpr Node_kind variant_tree = make_tree_node(21);
@@ -71,6 +72,18 @@ struct Call_tree : Tree, Kind_of<call_tree> {
 
   Tree* first;
   Tree_seq* second;
+};
+
+// An index (or subscript) tree of the form `e1[e2]`.
+struct Index_tree : Tree, Kind_of<index_tree> {
+  Index_tree(Tree* e1, Tree* e2)
+    : Tree(Kind, e1->loc), first(e1), second(e2) { }
+
+  Tree* elem() const { return first; }
+  Tree* index() const { return second; }
+
+  Tree* first;
+  Tree* second;
 };
 
 // An application expression of the form 'e1 e2'. Application is

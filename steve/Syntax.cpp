@@ -11,6 +11,7 @@ init_trees() {
   init_node(id_tree, "id-tree");
   init_node(lit_tree, "lit-tree");
   init_node(call_tree, "call-tree");
+  init_node(index_tree, "index-tree");
   init_node(app_tree, "app-tree");
   init_node(unary_tree, "unary-tree");
   init_node(binary_tree, "binary-tree");
@@ -171,6 +172,7 @@ debug_print(Printer& p, Tree* t) {
   case id_tree: return debug_nullary(p, as<Id_tree>(t));
   case lit_tree: return debug_nullary(p, as<Lit_tree>(t));
   case call_tree: return debug_binary(p, as<Call_tree>(t));
+  case index_tree: return debug_binary(p, as<Index_tree>(t));
   case app_tree: return debug_binary(p, as<App_tree>(t));
   case range_tree: return debug_binary(p, as<Range_tree>(t));
   case unary_tree: return debug_unary(p, as<Unary_tree>(t));

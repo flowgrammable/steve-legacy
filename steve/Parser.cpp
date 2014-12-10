@@ -850,6 +850,16 @@ parse_call_expr(Parser& p, Tree* t) {
   return nullptr;
 }
 
+// Parse an index expression.
+//
+//    index-expr ::= postfixe-expr '[' expr ']'
+Tree*
+parse_index_expr(Parser& p, Tree* t) {
+  if (Tree* e = parse_bracket_enclosed(p, parse_expr))
+    return new Index_tree(t, e);
+  return nullptr;
+}
+
 // Parse a postfix-expression.
 //
 //    range-expr :: = postfix-expr .. postfix-expr
@@ -876,15 +886,22 @@ parse_app_expr(Parser& p, Tree* t1) {
 // binary or n-ary expressions parsed at this precedence.
 //
 //    postfix-expr ::= call-expr
-//                   | app-expr
+//                   | index-expr
 //                   | range-expr
+//                   | app-expr
 //                   | primary-expr
+//
+// TODO: This could be made more efficient by looking at the token
+// after the initial primary epxression and then dispatching to
+// the appropriate parser.
 Tree*
 parse_postfix_expr(Parser& p) {
   if (Tree* t = parse_primary_expr(p)) {
     while (t) {
       if (Tree* c = parse_call_expr(p, t))
         t = c;
+      else if (Tree* i = parse_index_expr(p, t))
+        t = i;
       else if (Tree* r = parse_range_expr(p, t))
         t = r;
       else if (Tree* a = parse_app_expr(p, t))

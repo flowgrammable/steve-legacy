@@ -33,7 +33,7 @@ constexpr Node_kind dep_variant_type  = make_type_node(13); // variant(e) { ... 
 constexpr Node_kind enum_type         = make_type_node(14); // enum { ... }
 constexpr Node_kind enum_of_type      = make_type_node(15); // enum(T) { ... }
 constexpr Node_kind array_type        = make_type_node(16); // T[n]
-constexpr Node_kind module_type       = make_type_node(16); // module
+constexpr Node_kind module_type       = make_type_node(50); // module
 // Terms
 constexpr Node_kind unit_term      = make_term_node(1);  // ()
 constexpr Node_kind bool_term      = make_term_node(2);  // {true, false}
