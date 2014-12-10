@@ -1,6 +1,5 @@
 
 def uint(n : nat) -> typename = bitfield(nat, n, 1);
-def array(t : typename, n : nat) -> typename = nat;
 
 def vector(t : typename) -> typename = nat;
 def constrain(n : nat) -> bool = true;
@@ -206,7 +205,7 @@ def PortFeature : typename = enum(uint(32)) {
 def Port : typename = record {
   port_id    : PortId;
   hw_addr    : uint(48);
-  name       : array(char, 16);
+  name       : char[16];
   config     : PortConfig;
   state      : PortState;
   curr       : PortFeature;
@@ -525,11 +524,11 @@ def StatsReq : typename = record {
 }
 
 def StatsResDesc : typename = record {
-  mfr_desc   : array(char, 256);
-  hw_desc    : array(char, 256);
-  sw_desc    : array(char, 256);
-  serial_num : array(char, 32);
-  dp_desc    : array(char, 256);
+  mfr_desc   : char[256];
+  hw_desc    : char[256];
+  sw_desc    : char[256];
+  serial_num : char[32];
+  dp_desc    : char[256];
 }
 
 def StatsResFlow : typename = record {
@@ -563,7 +562,7 @@ def StatsResAggregate : typename = record {
 def StatsResTable : typename = record {
   table_id      : uint(8);
   __pad         : uint(24);
-  name          : array(char, 16);
+  name          : char[16];
   wildcards     : uint(32);
   max_entries   : uint(32);
   active_count  : uint(32);
