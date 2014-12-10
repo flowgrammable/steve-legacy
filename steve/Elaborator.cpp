@@ -436,6 +436,66 @@ elab_call(Call_tree* t) {
   return call;
 }
 
+// -------------------------------------------------------------------------- //
+// Elaboration of arrays and subscripting
+
+// Form an array type. The argument `e` must be an integeral constant
+// expression.
+//
+// TODO: If `e` is not constant, then this would be a dependent
+// array type. This is similar to the notion of a variable length
+// array, but different; dependent types in Steve are pairs that
+// associate the dependent term with the type.
+Type*
+elab_array_type(Index_tree* t, Type* type, Expr* e) {
+  Term* bound = as<Term>(e);
+  if (not bound) {
+    error(e->loc) << format("ill-formed array bound '{}'", debug(e));
+    return nullptr;
+  }
+
+  // Array subscripts have type nat.
+  bound = convert(bound, get_nat_type());
+  if (not bound)
+    return nullptr;
+
+  // Array subscripts must be fully reduced.
+  bound = reduce(bound);
+  if (!is_value(bound)) {
+    error(e->loc) << format("array bound '{}' is not constant", debug(e));
+    return nullptr;
+  }
+
+  Type* kind = get_typename_type();
+  return make_expr<Array_type>(t->loc, kind, type, bound);
+}
+
+Term*
+elab_index_term(Index_tree* t, Term* term, Expr* e) {
+  sorry(t->loc) << "array subscript not implemented";
+  return nullptr;
+}
+
+
+// An expression of the form `e1[e2]` is:
+//    - an array type `T[n]` when `e1` denotes a type `T` and `e2
+//      is an integral expression `n`.
+//    - a subscript operation when `e1` has type `T[N]` and
+//      `e2` is an integral expression.
+Expr*
+elab_index(Index_tree* t) {
+  Expr* e1 = elab_expr(t->elem());
+  Expr* e2 = elab_expr(t->index());
+  if (not e1 || not e2)
+    return nullptr;
+
+  if (Type* type = as<Type>(e1))
+    return elab_array_type(t, type, e2);
+  else if (Term* term = as<Term>(e1))
+    return elab_index_term(t, term, e2);
+  error(t->loc) << format("ill-formed index expression '{}'", debug(t));
+  return nullptr;
+}
 
 // -------------------------------------------------------------------------- //
 // Elaboration of unary and binary expressions
@@ -1009,6 +1069,7 @@ elab_expr(Tree* t) {
   case id_tree: return elab_id(as<Id_tree>(t));
   case lit_tree: return elab_lit(as<Lit_tree>(t));
   case call_tree: return elab_call(as<Call_tree>(t));
+  case index_tree: return elab_index(as<Index_tree>(t));
   case range_tree: return elab_range(as<Range_tree>(t));
   case unary_tree: return elab_unary(as<Unary_tree>(t));
   case binary_tree: return elab_binary(as<Binary_tree>(t));

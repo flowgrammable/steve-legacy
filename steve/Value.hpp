@@ -9,8 +9,10 @@
 
 namespace steve { 
 
+bool is_value(Expr*);
+
 // -------------------------------------------------------------------------- //
-// Values
+// Value representation
 
 // Enumerates the different kinds of values.
 enum Value_kind {

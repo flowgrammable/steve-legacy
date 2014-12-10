@@ -281,11 +281,27 @@ eval(Expr* e) {
   return ev(e);
 }
 
-// Partially evaluate an expression, returning a new expression.
+namespace {
+
 Expr*
-reduce(Expr* e) {
+do_reduce(Expr* e) {
   Eval v = eval(e);
   return to_expr(v, e);
+}
+
+} // namespace
+
+// Partially evaluate an expression, returning a new expression.
+Expr*
+reduce(Expr* e) { return do_reduce(e); }
+
+// Partially evaluate the term `t`. Note that a term cannot result 
+// in a type.
+Term*
+reduce(Term* t) {
+  Expr* e = do_reduce(t);
+  steve_assert(is<Term>(e), "recuction of term to a non-term");
+  return as<Term>(e);
 }
 
 // Evaluate t, expecting a boolean value. Behavior is undefined if

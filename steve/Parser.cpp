@@ -852,7 +852,7 @@ parse_call_expr(Parser& p, Tree* t) {
 
 // Parse an index expression.
 //
-//    index-expr ::= postfixe-expr '[' expr ']'
+//    index-expr ::= postfix-expr '[' expr ']'
 Tree*
 parse_index_expr(Parser& p, Tree* t) {
   if (Tree* e = parse_bracket_enclosed(p, parse_expr))

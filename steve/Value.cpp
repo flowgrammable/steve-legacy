@@ -6,6 +6,30 @@
 
 namespace steve {
 
+// Returns true if the expression `e` is a value (i.e., fully
+// reduced or in normal form, etc). Values encompass the unit
+// value, boolean values, integral values, functions, and
+// types.
+//
+// FIXME: This does not include values of aggregate type,
+// but it probably should.
+bool
+is_value(Expr* e) {
+  if (is<Type>(e))
+    return true;
+  switch (e->kind) {
+  case unit_term:
+  case bool_term:
+  case int_term:
+  case fn_term:
+  case builtin_term:
+    return true;
+  default:
+    return false;
+  }
+}
+
+
 namespace {
 
 // Reconstitute an expression from a value. The source expression
@@ -37,7 +61,7 @@ to_expr(const Value& v, Expr* e) {
 // Returns true if all evaluations have resulted in values.
 bool
 all_values(const Eval_seq& evals) {
-  return std::all_of(evals.begin(), evals.end(), is_value);
+  return std::all_of(evals.begin(), evals.end(), (bool(*)(const Eval&))is_value);
 }
 
 // Return an expression representing the result of the evaluation

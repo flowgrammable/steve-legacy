@@ -12,7 +12,7 @@ struct Expr;
 struct Type;
 
 Expr* convert(Expr*, Type*);
-
+Term* convert(Term*, Type*);
 
 // A ranked conversion is a numeric quantity that describes the
 // conversions applied to an expression.

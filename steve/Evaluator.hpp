@@ -21,6 +21,7 @@ struct Evaluator {
 
 Eval eval(Expr*);
 Expr* reduce(Expr*);
+Term* reduce(Term*);
 
 bool eval_boolean(Term*);
 Integer eval_integer(Term*);

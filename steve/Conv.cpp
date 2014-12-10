@@ -47,12 +47,8 @@ predicate(Expr* e, Type* t) {
   return nullptr;
 }
 
-} // namespace
-
-// Find a rule that allows the conversion of e to T.  If no conversion is 
-// possible, emit a diagnostic.
 Expr*
-convert(Expr* e, Type* t) {
+do_convert(Expr* e, Type* t) {
   if (Expr* c = identity(e, t))
     return c;
   if (Expr* c = promote(e, t))
@@ -64,6 +60,26 @@ convert(Expr* e, Type* t) {
                           typed(e), 
                           debug(t));
 
+  return nullptr;
+}
+
+
+} // namespace
+
+// Find a rule that allows the conversion of the expression
+// `e` to the type `T`. If no conversion is possible, emit a 
+// diagnostic.
+Expr*
+convert(Expr* e, Type* t) { return do_convert(e, t); }
+
+// Find a rule that allows the conversion of the term `e` to
+// the type `T`. Emit a diagnostic if no conersion is possible.
+Term*
+convert(Term* e, Type* t) {
+  if (Expr* r = do_convert(e, t)) {
+    steve_assert(is<Term>(r), "term converted to non-term");
+    return as<Term>(r);
+  }
   return nullptr;
 }
 
