@@ -8,6 +8,7 @@
 #include <steve/Conv.hpp>
 #include <steve/Overload.hpp>
 #include <steve/Variant.hpp>
+#include <steve/Module.hpp>
 #include <steve/Intrinsic.hpp>
 #include <steve/Debug.hpp>
 
@@ -1043,17 +1044,70 @@ elab_def(Def_tree* t) {
 // -------------------------------------------------------------------------- //
 // Elaboration of imports
 
+Tree*
+elab_module_id(Module*& mod, Id_tree* t) {
+  mod = load_module(mod, t->value()->text);
+  return nullptr;
+}
+
+Tree*
+elab_module_path(Module*& mod, Dot_tree* t) {
+  // Get the name of the enclosing module.
+  Tree* scope = t->scope();
+  Id_tree* id = as<Id_tree>(scope);
+  if (not id) {
+    error(scope->loc) << format("ill-formed module-id '{}'", debug(scope));
+    return nullptr;
+  }
+
+  // Load the enclosing module.
+  mod = load_module(mod, id->value()->text);
+  if (not mod)
+    return nullptr;
+  
+  // Set the current module to right 
+  return t->member();
+}
+
+Module*
+elab_module_name(Tree* t) {
+  Module* mod = nullptr;
+  Tree* cur = t;
+  while (cur) {
+    if (Id_tree* id = as<Id_tree>(cur)) {
+      cur = elab_module_id(mod, id);
+    } else if (Dot_tree* dot = as<Dot_tree>(cur)) {
+      cur = elab_module_path(mod, dot);
+    } else {
+      error(cur->loc) << format("ill-formed module-id '{}'", debug(cur));
+      return nullptr;
+    }
+  }
+  return mod;
+}
+
+// Return an id for the outermost name in the module. If the 
+// name is ill-formed, don't report the error yet. We'll do that 
+// in elab_module_name.
+Name*
+elab_outermost_module_name(Tree* t) {
+  if (Dot_tree* dot = as<Dot_tree>(t))
+    t = dot->scope();
+  if (Id_tree* id = as<Id_tree>(t))
+    return new Basic_id(id->value()->text);
+  return nullptr;
+}
 
 Expr*
 elab_import(Import_tree* t) {
-  std::cout << "HERE: " << debug(t->module()) << '\n';
-  // Expr* m = elab_module_name(t->module());
+  Name* n = elab_outermost_module_name(t->module());
+  Module* m = elab_module_name(t->module());
+  if (not m) {
+    error(t->loc) << format("no matching module for '{}'", debug(t->module()));
+    return nullptr;
+  }
 
-  // Make a fake declaration.
-  // Name* name = new Basic_id(t->loc, "x");
-  // Type* type = get_unit_type();
-  // return make_expr<Def>(t->loc, type, name, type, nullptr);
-  return nullptr;
+  return make_expr<Import>(t->loc, get_unit_type(), n, m);
 }
 
 // Elaborate each declaration in turn. Note that declarations are

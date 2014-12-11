@@ -135,20 +135,12 @@ void reset_diagnostics();
 // An RAII helper that replaces the current diagnostics with
 // an empty set.
 struct Diagnostics_guard {
-  Diagnostics_guard(Diagnostics& diags)
-    : saved(current_diagnostics())
-    , current(diags)
-  { use_diagnostics(diags); }
-  
-  ~Diagnostics_guard() {
-    if (saved)
-      use_diagnostics(*saved);
-    else
-      reset_diagnostics();
-  }
+  Diagnostics_guard();
+  Diagnostics_guard(Diagnostics&);
+  ~Diagnostics_guard();
 
   Diagnostics* saved;   // The previous diagnostics
-  Diagnostics& current; // The current diagnostics
+  Diagnostics* current; // The current diagnostics
 };
 
 

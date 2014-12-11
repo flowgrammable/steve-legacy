@@ -13,6 +13,7 @@ add_library(steve-lib
   Format.cpp
   Print.cpp
   Error.cpp
+  File.cpp
   Location.cpp
   Token.cpp
   Node.cpp
@@ -25,6 +26,7 @@ add_library(steve-lib
   Scope.cpp
   Overload.cpp
   Variant.cpp
+  Module.cpp
   Subst.cpp
   Conv.cpp
   Intrinsic.cpp
@@ -36,7 +38,7 @@ add_library(steve-lib
   ${contrib_src}
 )
 set_target_properties(steve-lib PROPERTIES ARCHIVE_OUTPUT_NAME steve)
-target_link_libraries(steve-lib gc gmp)
+target_link_libraries(steve-lib gc gmp boost_system boost_filesystem)
 
 add_executable(steve Main.cpp)
 target_link_libraries(steve steve-lib)

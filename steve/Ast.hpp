@@ -6,6 +6,7 @@
 #include <steve/Node.hpp>
 #include <steve/String.hpp>
 #include <steve/Integer.hpp>
+#include <steve/File.hpp>
 
 #include <iostream>
 
@@ -492,11 +493,19 @@ struct Array_type : Type, Kind_of<array_type> {
   Term* second;
 };
 
-// The module type represents the type of an imported module. 
-//
-// TODO: Implement me!
-struct Module_type : Type, Kind_of<module_type> {
-  Module_type() : Type(module_type) { }
+// A module is a type contains a sequence a program. Each module
+// defines its own distinct type.
+struct Module : Type, Kind_of<module_type> {
+  Module(const Path& p, Decl_seq* e)
+    : Type(Kind), path_(p), first(e) { }
+  Module(const Location& l, const Path& p, Decl_seq* e)
+    : Type(Kind, l), path_(p), first(e) { }
+
+  const Path path() const { return path_; }
+  Decl_seq* decls() const { return first; }
+  
+  Path path_;
+  Decl_seq* first;
 };
 
 
@@ -736,10 +745,18 @@ struct Binary : Term, Kind_of<binary_term> {
 //
 // TODO: Every declaration can have a constraint.
 
-// The top-level declaration sequence of a steve program.
+// The top-level declaration sequence of a Steve program.
+//
+// TODO: Should we replace top with a module? So that every program
+// is inherently a module. This seems like a good idea. Of course,
+// that means that every program would inherently be a type, which
+// seems a bit odd...
 struct Top : Decl, Kind_of<top_decl> {
   Top(Decl_seq* ds) 
     : Decl(Kind), first(ds) { }
+
+  Decl_seq* decls() const { return first; }
+
   Decl_seq* first;
 };
 
@@ -835,16 +852,25 @@ struct Enum : Decl, Kind_of<enum_decl> {
   Expr* second;
 };
 
-// An import declaration of the form 'import n' introduces the named
-// module into the current context.
+// An import declaration of the form `import n` introduces the named
+// module into the current context. The import declaration associates
+// that name with the loaded module type.
+//
+// Note that in declarations of the form `import m1.m2`, the
+// import declaration contains only `import m1. The nested module
+// type of `m1` contains the declaration `import m2`.
 struct Import : Decl, Kind_of<import_decl> {
-  Import(Name* n) 
-    : Decl(Kind), first(n) { }
-  Import(const Location& l, Name* n) 
-    : Decl(Kind, l), first(n) { }
-  Name* first;
-};
+  Import(Name* n, Type* m) 
+    : Decl(Kind), first(n), second(m) { }
+  Import(const Location& l, Name* n, Type* m) 
+    : Decl(Kind, l), first(n), second(m) { }
 
+  Name* name() const { return first; }
+  Type* module() const { return second; }
+
+  Name* first;
+  Type* second;
+};
 
 // -------------------------------------------------------------------------- //
 // Expression construction.

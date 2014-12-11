@@ -22,7 +22,7 @@ struct Lexer {
   Iterator first;  // The current lex position
   Iterator last;   // The final lex position
   Location loc;    // The current source location
-  Tokens toks; // The current token list
+  Tokens toks;     // The current token list
 };
 
 } // namespace steve
