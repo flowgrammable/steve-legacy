@@ -150,7 +150,7 @@ load_module(Location loc, const Path& parent, String id) {
   if (fs::exists(dir))
     return load_directory_module(loc, dir);
   if (fs::exists(file))
-    return load_directory_module(loc, file);
+    return load_file_module(loc, file);
   error(loc) << format("no module named '{}' in '{}'", id, parent);
   return nullptr;
 }

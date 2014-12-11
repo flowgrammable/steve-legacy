@@ -202,6 +202,31 @@ push_scope(Scope_kind k, Expr* c) {
   return stack_;
 }
 
+// FIXME: This is not terribly efficient because we have to re-do all
+// of the re-declaration work. It would be better if each scoped type
+// saved it's corresponding scope, we could just push that.
+Scope*
+push_module_scope(Module* m) {
+  Scope* s = push_scope(module_scope, m);
+  for (Decl* d : *m->decls())
+    declare(d);
+  return s;
+}
+
+// Push the declarations corresponding to the given type onto the
+// scope stack.
+Scope*
+push_scope(Type* t) {
+  switch (t->kind) {
+  case module_type:
+    return push_module_scope(as<Module>(t));
+  case record_type:
+    steve_unreachable("unimplemented: push record scope");
+  default:
+    steve_unreachable(format("cannot push non-aggregate type '{}'", debug(t)));
+  }
+}
+
 Scope*
 pop_scope() {
   steve_assert(stack_, "pop on empty scope stack");

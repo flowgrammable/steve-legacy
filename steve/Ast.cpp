@@ -232,6 +232,11 @@ template<typename T>
     print_indent(p);
   }
 
+void
+debug_module(Printer& p, Module* m) {
+  print(p, format("<module {}>", m->path().c_str()));
+}
+
 } // namespace
 
 void
@@ -264,6 +269,7 @@ debug_print(Printer& p, Expr* e) {
   case enum_type: return debug_unary(p, as<Enum_type>(e));
   case enum_of_type: return debug_nested_binary(p, as<Enum_of_type>(e));
   case array_type: return debug_binary(p, as<Array_type>(e));
+  case module_type: return debug_module(p, as<Module>(e));
   // Terms
   case unit_term: return print(p, "<unit>");
   case bool_term: return debug_terminal(p, as<Bool>(e));

@@ -30,6 +30,11 @@ Scope_guard::Scope_guard(Scope_kind k, Expr* e) {
 }
 
 inline
+Scope_guard::Scope_guard(Type* t) {
+  push_scope(t);
+}
+
+inline
 Scope_guard::~Scope_guard() {
   pop_scope();
 }

@@ -71,6 +71,7 @@ Decl* lookup_single(Name*);
 // Scope management
 
 Scope* push_scope(Scope_kind k, Expr* = nullptr);
+Scope* push_scope(Type*);
 Scope* pop_scope();
 Scope* current_scope();
 Expr* current_context();
@@ -86,6 +87,7 @@ Enum_type* current_enumeration();
 // The scope guard is an RAII helper class that provides scope-based
 // pushing and popping of scopes.
 struct Scope_guard {
+  Scope_guard(Type*);
   Scope_guard(Scope_kind, Expr* = nullptr);
   ~Scope_guard();
 };

@@ -22,6 +22,7 @@ get_name(Decl* d) {
   case parm_decl: return decl_name(as<Parm>(d));
   case field_decl: return decl_name(as<Field>(d));
   case enum_decl: return decl_name(as<Enum>(d));
+  case import_decl: return decl_name(as<Import>(d));
   default: break;
   }
   steve_unreachable(format("no declaration name for '{}'", node_name(d)));

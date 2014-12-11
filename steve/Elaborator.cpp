@@ -58,9 +58,12 @@ elab_type(Tree* t) {
     return nullptr;
 
   // See through declaration references.
-  if (Decl_id *id = as<Decl_id>(e))
+  if (Decl_id *id = as<Decl_id>(e)) {
     if (Def* def = as<Def>(id->decl()))
       e = def->init();
+    else if (Import* imp = as<Import>(id->decl()))
+      e = imp->module();
+  }
 
   // If the elaboration refers to a type function, then evaluate it.
   if (Call *call = as<Call>(e)) {
@@ -499,9 +502,28 @@ elab_index(Index_tree* t) {
 }
 
 // -------------------------------------------------------------------------- //
+// Elaboration of projections
+//
+// The projection expression of the for `e1.e2` is a mechanism for 
+// explicitly qualifying the lookup of `e2` within the scope `e1`.
+// In general, `e1` is expected to be a compound type (e.g., record
+// or module), and `e2` a member thereof.
+//
+// When a projection occurs as the target of an import-stmt, it
+// is a module-id.
+
+Expr*
+elab_dot(Dot_tree* t) {
+  Type* e1 = elab_type(t->scope());
+  Scope_guard scope(e1);
+  return elab_expr(t->member());
+}
+
+
+// -------------------------------------------------------------------------- //
 // Elaboration of unary and binary expressions
 //
-// Unary and binary expressions are elabarted as unary and binary
+// Unary and binary expressions are elaborated as unary and binary
 // terms by looking up a function having the same name as the
 // given operator.
 
@@ -1071,6 +1093,7 @@ elab_module_path(Module*& mod, Dot_tree* t) {
 
 Module*
 elab_module_name(Tree* t) {
+  Module* first = nullptr;
   Module* mod = nullptr;
   Tree* cur = t;
   while (cur) {
@@ -1082,8 +1105,12 @@ elab_module_name(Tree* t) {
       error(cur->loc) << format("ill-formed module-id '{}'", debug(cur));
       return nullptr;
     }
+
+    // Save outermost target of the import statement.
+    if (not first)
+      first = mod;
   }
-  return mod;
+  return first;
 }
 
 // Return an id for the outermost name in the module. If the 
@@ -1102,13 +1129,17 @@ Expr*
 elab_import(Import_tree* t) {
   Name* n = elab_outermost_module_name(t->module());
   Module* m = elab_module_name(t->module());
-  if (not m) {
-    error(t->loc) << format("no matching module for '{}'", debug(t->module()));
+  if (not m)
     return nullptr;
-  }
 
-  return make_expr<Import>(t->loc, get_unit_type(), n, m);
+  // Declare the outermost imported module.
+  Decl* imp = make_expr<Import>(t->loc, get_unit_type(), n, m);
+  declare(imp);
+  return imp;
 }
+
+// ---------------------------------------------------------------------------//
+// Miscellaneous expressions
 
 // Elaborate each declaration in turn. Note that declarations are
 // never replaced. The elaboration operates in-place.
@@ -1140,6 +1171,7 @@ elab_expr(Tree* t) {
   case lit_tree: return elab_lit(as<Lit_tree>(t));
   case call_tree: return elab_call(as<Call_tree>(t));
   case index_tree: return elab_index(as<Index_tree>(t));
+  case dot_tree: return elab_dot(as<Dot_tree>(t));
   case range_tree: return elab_range(as<Range_tree>(t));
   case unary_tree: return elab_unary(as<Unary_tree>(t));
   case binary_tree: return elab_binary(as<Binary_tree>(t));
