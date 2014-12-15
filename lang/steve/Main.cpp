@@ -5,41 +5,43 @@
 
 #include <steve/Config.hpp>
 #include <steve/Language.hpp>
+#include <steve/Module.hpp>
 #include <steve/Lexer.hpp>
 #include <steve/Parser.hpp>
 #include <steve/Elaborator.hpp>
 
 using namespace steve;
 
+void
+usage(std::ostream& os) {
+  os << "steve [options] input-file\n";
+}
+
+int
+usage_error() {
+  std::cerr << "error: invalid arguments\n";
+  usage(std::cerr);
+  return 01;
+}
+
 int 
 main(int argc, char* argv[]) {
   Configuration cfg(argc, argv);
   Language lang;
 
-  // Read the input text into a file.
-  using Iter = std::istreambuf_iterator<char>;
-  std::string text(Iter(std::cin), Iter());
+  // FIXME: Actually parse command line arguments.
+  if (argc < 2)
+    return usage_error();
+  String input = argv[argc - 1];
 
-  Lexer lex;
-  Tokens toks = lex(text);
-  // for (const Token& k : toks)
-  //   std::cout << debug(k) << ' ';
-  // std::cout << '\n';
-  // return 0;
-
-  Parser parse;
-  Tree* pt = parse(toks);
-  if (not parse.diags.empty()) {
-    std::cerr << "got errors\n" << parse.diags;
+  // Load the program.
+  Module* prog = load_file(input);
+  if (not prog)
     return -1;
-  }
 
-  Elaborator elab;
-  Expr* ast = elab(pt);
-  if (not elab.diags.empty()) {
-    std::cerr << "got typing errors\n" << elab.diags;
-    return -1;
-  }
+  // Dump output.
+  for (Decl* d : *prog->decls())
+    std::cout << debug(d) << '\n';
 
-  std::cout << debug(ast) << '\n';
+  return 0;
 }

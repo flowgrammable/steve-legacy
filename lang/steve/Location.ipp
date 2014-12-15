@@ -22,7 +22,7 @@ template<typename C, typename T>
   std::basic_ostream<C, T>&
   operator<<(std::basic_ostream<C, T>& os, const Location& loc) {
     if (loc.is_internal())
-      return os ;
+      return os << "<internal>";
     if (loc.is_eof())
       return os << "<eof>:";
     return os << loc.line << ':' << loc.col;

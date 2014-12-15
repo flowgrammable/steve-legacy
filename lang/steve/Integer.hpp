@@ -6,11 +6,11 @@
 // dynamically. This may rule out Boost.Multiprecision since its
 // bounds are static.
 
-#include <gmp.h>
-
 #include <steve/String.hpp>
 #include <steve/Memory.hpp>
 #include <steve/Debug.hpp>
+
+#include <gmp.h>
 
 namespace steve {
 

@@ -496,16 +496,18 @@ struct Array_type : Type, Kind_of<array_type> {
 // A module is a type contains a sequence a program. Each module
 // defines its own distinct type.
 struct Module : Type, Kind_of<module_type> {
-  Module(const Path& p, Decl_seq* e)
-    : Type(Kind), path_(p), first(e) { }
-  Module(const Location& l, const Path& p, Decl_seq* e)
-    : Type(Kind, l), path_(p), first(e) { }
+  Module(const Path& p, Name* n, Decl_seq* e)
+    : Type(Kind), path_(p), first(n), second(e) { }
+  Module(const Location& l, const Path& p, Name* n, Decl_seq* e)
+    : Type(Kind, l), path_(p), first(n), second(e) { }
 
   const Path path() const { return path_; }
-  Decl_seq* decls() const { return first; }
+  Name* name() const { return first; }
+  Decl_seq* decls() const { return second; }
   
   Path path_;
-  Decl_seq* first;
+  Name* first;
+  Decl_seq* second;
 };
 
 

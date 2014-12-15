@@ -25,12 +25,11 @@ namespace {
 // module do not cause it to be reloaded.
 
 using Module_map = std::map<Path, Module*>;
-
 Module_map modules_;
 
 // Returns the module at the given path or nullptr if no such module
 // exists.
-Module*
+inline Module*
 lookup_module(const Path& p) {
   auto iter = modules_.find(p);
   if (iter != modules_.end())
@@ -40,17 +39,34 @@ lookup_module(const Path& p) {
 
 // Register the module to the given path. No module shall have been
 // previously associated with the given path.
-Module*
+inline Module*
 register_module(Module* m) {
   steve_assert(modules_.count(m->path()) == 0, 
-               format("module '{}' already registered", m->path()));
+               format("module '{}' already registered", m->path().c_str()));
   modules_.insert({m->path(), m});
   return m;
 }
 
-Module*
-make_module(const Path& p, Decl_seq* ds) {
-  return make_expr<Module>(no_location, get_typename_type(), p, ds);
+// Create an initial module. This allocates the module type, but leaves
+// the declaration sequence uninitialized.
+inline Module*
+init_module(const Path& p, Name* n) {
+  return make_expr<Module>(no_location, get_typename_type(), p, n, nullptr);
+}
+
+// Create an initial module. This allocates the module type, but leaves
+// the declaration sequence uninitialized.
+inline Module*
+make_module(const Path& p, Name* n, Decl_seq* ds) {
+  return make_expr<Module>(no_location, get_typename_type(), p, n, ds);
+}
+
+// Complete the construction of the module by assigning it a sequence
+// of nested declarations (possibly empty).
+inline Module*
+finish_module(Module* m, Decl_seq* ds) {
+  m->second = ds;
+  return m;
 }
 
 // -------------------------------------------------------------------------- //
@@ -69,8 +85,15 @@ parse_module(std::ifstream& fs) {
   Diagnostics_guard guard;
 
   // Get the text.
-  using Iter = std::istreambuf_iterator<char>;
-  std::string text(Iter{fs}, Iter{});
+  // HACK: There's a GCC bug that causes exceptions to be thrown
+  // when they aren't expected (e.g., underflow errors). 
+  std::string text;
+  try {
+    using Iter = std::istreambuf_iterator<char>;
+    text = std::string(Iter{fs}, Iter{});
+  } catch (...) { 
+    // Don't do anything here...
+  }
 
   // Lex the module.
   Lexer lex;
@@ -94,28 +117,36 @@ parse_module(std::ifstream& fs) {
   return as<Top>(ast)->decls();
 }
 
+// Load the file module.
 Module*
-load_file_module(Location loc, std::ifstream& fs, const Path& p) {
+load_file_module(const Location& loc, std::ifstream& fs, const Path& p, Name* n) {
+  Module* m = register_module(init_module(p, n));
   if (Decl_seq* ds = parse_module(fs))
-    return register_module(make_module(p, ds));
+    return finish_module(m, ds);
   else
     return nullptr;
 }
 
-// Try to load a module from the file with the given name.
+// Try to load a module from the file with the given name. A module 
+// shall not import itself.
 Module*
-load_file_module(Location loc, const Path& p) {
-  if (Module* m = lookup_module(p))
+load_file_module(const Location& loc, const Path& p, Name* n) {
+  if (Module* m = lookup_module(p)) {
+    if (m->path() == p) {
+      error(loc) << format("module '{}' imports itself", p.c_str());
+      return nullptr;
+    }
     return m;
+  }
   std::ifstream fs(p.c_str());
   if (fs)
-    return load_file_module(loc, fs, p);
+    return load_file_module(loc, fs, p, n);
   error(loc) << format("could not open module '{}'", p.c_str());
   return nullptr;
 }
 
 // Create a module corresponding to the given directory. When loaded
-// the directory contains a top-declration with an empty sequence
+// the directory contains a top-declaration with an empty sequence
 // of declarations.
 //
 // FIXME: Check directory permissions on the path name.
@@ -125,13 +156,27 @@ load_file_module(Location loc, const Path& p) {
 // file. We could have a nested file named __module__.steve
 // provide the same benefit.
 Module*
-load_directory_module(Location loc, const Path& p) {
+load_directory_module(const Location& loc, const Path& p, Name* n) {
   if (Module* m = lookup_module(p))
     return m;
-  Decl_seq* ds = new Decl_seq();
-  return register_module(make_module(p, ds));
+  return register_module(make_module(p, n, new Decl_seq()));
 }
 
+// Try to load a directory module at path p.
+Module*
+try_load_dir(const Location& loc, const Path& p, Name* n) {
+  if (fs::exists(p))
+    return load_directory_module(loc, p, n);
+  return nullptr;
+}
+
+// Try to load a file module at path p.
+Module*
+try_load_file(const Location& loc, const Path& p, Name* n) {
+  if (fs::exists(p))
+    return load_file_module(loc, p, n);
+  return nullptr;
+}
 
 // Construct a path to a directory from a module-id.
 inline Path
@@ -142,26 +187,21 @@ inline Path
 steve_file_name(String id) { return id.str() + ".steve"; }
 
 // Try to load a module in the given directory with the
-// given name.
+// given name. Note that id could name a file module or
+// a directory module.
 Module*
-try_load_module(const Location& loc, const Path& root, String id) {
-  // Try a directory module.
-  Path dir = root / steve_dir_name(id);
-  if (fs::exists(dir))
-    return load_directory_module(loc, dir);
-
-  // Try a file module.
-  Path file = root / steve_file_name(id);
-  if (fs::exists(file))
-    return load_file_module(loc, file);
-
+try_load_module(const Location& loc, const Path& dir, String id, Name* n) {
+  if (Module* m = try_load_dir(loc, dir / steve_dir_name(id), n))
+    return m;
+  if (Module* m = try_load_file(loc, dir / steve_file_name(id), n))
+    return m;
   return nullptr;
 }
 
 // Load the module from the given file or directory.
 Module*
-load_module(const Location& loc, const Path& dir, String id) {
-  if (Module* m = try_load_module(loc, dir, id))
+load_module(const Location& loc, const Path& dir, String id, Name* n) {
+  if (Module* m = try_load_module(loc, dir, id, n))
     return m;
   error(loc) << format("no module named '{}' in '{}'", id, dir.c_str());
   return nullptr;
@@ -173,14 +213,14 @@ load_module(const Location& loc, const Path& dir, String id) {
 // - search starting from the current working directory.
 // - search each module in the module path.
 Module*
-find_module(const Location& loc, String id) {
+find_module(const Location& loc, String id, Name* n) {
   // Search locally.
-  if (Module* m = try_load_module(loc, fs::current_path(), id))
+  if (Module* m = try_load_module(loc, fs::current_path(), id, n))
     return m;
 
   // Look in the module path.
   for(const Path& search : config().module_path)
-    if (Module* m = try_load_module(loc, search, id))
+    if (Module* m = try_load_module(loc, search, id, n))
       return m;
 
   error(loc) << format("no module named '{}' in module path", id);
@@ -200,10 +240,11 @@ find_module(const Location& loc, String id) {
 // a lowered, elaborated form. 
 Module*
 load_module(Location loc, Module* parent, String id) {
+  Name* n = new Basic_id(id);
   if (not parent)
-    return find_module(loc, id);
+    return find_module(loc, id, n);
   else {
-    if (Module* m = load_module(loc, parent->path(), id)) {
+    if (Module* m = load_module(loc, parent->path(), id, n)) {
       Name* n = new Basic_id(id);
       Decl* d = new Import(n, m);
       parent->decls()->push_back(d);
@@ -213,11 +254,30 @@ load_module(Location loc, Module* parent, String id) {
   return nullptr;
 }
 
-
 // Load a module.
 Module*
 load_module(Module* parent, String id) { 
   return load_module(no_location, parent, id); 
+}
+
+// Load the input file as a module.
+//
+// FIXME: The diagnostics are a bit wonky here... There should be a
+// uniform way of managing diagnostics for module loading.
+Module*
+load_file(String id) {
+  Diagnostics diags;
+  Diagnostics_guard guard(diags);
+
+  Path p = fs::current_path() / id.str();
+  if (Module* m = try_load_file(no_location, p, new Basic_id(id)))
+    return m;
+
+  error(no_location) << format("error loading file '{}'", id);
+
+  if (not diags.empty())
+    std::cerr << diags;
+  return nullptr;
 }
 
 } // namesapce steve
