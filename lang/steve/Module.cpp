@@ -133,7 +133,7 @@ Module*
 load_file_module(const Location& loc, const Path& p, Name* n) {
   if (Module* m = lookup_module(p)) {
     if (m->path() == p) {
-      error(loc) << format("module '{}' imports itself", p.c_str());
+      error(loc) << format("module '{}' imports itself", debug(n));
       return nullptr;
     }
     return m;
