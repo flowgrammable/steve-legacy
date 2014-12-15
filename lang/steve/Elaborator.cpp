@@ -1068,7 +1068,7 @@ elab_def(Def_tree* t) {
 
 Tree*
 elab_module_id(Module*& mod, Id_tree* t) {
-  mod = load_module(mod, t->value()->text);
+  mod = load_module(t->loc, mod, t->value()->text);
   return nullptr;
 }
 
@@ -1083,7 +1083,7 @@ elab_module_path(Module*& mod, Dot_tree* t) {
   }
 
   // Load the enclosing module.
-  mod = load_module(mod, id->value()->text);
+  mod = load_module(t->loc, mod, id->value()->text);
   if (not mod)
     return nullptr;
   

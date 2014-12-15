@@ -9,6 +9,8 @@
 // TODO: Build an exception-based diagnostic facility for reporting
 // semantic errors.
 
+#include <steve/Format.hpp>
+
 #include <cassert>
 #include <stdexcept>
 

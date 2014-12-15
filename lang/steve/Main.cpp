@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iterator>
 
+#include <steve/Config.hpp>
 #include <steve/Language.hpp>
 #include <steve/Lexer.hpp>
 #include <steve/Parser.hpp>
@@ -11,7 +12,8 @@
 using namespace steve;
 
 int 
-main() {
+main(int argc, char* argv[]) {
+  Configuration cfg(argc, argv);
   Language lang;
 
   // Read the input text into a file.

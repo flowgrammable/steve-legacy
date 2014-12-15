@@ -34,6 +34,7 @@ add_library(steve-lib
   Conv.cpp
   Intrinsic.cpp
   Language.cpp
+  Config.cpp
   Lexer.cpp
   Parser.cpp
   Elaborator.cpp

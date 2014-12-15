@@ -7,6 +7,8 @@
 //
 // TODO: Bring more boost::filesystem operations into scope.
 
+#include <vector>
+
 #include <boost/filesystem.hpp>
 
 namespace steve {
@@ -16,6 +18,9 @@ namespace fs = boost::filesystem;
 
 // A path represents the location of a file in the host file system.
 using Path = fs::path;
+
+// A sequence of the paths.
+using Path_list = std::vector<Path>;
 
 } // namespace steve
 

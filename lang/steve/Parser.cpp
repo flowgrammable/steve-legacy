@@ -1300,9 +1300,11 @@ parse_top(Parser& p) {
 // Parse a range of tokens.
 Tree*
 Parser::operator()(Token_iterator f, Token_iterator l) {
-  // Set up the parsing state.
+  // An empty sequence of tokens is an empty program.
   if (f == l)
-    return nullptr;
+    return new Top_tree(new Tree_seq());
+
+  // Set up the parsing state.
   first = f; 
   last = l;
   current = first;

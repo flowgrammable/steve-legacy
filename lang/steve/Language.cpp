@@ -16,7 +16,7 @@ bool init_ = false;
 
 void
 init_lang() {
-  steve_assert(not init_, "language already initialzied");
+  steve_assert(not init_, "language already initialized");
   if (not init_)
     init_ = true;
 }
