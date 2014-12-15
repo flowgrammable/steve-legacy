@@ -1,4 +1,7 @@
 
+# Build configuration.
+include_directories(.. ${BOOST_INCLUDE_DIR})
+link_directories(${BOOST_LIBRARY_DIR})
 
 set(cppformat_src contrib/cppformat/format.cc)
 set(contrib_src ${cppformat_src})

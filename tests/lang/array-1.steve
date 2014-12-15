@@ -1,0 +1,4 @@
+
+def R : typename = record {
+  a : int[3];
+}

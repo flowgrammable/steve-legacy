@@ -1,0 +1,5 @@
+
+// Sanity test.
+// Ensure that the standard library can be found.
+
+import std;
