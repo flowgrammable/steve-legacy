@@ -313,6 +313,9 @@ struct Record_type : Type, Kind_of<record_type> {
     : Type(Kind), first(f) { }
   Record_type(const Location& l, Decl_seq* f) 
     : Type(Kind, l), first(f) { }
+
+  Decl_seq* field() const { return first; }
+
   Decl_seq* first;
 };
 

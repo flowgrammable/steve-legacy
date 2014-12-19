@@ -27,7 +27,6 @@ constexpr Node_kind parm_tree    = make_tree_node(31); // x : T (in parms)
 constexpr Node_kind fn_tree      = make_tree_node(32); // f(p)->T (in def)
 constexpr Node_kind def_tree     = make_tree_node(33); // def n = e
 constexpr Node_kind field_tree   = make_tree_node(34); // x : T where (in record)
-constexpr Node_kind pad_tree     = make_tree_node(35); // FIXME: remove?
 constexpr Node_kind alt_tree     = make_tree_node(36); // e1 : e2 (in variant)
 constexpr Node_kind import_tree  = make_tree_node(50); // import e
 // Misc
@@ -243,10 +242,11 @@ struct Def_tree : Tree, Kind_of<def_tree> {
   Tree* second;
 };
 
-// A field of the form 'n : t | c'
+// A field of the form 'n : t | c'. Note that an unnamed field
+// has a null name and a null constraint.
 struct Field_tree : Tree, Kind_of<field_tree> {
-  Field_tree(Tree* n, Tree* t, Tree* c)
-    : Tree(Kind, n->loc), first(n), second(t), third(c) { }
+  Field_tree(const Token* k, Tree* n, Tree* t, Tree* c)
+    : Tree(Kind, k->loc), first(n), second(t), third(c) { }
 
   Tree* name() const { return first; }
   Tree* type() const { return second; }
@@ -255,17 +255,6 @@ struct Field_tree : Tree, Kind_of<field_tree> {
   Tree* first;
   Tree* second;
   Tree* third;
-};
-
-// An padding field of the form ': t'. This is kept separate
-// from values since it has neither a name nor a constraint.
-struct Pad_tree : Tree, Kind_of<pad_tree> {
-  Pad_tree(const Token* k, Tree* t)
-    : Tree(Kind, k->loc), first(t) { }
-
-  Tree* type() const { return first; }
-
-  Tree* first;
 };
 
 // An alternative in a variant type of the form 't : T' where 't'

@@ -27,7 +27,6 @@ init_trees() {
   init_node(fn_tree, "fn-tree");
   init_node(def_tree, "def-tree");
   init_node(field_tree, "field-tree");
-  init_node(pad_tree, "pad-tree");
   init_node(alt_tree, "alt-tree");
   init_node(import_tree, "import-tree");
   // Misc
@@ -189,7 +188,6 @@ debug_print(Printer& p, Tree* t) {
   case fn_tree: return debug_unimplemented(t);
   case def_tree: return debug_binary(p, as<Def_tree>(t));
   case field_tree: return debug_ternary(p, as<Field_tree>(t));
-  case pad_tree: return debug_unimplemented(t);
   case alt_tree: return debug_binary(p, as<Alt_tree>(t));
   case import_tree: return debug_unary(p, as<Import_tree>(t));
   // Misc

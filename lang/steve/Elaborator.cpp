@@ -649,12 +649,51 @@ elab_record(Record_tree* t) {
   return make_expr<Record_type>(t->loc, kind, fields);
 }
 
-// Elaborate a field declaration.
+// Elaborate an unnamed field.
+//
+// TODO: Do we want a special node for unnamed fields? Note that
+// code gen could use unnamed fields to align members (using alignas)
+// rather than just dumping an unused member. Note that we could also
+// detect this by its name.
+Expr*
+elab_unnamed_field(Field_tree* t) {
+  if (t->prop()) {
+    error(t->prop()->loc) << "an unnamed field cannot be constrained";
+    return nullptr;
+  }
+
+  Type* type = elab_type(t->type());
+  if (not type)
+    return nullptr;
+
+  // Build an internal name for the field.
+  Record_type* record = current_record();
+  std::stringstream ss;
+  ss << "__unnamed" << record->field()->size() << "__";
+  Name* name = new Basic_id(ss.str());
+
+  return make_expr<Field>(t->loc, type, name, type, nullptr);
+}
+
+// Elaborate a field declaration. In general, a field has one of
+// the following forms:
+//
+//    : 
+//
+// A field declaration of the form:
+//
+//    : t;
+//
+// is an unnamed field. It contributes to the layout of the class
+// but is not an accessible member.
 //
 // TODO: Should we auto-complete the missing predicate with the
 // trivial constraint "true" or "top" or something like that?
 Expr*
 elab_field(Field_tree* t) {
+  if (not t->name())
+    return elab_unnamed_field(t);
+
   Name* name = elab_name(t->name());
   Type* type = elab_type(t->type());
   Term* pred = elab_term(t->prop());
@@ -1196,7 +1235,6 @@ elab_expr(Tree* t) {
   case parm_tree: return elab_parm(as<Parm_tree>(t));
   case def_tree: return elab_def(as<Def_tree>(t));
   case field_tree: return elab_field(as<Field_tree>(t));
-  case pad_tree: return elab_unimplemented(t);
   case import_tree: return elab_import(as<Import_tree>(t));
     break;
   // Misc

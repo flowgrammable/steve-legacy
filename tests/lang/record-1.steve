@@ -1,0 +1,9 @@
+
+// Sanity test for unnamed fields.
+
+def R : typename = record {
+  f1 : int;
+     : int;
+  f2 : int;
+     : bool;
+}

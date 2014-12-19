@@ -588,23 +588,24 @@ parse_name(Parser& p) {
 // TODO: Allow member initializers?
 Tree*
 parse_field_decl(Parser& p) {
+  const Token* k = peek(p);
+  if (not k)
+    return nullptr;
+
   // Parse a named field.
   if (Tree* n = parse_name(p)) {
     if (Tree* t = parse_required_declared_type(p)) {
       Tree* c = parse_where_clause(p);
       if (expect(p, semicolon_tok))
-        return new Field_tree(n, t, c);
+        return new Field_tree(k, n, t, c);
     }
     return nullptr;
   }
   
-  // Parse an unnamed field.
-  const Token* k = peek(p);
-  if (not k)
-    return nullptr;
+  // If it wasn't a named field, then it's an unnamed field.
   if (Tree* t = parse_declared_type(p))
     if (expect(p, semicolon_tok))
-    return new Pad_tree(k, t);
+    return new Field_tree(k, nullptr, t, nullptr);
   return nullptr;
 }
 
