@@ -30,11 +30,11 @@ init_exprs() {
   init_node(bitfield_type, "bitfield-type");
   init_node(record_type, "record-type");
   init_node(variant_type, "variant-type");
-  init_node(desc_variant_type, "desc-variant-type");
   init_node(dep_variant_type, "dep-variant-type");
   init_node(enum_type, "enum-type");
   init_node(enum_of_type, "enum-of-type");
   init_node(array_type, "array-type");
+  init_node(dep_type, "dep-type");
   init_node(module_type, "module-type");
   // Terms
   init_node(unit_term, "unit");
@@ -264,11 +264,11 @@ debug_print(Printer& p, Expr* e) {
   case range_type: return debug_unary(p, as<Range_type>(e));
   case record_type: return debug_unary(p, as<Record_type>(e));
   case variant_type: return debug_unary(p, as<Variant_type>(e));
-  case desc_variant_type: return debug_binary(p, as<Desc_variant_type>(e));
   case dep_variant_type: return debug_binary(p, as<Dep_variant_type>(e));
   case enum_type: return debug_unary(p, as<Enum_type>(e));
   case enum_of_type: return debug_nested_binary(p, as<Enum_of_type>(e));
   case array_type: return debug_binary(p, as<Array_type>(e));
+  case dep_type: return debug_binary(p, as<Dep_type>(e));
   case module_type: return debug_module(p, as<Module>(e));
   // Terms
   case unit_term: return print(p, "<unit>");

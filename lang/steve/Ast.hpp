@@ -29,11 +29,11 @@ constexpr Node_kind range_type        = make_type_node(8);  // .. T
 constexpr Node_kind bitfield_type     = make_type_node(9);  // bitfield(T, N, B)
 constexpr Node_kind record_type       = make_type_node(10); // record { ... }
 constexpr Node_kind variant_type      = make_type_node(11); // variant { ... }
-constexpr Node_kind desc_variant_type = make_type_node(12); // variant(T) { ... }
-constexpr Node_kind dep_variant_type  = make_type_node(13); // variant(e) { ... }
-constexpr Node_kind enum_type         = make_type_node(14); // enum { ... }
-constexpr Node_kind enum_of_type      = make_type_node(15); // enum(T) { ... }
-constexpr Node_kind array_type        = make_type_node(16); // T[n]
+constexpr Node_kind dep_variant_type  = make_type_node(12); // variant(d) { ... }
+constexpr Node_kind enum_type         = make_type_node(13); // enum { ... }
+constexpr Node_kind enum_of_type      = make_type_node(14); // enum(T) { ... }
+constexpr Node_kind array_type        = make_type_node(15); // T[n]
+constexpr Node_kind dep_type          = make_type_node(30); // f(args) -> typename
 constexpr Node_kind module_type       = make_type_node(50); // module
 // Terms
 constexpr Node_kind unit_term      = make_term_node(1);  // ()
@@ -332,24 +332,24 @@ struct Variant_type : Type, Kind_of<variant_type> {
   Variant_type(const Location& l, Decl_seq* as) 
     : Type(Kind, l), first(as) { }
 
-  Decl_seq* alts() const { return first; }
+  Decl_seq* vars() const { return first; }
 
   Decl_seq* first;
 };
 
-// A discriminated variant type has the form `variant(T) { a }` where 't' 
-// is a discriminator type and 'a' is a sequence of alternatives. In
-// a dependent variant type, the alternative tags are given as named 
-// values of the discriminator type (often enumerators). The 'default' 
-// label matches any other tag not explicitly given in the list of
-// alternatives. For example:
+// A dependent variant type has the form `variant(d) { ... }` where 'd' 
+// is a parameter whose values discriminate the variants of the type.
+// For example:
 //
-//    def V:typenae = variant(nat) { 
+//    def V(n : nat) -> typename = variant(n) { 
 //        0 : bool; 
 //        1 : nat; 
 //        2 : int; 
 //        default : unit; 
 //    }
+//
+// Each variant within the type has the form `e:t` where `e` is some
+// value of the variant's dependent parameter.
 //
 // When constructing a variant of this type, a discriminator must be
 // given or deduced. For example:
@@ -371,34 +371,34 @@ struct Variant_type : Type, Kind_of<variant_type> {
 // require that value as input.
 //
 // TODO: What kinds of types can we use as the discriminator?
-struct Desc_variant_type : Type, Kind_of<desc_variant_type>  {
-   Desc_variant_type(Type* t, Decl_seq* as) 
+struct Dep_variant_type : Type, Kind_of<dep_variant_type>  {
+   Dep_variant_type(Decl* t, Decl_seq* as) 
      : Type(Kind), first(t), second(as) { }
-   Desc_variant_type(const Location& l, Type* t, Decl_seq* as) 
+   Dep_variant_type(const Location& l, Decl* t, Decl_seq* as) 
     : Type(Kind, l), first(t), second(as) { }
   
-  Type* desc() const { return first; }
+  Decl* arg() const { return first; }
   Decl_seq* alts() const { return second; }
   
-  Type* first;
+  Decl* first;
   Decl_seq* second;
 };
 
-// A dependent variant type is the result of deducing or specifying
-// a discriminator of a dependent variant type. Note that this is
-// not the same as instantiation.
-struct Dep_variant_type : Type, Kind_of<dep_variant_type> {
-  Dep_variant_type(Type* t, Decl* d)
-    : Type(Kind), first(t), second(d) { }
-  Dep_variant_type(const Location& l, Type* t, Decl* d)
-    : Type(Kind, l), first(t), second(d) { }
+// // A dependent variant type is the result of deducing or specifying
+// // a discriminator of a dependent variant type. Note that this is
+// // not the same as instantiation.
+// struct Dep_variant_type : Type, Kind_of<dep_variant_type> {
+//   Dep_variant_type(Type* t, Decl* d)
+//     : Type(Kind), first(t), second(d) { }
+//   Dep_variant_type(const Location& l, Type* t, Decl* d)
+//     : Type(Kind, l), first(t), second(d) { }
 
-  Type* variant() const { return first; }
-  Decl* decl() const {return second; }
+//   Type* variant() const { return first; }
+//   Decl* decl() const {return second; }
 
-  Type* first;
-  Decl* second;
-};
+//   Type* first;
+//   Decl* second;
+// };
 
 
 // The enum type of the form 'enum { es* } represents a set of values 
@@ -491,6 +491,38 @@ struct Array_type : Type, Kind_of<array_type> {
 
   Type* first;
   Term* second;
+};
+
+// A dependent type is a type function that associates a sequence
+// of runtime values with a type. This allows certain properties
+// of those types to be deferred until runtime. For example:
+//
+//    def Vec : typename = record {
+//      size : nat;
+//      elems : array(double, size);
+//    }
+//
+// Here, the type of elems depends on whatever value size is
+// given during initialization.
+//
+// Dependencies are resolved as needed. This generally happens during
+// code generation. In the case of code generation for C++, the incomplete
+// array type and the size would be passed as a pair to every function
+// to which elems is passed as an argument.
+//
+// Note that the dependent type is the function definition that
+// computes the completed typed.
+struct Dep_type : Type, Kind_of<dep_type> {
+  Dep_type(Term* t, Expr_seq* a)
+    : Type(Kind), first(t), second(a) { }
+  Dep_type(const Location& l, Term* t, Expr_seq* a)
+    : Type(Kind, l), first(t), second(a) { }
+
+  Term* fn() const { return first; }
+  Expr_seq* args() const { return second; }
+
+  Term* first;
+  Expr_seq* second;
 };
 
 // A module is a type contains a sequence a program. Each module

@@ -26,14 +26,18 @@ Type* make_nat_type(const Location&);
 Type* make_int_type(const Location&);
 Type* make_char_type(const Location&);
 
+// TODO: Clean this up?
+Type* make_fn_type(Decl_seq*, Type*);
+
+
 // Type categories
+bool is_typename_type(Type*);
 bool is_boolean_type(Type*);
 bool is_integral_type(Type*);
+bool is_type_constructor_type(Type*);
 
 // Type queries
 Type* get_type(Expr*);
-Type* get_fn_type(Decl_seq*, Type*);
-Type* get_fn_type(Fn*);
 
 Integer size_in_bits(Type*);
 

@@ -45,7 +45,26 @@ template<typename T>
 Decl* 
 elab_decl(Tree* t) { return elaborate_as<Decl>(t, "declaration"); }
 
-// Elabor
+// Elaborate t as a reference to a parameter.
+Parm*
+elab_as_parm(Tree* t) {
+  Expr* expr = elab_expr(t);
+  if (not expr)
+    return nullptr;
+  Decl_id* id = as<Decl_id>(expr);
+  if (not id) {
+    error(t->loc) << format("'{}' does not name a declaration", debug(t));
+    return nullptr;
+  }
+  Parm* parm = as<Parm>(id->decl());
+  if (not parm) {
+    error(t->loc) << format("'{}' does not name a parameter", debug(parm));
+  }
+  return parm;
+}
+
+
+// Elaborate the given tree as a term.
 Term*
 elab_term(Tree* t) { return elaborate_as<Term>(t, "term"); }
 
@@ -64,6 +83,8 @@ elab_type(Tree* t) {
     else if (Import* imp = as<Import>(id->decl()))
       e = imp->module();
   }
+
+  // FIXME: Implement overlaod resolution!
 
   // If the elaboration refers to a type function, then evaluate it.
   if (Call *call = as<Call>(e)) {
@@ -323,8 +344,11 @@ check_arguments(Call_tree* t, Def* fn, Expr_seq* args, Type_seq* parms) {
 
 // Elaborate the binding of a variant to its dependent descriminator,
 // producing a new type.
+//
+// FIXME: This should go away.
 Expr*
-elab_variant_binding(Call_tree* t, Desc_variant_type* type) {
+elab_variant_binding(Call_tree* t, Dep_variant_type* type) {
+  /*
   Tree_seq* exprs = t->args();
   if (exprs->size() != 1) {
     if (exprs->size() == 0)
@@ -347,6 +371,8 @@ elab_variant_binding(Call_tree* t, Desc_variant_type* type) {
   if (not arg)
     return nullptr;
   return instantiate_variant(type, arg);
+  */
+  return nullptr;
 }
 
 
@@ -358,9 +384,11 @@ elab_variant_binding(Call_tree* t, Desc_variant_type* type) {
 //
 // In the definition of `s`, the variant member `v` is bound
 // to its discriminator `n`.
+//
+// FIXME: This should also go away.
 Expr*
 elab_type_call(Call_tree* t, Type* target) {
-  if (Desc_variant_type* v = as<Desc_variant_type>(target))
+  if (Dep_variant_type* v = as<Dep_variant_type>(target))
     return elab_variant_binding(t, v);
   error (t->loc) << format("cannot call the type '{}'", debug(target));
   return nullptr;
@@ -414,6 +442,7 @@ elab_call(Call_tree* t) {
         fn = f;
         ft = as<Fn_type>(get_type(fn));
       } else if (Type* ty = as<Type>(init)) {
+        // FIXME: This shouldn't be here...
         return elab_type_call(t, ty);
       }
     }
@@ -674,26 +703,14 @@ elab_alt_tag(Tree* t, Type* v) {
 //
 // Note that an alternative is not a declaration in the usual sense.
 // It is simply a term that associates a tag and a type.
-//
-// FIXME: In the elaboration of alternatives in a variant-of type,
-// they tend to be of the form 'e:T'. Here, 'e' is effectively
-// interpreted as an implied condition, generally of the form
-// 'x == e', where 'x' is the implicit descriminator. If 'e' has
-// the form 'e1..e2', then the corresponding tag condition is
-// 'x in e1..e2'. This should be made more explicit.
-//
-// Also, is there a need to access the implicit descriminator? If so,
-// then it should be given a special name (this?).
-Expr*
-elab_alt(Alt_tree* t) {
+Decl*
+elab_alt(Alt_tree* t, Type* var) {
   // Get the context for a descriminated variant type.
-  Desc_variant_type* var = as<Desc_variant_type>(current_context());
+  Dep_variant_type* dep = as<Dep_variant_type>(var);
 
   // Elaborate the tag and type.
-  Expr* tag = elab_alt_tag(t->tag(), var);
+  Expr* tag = elab_alt_tag(t->tag(), dep);
   Type* type = elab_type(t->type());
-
-  // Stop analyzing if we didn't get everything.
   if (not tag or not type)
     return nullptr;
 
@@ -707,19 +724,19 @@ elab_alt(Alt_tree* t) {
   // Here, 0..10 does not have type int, although its bounds do
   // This should be well-formed. Also, the tag 'default' would
   // need to be made admissable.
-  if (var)
-    check_convertible(tag, var->desc());
+  //
+  // if (var)
+  //   check_convertible(tag, var->desc());
 
   return make_expr<Alt>(t->loc, type, tag, type);
 }
 
-// Elaborate a sequence of alternatives for the variant type.
+// Elaborate a sequence of variants nested within the variant type.
 // Note that alternatives are never declared.
 Expr*
-elab_alts(Variant_tree* t, Type* var, Decl_seq* alts) {
-  Scope_guard scope(variant_scope, var);
+elab_alternatives(Variant_tree* t, Type* var, Decl_seq* alts) {
   for (Tree *a : *t->alts()) {
-    if (Decl* d = as<Decl>(elab_expr(a)))
+    if (Decl* d = elab_alt(as<Alt_tree>(a), var))
       alts->push_back(d);
     else
       return nullptr;
@@ -727,50 +744,47 @@ elab_alts(Variant_tree* t, Type* var, Decl_seq* alts) {
   return var;
 }
 
-// Elaborate the variant type.
-//
-//    for each ai in as G |- ai : Ti
-//    ------------------------------ T-variant
-//    G |- variant { as } : typename
+// Elaborate a plain variant. A plain variant is a sequence of
+// alternatives of the form `n:t` where `n` is an identifier
+// and `t` is a type.
 Expr*
 elab_variant(Variant_tree* t) {
   // Stub ot the variant.
   Decl_seq* alts = new Decl_seq();
   Type* kind = get_typename_type();
   Type* var = make_expr<Variant_type>(t->loc, kind, alts);
-  return elab_alts(t, var, alts);
+  return elab_alternatives(t, var, alts);
 }
 
-// Elaborate a descriminated variant of the form `variant(T) {a}`.
-// The expression `T` denote a type, and `a` shall be a sequence
-// of alternatives matching one of the following forms:
+// Elaborate a dependent variant. A dependent variant is
+// a sequence of alternatives whose discriminators are defined
+// in terms of a parameter `p`. Each alternative has the
+// form `d:t` where `d` is a value of `p` and `t` is its
+// corresponding type.
 //
-//    't:e' where `t` is a term that is convertible to 'T'
-//    `t1..t2:e` where `t1..t2` is a range of values of type `T`
+// The expression `d` must be one of:
+//
+//    `e` where `e` is a term that is convertible to 't'
+//    `e1..e2` where `e1..e2` is a range of values of type `t`
 //    `default`
-//
-// TODO: Clarify what types can be used as a descriminator. In the
-// the range case for example, `T` needs to define a successor
-// function that we can use to enumerate cases.
 Expr*
-elab_desc_variant(Variant_tree* t) {
-  Type* type = elab_type(t->desc());
-  if (not type)
+elab_dependent_variant(Variant_tree* t) {
+  Parm* parm = elab_as_parm(t->arg());
+  if (not parm)
     return nullptr;
 
-  // Stub out the variant.
   Decl_seq* alts = new Decl_seq();
   Type* kind = get_typename_type();
-  Type* var = make_expr<Desc_variant_type>(t->loc, kind, type, alts);
-  return elab_alts(t, var, alts);
+  Type* var = make_expr<Dep_variant_type>(t->loc, kind, parm, alts);
+  return elab_alternatives(t, var, alts);
 }
 
 
 // Elaborate a variant declaration.
 Expr*
 elab_variant_type(Variant_tree* t) {
-  if (t->desc())
-    return elab_desc_variant(t);
+  if (t->arg())
+    return elab_dependent_variant(t);
   else
     return elab_variant(t);
 }
@@ -1010,7 +1024,7 @@ elab_fn(Fn_tree* t, Tree* e) {
 
   // Compute the type of the function and update
   // the parsed function.
-  Type* type = get_fn_type(parms, result);
+  Type* type = make_fn_type(parms, result);
   fn->tr = type;
   
   // Emit the declaration of the (as-of-yet) incomplete function
@@ -1184,7 +1198,6 @@ elab_expr(Tree* t) {
   case def_tree: return elab_def(as<Def_tree>(t));
   case field_tree: return elab_field(as<Field_tree>(t));
   case pad_tree: return elab_unimplemented(t);
-  case alt_tree: return elab_alt(as<Alt_tree>(t));
   case import_tree: return elab_import(as<Import_tree>(t));
     break;
   // Misc

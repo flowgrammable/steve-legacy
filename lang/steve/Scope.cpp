@@ -8,8 +8,6 @@
 
 namespace steve {
 
-namespace {
-
 // Return a textual representation of the scope kind.
 const char*
 scope_name(Scope_kind k) {
@@ -24,8 +22,6 @@ scope_name(Scope_kind k) {
   }
   steve_unreachable("unkown scope kind");
 }
-
-} // namespace
 
 // -------------------------------------------------------------------------- //
 // Name comparison
@@ -77,7 +73,7 @@ check_scope_and_context(Scope_kind k, Expr* c) {
                  format("context '{}' is not a record type", debug(c)));
     break;
   case variant_scope:
-    steve_assert(is<Variant_type>(c) || is<Desc_variant_type>(c),
+    steve_assert(is<Variant_type>(c) || is<Dep_variant_type>(c),
                  format("context '{}' is not a kind of variant", debug(c)));
     break;
   case enum_scope:

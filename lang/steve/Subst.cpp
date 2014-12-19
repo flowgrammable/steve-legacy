@@ -2,6 +2,7 @@
 #include <steve/Subst.hpp>
 #include <steve/Intrinsic.hpp>
 #include <steve/Type.hpp>
+#include <steve/Variant.hpp>
 #include <steve/Debug.hpp>
 
 namespace steve {
@@ -106,6 +107,13 @@ subst_call(Call* e, const Subst& sub) {
   return make_expr<Call>(e->loc, get_type(e), fn, args);
 }
 
+Expr*
+subst_variant(Dep_variant_type* e, const Subst& sub) {
+  steve_assert(sub.get(e->arg()), "missing argument for dependent variant type");
+  Expr* arg = sub.get(e->arg());
+  return instantiate_variant(e, arg);
+}
+
 } // namespace
 
 
@@ -128,6 +136,7 @@ subst(Expr* e, const Subst& sub) {
   case bool_type: return e;
   case nat_type: return e;
   case int_type: return e;
+  case dep_variant_type: return subst_variant(as<Dep_variant_type>(e), sub);
   default:
     steve_unreachable(format("undefined substitution '{}'", node_name(e)));
   }

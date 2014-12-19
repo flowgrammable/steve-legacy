@@ -119,28 +119,43 @@ eval_builtin_call(Builtin* b, Expr_seq* args) {
 
 // Evaluate the call of a function declaration by applying the arguments
 // to its definition.
+//
+// A function call is evaluated at compile time if either of following
+// are true:
+//
+//    - all of the arguments are compile times values, or
+//    - the function returns a type.
+//
+// Note that types are compile-time-only entities. Therefore a function
+// that returns a type must be computed at compile time. For all other
+// function calls, this is opportunistic evaluation.
 Eval
 eval_call(Call* e) {
   // Reduce the function.
-  Term* tgt = as<Term>(reduce(e->fn()));
+  Term* fn = as<Term>(reduce(e->fn()));
+  Type* ft = get_type(fn);
 
   // Evaluate the function arguments first.
   Eval_seq evals = eval_args(e->args());
   Expr_seq* args = to_exprs(evals, e->args());
 
-  // If all of the arguments are fully reduced, then evaluate the
-  // function call. Otherwise, replace the call's arguments with
-  // the partially evaluated results.
+  // Evaluate the function, if it needs to be evaluated.
   if (all_values(evals)) {
-    if (Fn* fn = as<Fn>(tgt))
-      return eval_fn_call(fn, args);
-    if (Builtin* b = as<Builtin>(tgt))
+    // We can compile-time evaluate this function.
+    if (Fn* f = as<Fn>(fn))
+      return eval_fn_call(f, args);
+    if (Builtin* b = as<Builtin>(fn))
       return eval_builtin_call(b, args);
     steve_unreachable(format("{}: evalutaion failure: invalid call target", e->loc));
+  } else if (is_type_constructor_type(ft)) {
+    // Otherwise, we have dependent arguments to a function
+    // returning a type. The result is a dependent type.
+    Type* kind = get_typename_type();
+    return make_expr<Dep_type>(e->loc, kind, fn, args);
   } else {
     // Rewrite the call expression with the reduced function and
     // arguments.
-    e->first = tgt;
+    e->first = fn;
     e->second = args;
     return partial(e);
   }

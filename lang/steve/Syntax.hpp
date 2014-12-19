@@ -166,12 +166,12 @@ struct Record_tree : Tree, Kind_of<record_tree> {
 };
 
 // A variant type of the form 'variant(T) { c* }' where 'T' is an
-// (optional) descriminator type and 'c*' is a sequence of alternatives.
+// (optional) discriminator type and 'c*' is a sequence of alternatives.
 struct Variant_tree : Tree, Kind_of<variant_tree> {
   Variant_tree(const Token* k, Tree* d, Tree_seq* as)
     : Tree(Kind, k->loc), first(d), second(as) { }
 
-  Tree* desc() const { return first; }
+  Tree* arg() const { return first; }
   Tree_seq* alts() const { return second; }
 
   Tree* first;

@@ -96,6 +96,10 @@ make_char_type(const Location& l) {
 // -------------------------------------------------------------------------- //
 // Type categories
 
+// Returns ture if t is the typename type.
+bool
+is_typename_type(Type* t) { return t->kind == typename_type; }
+
 // Returns true if t is a boolean type. The boolean types are
 // bool and bitfield(bool, _, _).
 bool
@@ -118,6 +122,14 @@ is_integral_type(Type* t) {
   return false;
 }
 
+// Returns true if t is the type of a type function. That is,
+// the result type of t is `typename`.
+bool
+is_type_constructor_type(Type* t) {
+  if (Fn_type* f = as<Fn_type>(t))
+    return is_typename_type(f->result());
+  return false;
+}
 
 // -------------------------------------------------------------------------- //
 // Type queries
@@ -139,15 +151,11 @@ get_parm_type_list(Decl_seq* ps) {
 // Given a sequence of paramters and a return type, create a
 // function type.
 Type*
-get_fn_type(Decl_seq* ps, Type* e) {
+make_fn_type(Decl_seq* ps, Type* e) {
   Type_seq* ts = get_parm_type_list(ps);
   return new Fn_type(ts, e);
 }
 
-Type*
-get_fn_type(Fn* f) {
-  return get_fn_type(f->parms(), f->result());
-}
 
 namespace {
 
