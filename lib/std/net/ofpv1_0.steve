@@ -97,7 +97,7 @@ def QueueOpFailedCode : typename = enum(uint(16)) {
   QOF_EPERM     = 2
 }
 
-def ErrorCode : typename = variant(ErrorType) {
+def ErrorCode(type : ErrorType) -> typename = variant(type) {
   HELLO_FAILED    : HelloFailedCode;
   BAD_REQUEST     : BadRequestCode;
   BAD_ACTION      : BadActionCode;
