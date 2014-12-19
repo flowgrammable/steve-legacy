@@ -1,0 +1,10 @@
+
+// Sanity check for scoped enumerations.
+
+def E : typename = enum(int) {
+  A = 1, B = 2, C = 3
+}
+
+def a : E = E.A;
+def b : E = E.B;
+def c : E = E.C;

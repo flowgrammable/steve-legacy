@@ -143,9 +143,8 @@ elab_id(Id_tree* t) {
   // TODO: Change to lookup(n) when we want to support overloading.
   if (Decl* d = lookup_single(n))
     return make_expr<Decl_id>(t->loc, get_type(d), n, d);
-  
-  error(t->loc) << format("no matching declaration for '{}'", debug(n)) << '\n';
-  return nullptr;
+  else
+    return nullptr;
 }
 
 
@@ -831,7 +830,6 @@ Expr*
 elab_named_ctor(Binary_tree* t, Enum_of_type* enu) {
   Name* name = elab_name(t->left());
   Expr* value = elab_expr(t->right());
-
   if (not name || not value)
     return nullptr;
 
@@ -872,6 +870,7 @@ elab_enum_of_ctor(Tree* t, Enum_of_type* enu) {
 // Elaborate the constructors of an enum-of type.
 Expr*
 elab_enum_of_ctors(Enum_tree* t, Enum_of_type* enu, Expr_seq* ctors) {
+  Scope_guard scope(enum_scope, enu);
   for (Tree* c : *t->ctors()) {
     if (Expr* e = elab_enum_of_ctor(c, enu))
       ctors->push_back(e);

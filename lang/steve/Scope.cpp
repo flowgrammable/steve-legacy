@@ -77,7 +77,7 @@ check_scope_and_context(Scope_kind k, Expr* c) {
                  format("context '{}' is not a kind of variant", debug(c)));
     break;
   case enum_scope:
-    steve_assert(is<Enum_type>(c), 
+    steve_assert(is<Enum_type>(c) || is<Enum_of_type>(c), 
                  format("context '{}' is not a enum type", debug(c)));
     break;
   case function_scope:
@@ -198,14 +198,38 @@ push_scope(Scope_kind k, Expr* c) {
   return stack_;
 }
 
+// Add the sequence of declarations to the current scope.
+inline void
+declare(Decl_seq* decls) {
+  for (Decl* d : *decls)
+    declare(d);
+}
+
+// Add all declarations (among the sequence of expressions) to
+// the current scope.
+inline void
+declare(Expr_seq* exprs) {
+  for (Expr* e : *exprs) {
+    if (Decl* d = as<Decl>(e))
+      declare(d);
+  }
+}
+
+
 // FIXME: This is not terribly efficient because we have to re-do all
 // of the re-declaration work. It would be better if each scoped type
 // saved it's corresponding scope, we could just push that.
 Scope*
 push_module_scope(Module* m) {
   Scope* s = push_scope(module_scope, m);
-  for (Decl* d : *m->decls())
-    declare(d);
+  declare(m->decls());
+  return s;
+}
+
+Scope*
+push_enum_scope(Enum_of_type* e) {
+  Scope* s = push_scope(enum_scope, e);
+  declare(e->ctors());
   return s;
 }
 
@@ -218,6 +242,10 @@ push_scope(Type* t) {
     return push_module_scope(as<Module>(t));
   case record_type:
     steve_unreachable("unimplemented: push record scope");
+  case enum_type:
+    steve_unreachable("unimplemented: push enum scope");
+  case enum_of_type:
+    return push_enum_scope(as<Enum_of_type>(t));
   default:
     steve_unreachable(format("cannot push non-aggregate type '{}'", debug(t)));
   }
