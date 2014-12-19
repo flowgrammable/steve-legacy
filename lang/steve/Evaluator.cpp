@@ -150,8 +150,10 @@ eval_call(Call* e) {
   } else if (is_type_constructor_type(ft)) {
     // Otherwise, we have dependent arguments to a function
     // returning a type. The result is a dependent type.
-    Type* kind = get_typename_type();
-    return make_expr<Dep_type>(e->loc, kind, fn, args);
+    //
+    // TODO: We should probably curry the type constructor, if it
+    // all possible.
+    return make_expr<Dep_type>(e->loc, get_typename_type(), fn, args);
   } else {
     // Rewrite the call expression with the reduced function and
     // arguments.

@@ -58,7 +58,7 @@ elab_as_parm(Tree* t) {
   }
   Parm* parm = as<Parm>(id->decl());
   if (not parm) {
-    error(t->loc) << format("'{}' does not name a parameter", debug(parm));
+    error(t->loc) << format("'{}' does not name a parameter", debug(id));
   }
   return parm;
 }

@@ -97,7 +97,7 @@ def QueueOpFailedCode : typename = enum(uint(16)) {
   QOF_EPERM     = 2
 }
 
-def ErrorCode(type : ErrorType) -> typename = variant(type) {
+def ErrorCode(t : ErrorType) -> typename = variant(t) {
   HELLO_FAILED    : HelloFailedCode;
   BAD_REQUEST     : BadRequestCode;
   BAD_ACTION      : BadActionCode;
@@ -390,7 +390,7 @@ def ActionEnqueue : typename = record {
 
 def ActionVendor : typename = Action3;
 
-def ActionPayload : typename = variant(ActionType) {
+def ActionPayload(t : ActionType) -> typename = variant(t) {
   ACTION_OUTPUT       : ActionOutput;
   ACTION_SET_VLAN_VID : ActionSetVlanVid;
   ACTION_SET_VLAN_PCP : ActionSetVlanPcp;
@@ -507,16 +507,16 @@ def StatsReqVendor : typename = record {
   data      : Data;
 }
 
-def StatsReqPayload : typename = variant(StatsType) {
-  STATS_DESC : StatsReqDesc;
-  STATS_FLOW : StatsReqFlow;
+def StatsReqPayload(t : StatsType) -> typename = variant(t) {
+  STATS_DESC      : StatsReqDesc;
+  STATS_FLOW      : StatsReqFlow;
   STATS_AGGREGATE : StatsReqAggregate;
-  STATS_PORT : StatsReqPort;
-  STATS_TABLE : StatsReqTable;
-  STATS_QUEUE : StatsReqQueue;
-  STATS_VENDOR : StatsReqVendor;
+  STATS_PORT      : StatsReqPort;
+  STATS_TABLE     : StatsReqTable;
+  STATS_QUEUE     : StatsReqQueue;
+  STATS_VENDOR    : StatsReqVendor;
 }
-  
+
 def StatsReq : typename = record {
   type    : StatsType;
   flags   : uint(16);
@@ -613,7 +613,7 @@ def StatsResVendor : typename = record {
   data      : Data;
 }
 
-def StatsResPayload : typename = variant(StatsType) {
+def StatsResPayload(t : StatsType) -> typename = variant(t) {
   STATS_DESC : StatsResDesc;
   STATS_FLOW : StatsResFlows;
   STATS_AGGREGATE : StatsResAggregate;
@@ -646,7 +646,7 @@ def QueuePropertyMinRate : typename = record {
   __pad : uint(48);
 }
 
-def QueueProperyPayload : typename = variant(Property) {
+def QueueProperyPayload(t : Property) -> typename = variant(t) {
   MIN_RATE : QueuePropertyMinRate;
 }
 
@@ -670,7 +670,7 @@ def QueueGetConfigRes : typename = record {
   queues : vector(Queue);	   
 }
 
-def Payload : typename = variant(Type) {
+def Payload(t : Type) -> typename = variant(t) {
   HELLO : Hello;
   ERROR : Error;
   ECHO_REQ : EchoReq;

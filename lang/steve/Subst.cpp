@@ -1,8 +1,10 @@
 
 #include <steve/Subst.hpp>
+#include <steve/Ast.hpp>
 #include <steve/Intrinsic.hpp>
 #include <steve/Type.hpp>
 #include <steve/Variant.hpp>
+#include <steve/Evaluator.hpp>
 #include <steve/Debug.hpp>
 
 namespace steve {
@@ -103,7 +105,9 @@ subst_call(Call* e, const Subst& sub) {
   for (Expr* a : *e->args())
     args->push_back(subst(a, sub));
 
-  // Rebuild the call.
+  // Rebuild the call expression. Note that you can't substitute
+  // directly into the body. We need to build a new substutition
+  // that covers the complete set of arguments.
   return make_expr<Call>(e->loc, get_type(e), fn, args);
 }
 
@@ -112,6 +116,18 @@ subst_variant(Dep_variant_type* e, const Subst& sub) {
   steve_assert(sub.get(e->arg()), "missing argument for dependent variant type");
   Expr* arg = sub.get(e->arg());
   return instantiate_variant(e, arg);
+}
+
+Expr*
+subst_dependent(Dep_type* e, const Subst& sub) {
+  // Substitute into the arguments.
+  Expr_seq* args = new Expr_seq();
+  for (Expr* arg : *e->args())
+    args->push_back(subst(arg, sub));
+
+  // Re-evaluate the type function.
+  Expr* call = make_expr<Call>(no_location, get_type(e), e->fn(), args);
+  return reduce(call);
 }
 
 } // namespace
@@ -137,8 +153,10 @@ subst(Expr* e, const Subst& sub) {
   case nat_type: return e;
   case int_type: return e;
   case dep_variant_type: return subst_variant(as<Dep_variant_type>(e), sub);
+  case dep_type: return subst_dependent(as<Dep_type>(e), sub);
   default:
-    steve_unreachable(format("undefined substitution '{}'", node_name(e)));
+    steve_unreachable(format("at {}, undefined substitution '{}'", 
+                             e->loc, node_name(e)));
   }
   return e;
 }
