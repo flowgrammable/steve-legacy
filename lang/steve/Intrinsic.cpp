@@ -152,6 +152,26 @@ eval_bitfield(Expr* t, Expr* n, Expr* b) {
   return make_expr<Bitfield_type>(no_location, get_typename_type(), t1, n1, b1);
 }
 
+
+Expr*
+eval_net_str_type(Expr* n) {
+  Type* type = get_typename_type();
+  Term* size = as<Term>(n);
+  return make_expr<Net_str_type>(no_location, type, size);
+}
+
+Expr*
+eval_net_seq_type(Expr* t, Expr* p) {
+  Type* type = get_typename_type();
+  Type* elem = as<Type>(t);
+  Term* pred = as<Term>(p);
+  return make_expr<Net_seq_type>(no_location, type, elem, pred);
+}
+
+// -------------------------------------------------------------------------- //
+// Evaluation support
+
+
 // Returns the the value of the expression e. Bahavior is undefined if
 // e is not fully evaluated.
 inline Value
@@ -176,7 +196,6 @@ get_type_value(Expr* e) { return get_value(e).as_type(); }
 // Returns true.
 inline Expr*
 truth() { return to_expr(Value(true), get_bool_type()); }
-
 
 // Returns false.
 inline Expr*
@@ -483,7 +502,12 @@ init_intrinsics() {
     { or_tok,             {bool_, bool_}, bool_, bool_or},
     { not_tok,            {bool_, bool_}, bool_, bool_not},
 
-    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield}
+    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield},
+    { "__net_str",        {nat_}, typename_,                  eval_net_str_type},
+
+    // FIXME: the second argument tyoe should be (t)->bool 
+    // where t is the type given as the first argument.
+    { "__net_seq",        {typename_, bool_}, typename_,       eval_net_seq_type},
   };
 
   // Extract the declared features

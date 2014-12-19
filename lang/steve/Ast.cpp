@@ -35,6 +35,9 @@ init_exprs() {
   init_node(array_type, "array-type");
   init_node(dep_type, "dep-type");
   init_node(module_type, "module-type");
+  // Networking primitives
+  init_node(net_str_type, "net-str-type");
+  init_node(net_seq_type, "net-seq-type");
   // Terms
   init_node(unit_term, "unit");
   init_node(bool_term, "bool");
@@ -261,13 +264,16 @@ debug_print(Printer& p, Expr* e) {
   case bitfield_type: return debug_ternary(p, as<Bitfield_type>(e));
   case fn_type: return debug_binary(p, as<Fn_type>(e));
   case range_type: return debug_unary(p, as<Range_type>(e));
-  case record_type: return debug_unary(p, as<Record_type>(e));
-  case variant_type: return debug_unary(p, as<Variant_type>(e));
+  case record_type: return debug_nested_unary(p, as<Record_type>(e));
+  case variant_type: return debug_nested_unary(p, as<Variant_type>(e));
   case dep_variant_type: return debug_nested_binary(p, as<Dep_variant_type>(e));
   case enum_type: return debug_nested_binary(p, as<Enum_type>(e));
   case array_type: return debug_binary(p, as<Array_type>(e));
   case dep_type: return debug_binary(p, as<Dep_type>(e));
   case module_type: return debug_module(p, as<Module>(e));
+  // Networking primitives
+  case net_str_type: return debug_unary(p, as<Net_str_type>(e));
+  case net_seq_type: return debug_binary(p, as<Net_seq_type>(e));
   // Terms
   case unit_term: return print(p, "<unit>");
   case bool_term: return debug_terminal(p, as<Bool>(e));

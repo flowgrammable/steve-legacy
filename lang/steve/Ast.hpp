@@ -34,6 +34,9 @@ constexpr Node_kind enum_type         = make_type_node(13); // enum { ... }
 constexpr Node_kind array_type        = make_type_node(14); // T[n]
 constexpr Node_kind dep_type          = make_type_node(30); // f(args) -> typename
 constexpr Node_kind module_type       = make_type_node(50); // module
+// Intrinsic types for networking
+constexpr Node_kind net_str_type      = make_type_node(100);  // string(n)
+constexpr Node_kind net_seq_type      = make_type_node(101);  // sequence(t, p)
 // Terms
 constexpr Node_kind unit_term      = make_term_node(1);  // ()
 constexpr Node_kind bool_term      = make_term_node(2);  // {true, false}
@@ -495,6 +498,42 @@ struct Module : Type, Kind_of<module_type> {
   Path path_;
   Name* first;
   Decl_seq* second;
+};
+
+
+// -------------------------------------------------------------------------- //
+// Intrinsic networking types
+//
+// The following types and type constructors are used to support the
+// definition of various networking protocols. They should be library
+// supported, but for now, they are internal.
+
+// The network string type is a fixed-sized, null-terminated string.
+struct Net_str_type : Type, Kind_of<net_str_type> {
+  Net_str_type(Term* n)
+    : Type(Kind), first(n) { }
+  Net_str_type(const Location& l, Term* n)
+    : Type(Kind, l), first(n) { }
+
+  Term* size() const { return first; }
+
+  Term* first;
+};
+
+// The sequence type constructor defines a sequence of elements of
+// some type t. A predicate function determines the terminator for
+// the sequence.
+struct Net_seq_type : Type, Kind_of<net_seq_type> {
+  Net_seq_type(Type* t, Term* p)
+    : Type(Kind), first(t), second(p) { }
+  Net_seq_type(const Location& l, Type* t, Term* p)
+    : Type(Kind, l), first(t), second(p) { }
+
+  Type* type() const { return first; }
+  Term* pred() const { return second; }
+
+  Type* first;
+  Term* second;
 };
 
 

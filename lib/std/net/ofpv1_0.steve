@@ -1,7 +1,10 @@
 
+// Common types used in OpenFlow.
 def uint(n : nat) -> typename = bitfield(nat, n, 1);
+def str(n : nat) -> typename = __net_str(n);
+def seq(t : typename) -> typename = __net_seq(t, true);
 
-def vector(t : typename) -> typename = nat;
+// TODO: define this
 def constrain(n : nat) -> bool = true;
 
 def Version : typename = enum(uint(8)) {
@@ -34,7 +37,7 @@ def MessageType : typename = enum(uint(8)) {
 }
 
 def Data : typename = record {
-  data : vector(uint(8));
+  data : seq(uint(8));
 }
 
 def Hello : typename = Data;
@@ -205,7 +208,7 @@ def PortFeature : typename = enum(uint(32)) {
 def Port : typename = record {
   port_id    : PortId;
   hw_addr    : uint(48);
-  name       : char[16];
+  name       : str(16);
   config     : PortConfig;
   state      : PortState;
   curr       : PortFeature;
@@ -219,7 +222,7 @@ def FeatureRes : typename = record {
                : uint(24);
   capabilities : FeatureCapabilities;
   actions      : FeatureActions;
-  ports        : vector(Port);
+  ports        : seq(Port);
 }
 
 def GetConfigReq : typename = Empty;
@@ -416,7 +419,7 @@ def PacketOut : typename = record {
   buffer_id   : uint(32);
   in_port     : PortId;
   actions_len : uint(16);
-  actions     : vector(Action);
+  actions     : seq(Action);
   data        : Data where constrain(actions_len);
 }
 
@@ -444,7 +447,7 @@ def FlowMod : typename = record {
   buffer_id    : uint(32);
   out_port     : uint(16);
   flags        : FlowModFlags;
-  actions      : vector(Action);	
+  actions      : seq(Action);	
 }
 
 def PortModConfig : typename = enum(uint(32)) {	
@@ -524,11 +527,11 @@ def StatsReq : typename = record {
 }
 
 def StatsResDesc : typename = record {
-  mfr_desc   : char[256];
-  hw_desc    : char[256];
-  sw_desc    : char[256];
-  serial_num : char[32];
-  dp_desc    : char[256];
+  mfr_desc   : str(256);
+  hw_desc    : str(256);
+  sw_desc    : str(256);
+  serial_num : str(32);
+  dp_desc    : str(256);
 }
 
 def StatsResFlow : typename = record {
@@ -545,11 +548,11 @@ def StatsResFlow : typename = record {
   cookie        : uint(64);  
   packet_count  : uint(64); 
   byte_count    : uint(64); 
-  actions       : vector(Action);
+  actions       : seq(Action);
 }
 
 def StatsResFlows : typename = record {
-  flows : vector(StatsResFlow);
+  flows : seq(StatsResFlow);
 }
 
 def StatsResAggregate : typename = record {
@@ -562,7 +565,7 @@ def StatsResAggregate : typename = record {
 def StatsResTable : typename = record {
   table_id      : uint(8);
                 : uint(24);
-  name          : char[16];
+  name          : str(16);
   wildcards     : uint(32);
   max_entries   : uint(32);
   active_count  : uint(32);
@@ -571,7 +574,7 @@ def StatsResTable : typename = record {
 }
 
 def StatsResTables : typename = record {
-  tables : vector(StatsResTable);
+  tables : seq(StatsResTable);
 }
 
 def StatsResPort : typename = record {
@@ -592,7 +595,7 @@ def StatsResPort : typename = record {
 }
 
 def StatsResPorts : typename = record {
-  ports : vector(StatsResPort);
+  ports : seq(StatsResPort);
 }
 
 def StatsResQueue : typename = record {
@@ -605,7 +608,7 @@ def StatsResQueue : typename = record {
 }
 
 def StatsResQueues : typename = record {
-  queues : vector(StatsResQueue);
+  queues : seq(StatsResQueue);
 }
 
 def StatsResVendor : typename = record {
@@ -661,13 +664,13 @@ def Queue : typename = record {
   queue_id   : uint(32);
   length     : uint(16);
              : uint(16);
-  properties : vector(QueueProperty) where constrain(length - 8);
+  properties : seq(QueueProperty) where constrain(length - 8);
 }
 
 def QueueGetConfigRes : typename = record {
   port   : PortId;
          : uint(48);
-  queues : vector(Queue);	   
+  queues : seq(Queue);	   
 }
 
 def Payload(t : MessageType) -> typename = variant(t) {
