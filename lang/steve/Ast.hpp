@@ -31,8 +31,7 @@ constexpr Node_kind record_type       = make_type_node(10); // record { ... }
 constexpr Node_kind variant_type      = make_type_node(11); // variant { ... }
 constexpr Node_kind dep_variant_type  = make_type_node(12); // variant(d) { ... }
 constexpr Node_kind enum_type         = make_type_node(13); // enum { ... }
-constexpr Node_kind enum_of_type      = make_type_node(14); // enum(T) { ... }
-constexpr Node_kind array_type        = make_type_node(15); // T[n]
+constexpr Node_kind array_type        = make_type_node(14); // T[n]
 constexpr Node_kind dep_type          = make_type_node(30); // f(args) -> typename
 constexpr Node_kind module_type       = make_type_node(50); // module
 // Terms
@@ -387,66 +386,17 @@ struct Dep_variant_type : Type, Kind_of<dep_variant_type>  {
   Decl_seq* second;
 };
 
-// // A dependent variant type is the result of deducing or specifying
-// // a discriminator of a dependent variant type. Note that this is
-// // not the same as instantiation.
-// struct Dep_variant_type : Type, Kind_of<dep_variant_type> {
-//   Dep_variant_type(Type* t, Decl* d)
-//     : Type(Kind), first(t), second(d) { }
-//   Dep_variant_type(const Location& l, Type* t, Decl* d)
-//     : Type(Kind, l), first(t), second(d) { }
-
-//   Type* variant() const { return first; }
-//   Decl* decl() const {return second; }
-
-//   Type* first;
-//   Decl* second;
-// };
-
-
-// The enum type of the form 'enum { es* } represents a set of values 
-// where 'es*' is a list of constructors of those values. For example
-//
-//    def Day = enum { Mon, Tue, Wed, Thur, Fri, Sat, Sun }
-//
-// Enumerations of this type are closely related to variants. In fact,
-// the underlying type of this enumeration is a variant where each
-// constructor is mapped to a tagged unit value.
-//
-// Enumerations can also define recursive data types.
-//
-//    def Expr = enum { Plus {Expr, Expr}, Minus {Expr, Expr}, ... }
-//
-// When recursively defined, the underlying type is a recursive type.
-//
-// TODO: Implement recursive data types.
-//
-// Note that unlike the enum-of type, the underlying type of this 
-// enum is defined by its constructors. It is either a variant or a
-// recursive data type.
-struct Enum_type : Type, Kind_of<enum_type> {
-  Enum_type(Expr_seq* cs) 
-    : Type(Kind), first(cs) { }
-  Enum_type(const Location& l, Expr_seq* cs) 
-    : Type(Kind, l), first(cs) { }
-
-  Expr_seq* ctors() const { return first; }
-
-  Expr_seq* first;
-};
-
-
 // The enum-of type of the form 'enum (b) { cs* }' represents a set 
 // of values of some specified underlying type 'b' (also called the 
 // base type) whose constructors are given by the list 'cs*'.  For 
 // example:
 //
-//    def Color = record { r, g, b : Uint8 }
+//    def Color = record { value : array(uint(8), 3); }
 //
 //    def Named_color = enum(Color) { 
-//      Red   {0xff, 0, 0},
-//      Green {0, 0xff, 0},
-//      Blue  {0, 0, 0xff}
+//      Red   = {0xff, 0, 0},
+//      Green = {0, 0xff, 0},
+//      Blue  = {0, 0, 0xff}
 //    }
 //
 // Here, the Named_color type is a refinement of Color whose values
@@ -458,17 +408,19 @@ struct Enum_type : Type, Kind_of<enum_type> {
 //
 //    def Port = { 
 //      0 .. 0xffef, 
-//      Forward_port 0xff01, 
-//      Broadcast_port 0xff02 
+//      Forward_port   = 0xff01, 
+//      Broadcast_port = 0xff02 
 //    }
 //
 // Range constructors are unnamed, but allow the construction of Port
 // values within that range (e.g., 'Port 5' constructs a port with
 // value 5.
-struct Enum_of_type : Type, Kind_of<enum_of_type> {
-  Enum_of_type(Type* b, Expr_seq* cs) 
+//
+// By default, the underlying type is int.
+struct Enum_type : Type, Kind_of<enum_type> {
+  Enum_type(Type* b, Expr_seq* cs) 
     : Type(Kind), first(b), second(cs) { }
-  Enum_of_type(const Location& l, Type* b, Expr_seq* cs) 
+  Enum_type(const Location& l, Type* b, Expr_seq* cs) 
     : Type(Kind, l), first(b), second(cs) { }
 
   Type* base() const { return first; }
@@ -870,7 +822,7 @@ struct Alt : Decl, Kind_of<alt_decl> {
   Type* second;
 };
 
-// An enumerator of the form 'n e' within an enum-of type. 
+// An enumerator of the form 'n = e' within an enum type. 
 // Here, 'n' is the name of the enumerator and 'e' the associated
 // expression.
 //

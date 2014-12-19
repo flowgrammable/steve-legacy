@@ -544,7 +544,6 @@ bool
 defines_scope(Type* t) {
   switch (t->kind) {
   case enum_type:
-  case enum_of_type:
   case record_type:
   case module_type:
     return true;
@@ -848,32 +847,18 @@ elab_variant_type(Variant_tree* t) {
 }
 
 // -------------------------------------------------------------------------- //
-// Elaboration of enum types
-//
-// TODO: Implement me.
+// Elaboration of enumerated types
 
+// The terms in a range constructor must be convertible to the base type. 
 Expr*
-elab_enum(Enum_tree* t) {
-  sorry(t->loc) << "enumeration type not implemented" << '\n';
-  return nullptr;
-}
-
-
-// -------------------------------------------------------------------------- //
-// Elaboration of enum-of types
-
-// In an enum-of-T, the terms in a range constructor must be convertible
-// to the base type. Note that we require convertibility instead of 
-// equivalence to make the language more expressive.
-Expr*
-elab_range_ctor(Range_tree* t, Enum_of_type* enu) {
+elab_range_ctor(Range_tree* t, Enum_type* type) {
   Range* range = as<Range>(elab_term(t));
   if (not range)
     return nullptr;
 
   // The range type must be convertible to the enumeration's
   // base type.
-  if (not check_convertible(range->lower(), enu->base()))
+  if (not check_convertible(range->lower(), type->base()))
     return nullptr;
 
   return range;
@@ -882,11 +867,8 @@ elab_range_ctor(Range_tree* t, Enum_of_type* enu) {
 // For an expression of the form 'n = t', 'n' must be a basic-id
 // and 't' must be a value whose type is convertible to the base
 // type of the enumeration.
-//
-// Note that enumerator is declared in the enclosing scope of
-// the enumeration type.
 Expr*
-elab_named_ctor(Binary_tree* t, Enum_of_type* enu) {
+elab_named_ctor(Binary_tree* t, Enum_type* type) {
   Name* name = elab_name(t->left());
   Expr* value = elab_expr(t->right());
   if (not name || not value)
@@ -894,73 +876,69 @@ elab_named_ctor(Binary_tree* t, Enum_of_type* enu) {
 
   // Ensure that the value is convertible to the base type,
   // and partially evaluate the results.
-  value = check_convertible(value, enu->base());
+  value = check_convertible(value, type->base());
   if (not value)
     return nullptr;
   value = check_constant(value);
   if (not value)
     return nullptr;
 
-  Decl* decl = make_expr<Enum>(t->loc, enu, name, value);
+  Decl* decl = make_expr<Enum>(t->loc, type, name, value);
   if (declare(decl))
     return decl;
   return nullptr;
 }
 
-// Elaborate the constructor of an enum-of tree. Only two
+// Elaborate the constructor of an enum tree. Only two
 // kinds of expressions are admissable constructors of an
-// enum-of type: ranges and applications.
+// enum type: ranges and applications.
 //
 // TODO: Allow an id-tree to define a range-ctor when the base
 // type is well-founded. The semantics are interesting.
 Expr*
-elab_enum_of_ctor(Tree* t, Enum_of_type* enu) {
+elab_enum_ctor(Tree* t, Enum_type* type) {
   if (Range_tree* r = as<Range_tree>(t))
-    return elab_range_ctor(r, enu);
+    return elab_range_ctor(r, type);
   if (Binary_tree* b = as<Binary_tree>(t))
     if (b->op()->kind == equal_tok)
-      return elab_named_ctor(b, enu);
+      return elab_named_ctor(b, type);
 
   // FIXME: This should probably be an assertion.
   error(t->loc) << format("invalid enumerator '{}'", debug(t));
   return nullptr;
 }
 
-// Elaborate the constructors of an enum-of type.
+// Elaborate the constructors of an enum type.
 Expr*
-elab_enum_of_ctors(Enum_tree* t, Enum_of_type* enu, Expr_seq* ctors) {
-  Scope_guard scope(enum_scope, enu);
+elab_enum_ctors(Enum_tree* t, Enum_type* type, Expr_seq* ctors) {
+  Scope_guard scope(enum_scope, type);
   for (Tree* c : *t->ctors()) {
-    if (Expr* e = elab_enum_of_ctor(c, enu))
+    if (Expr* e = elab_enum_ctor(c, type))
       ctors->push_back(e);
     else
       return nullptr;
   }
-  return enu;  
+  return type;  
 }
 
-// Elaborate a parse tree representing an enum-of type.
+// Elaborate a parse tree representing an enum type.
 Expr*
-elab_enum_of(Enum_tree* t) {
-  Type* type = elab_type(t->base());
+elab_enum_type(Enum_tree* t) {
+  // Elaborate the underlying type. If not given, then it is defined
+  // to be int.
+  Type* type = nullptr;
+  if (t->base())
+    type = elab_type(t->base());
+  else
+    type = get_int_type();
   if (not type)
     return nullptr;
 
   // Stub out the enumeration type.
   Type* kind = get_typename_type();
   Expr_seq* ctors = new Expr_seq();
-  Enum_of_type* enu = make_expr<Enum_of_type>(t->loc, kind, type, ctors);
-  return elab_enum_of_ctors(t, enu, ctors);
-}
-
-// Elaborate a parse tree that represents either an enum type
-// or an enum-of type.
-Expr*
-elab_enum_type(Enum_tree* t) {
-  if (t->base())
-    return elab_enum_of(t);
-  else
-    return elab_enum(t);
+  Enum_type* enu = make_expr<Enum_type>(t->loc, kind, type, ctors);
+  return elab_enum_ctors(t, enu, ctors);
 }
 
 

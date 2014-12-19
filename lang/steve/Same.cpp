@@ -96,9 +96,7 @@ is_same(Expr* t, Expr* u) {
   case dep_variant_type:
     return same_binary(as<Dep_variant_type>(t), as<Dep_variant_type>(u));
   case enum_type:
-    return same_unary(as<Enum_type>(t), as<Enum_type>(u));
-  case enum_of_type:
-    return same_binary(as<Enum_of_type>(t), as<Enum_of_type>(u));
+    return same_binary(as<Enum_type>(t), as<Enum_type>(u));
   case module_type:
     break; // FIXME: Make this work.
 

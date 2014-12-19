@@ -177,7 +177,7 @@ struct Variant_tree : Tree, Kind_of<variant_tree> {
   Tree_seq* second;
 };
 
-// An enumeration type of the form 'record { v* }' where 'v*' is
+// An enumeration type of the form 'enum(b) { v* }' where 'v*' is
 // a sequence of values (possibly having names).
 struct Enum_tree : Tree, Kind_of<enum_tree> {
   Enum_tree(const Token* k, Tree* t, Tree_seq* es)

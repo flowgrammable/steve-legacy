@@ -77,7 +77,7 @@ check_scope_and_context(Scope_kind k, Expr* c) {
                  format("context '{}' is not a kind of variant", debug(c)));
     break;
   case enum_scope:
-    steve_assert(is<Enum_type>(c) || is<Enum_of_type>(c), 
+    steve_assert(is<Enum_type>(c), 
                  format("context '{}' is not a enum type", debug(c)));
     break;
   case function_scope:
@@ -227,7 +227,7 @@ push_module_scope(Module* m) {
 }
 
 Scope*
-push_enum_scope(Enum_of_type* e) {
+push_enum_scope(Enum_type* e) {
   Scope* s = push_scope(enum_scope, e);
   declare(e->ctors());
   return s;
@@ -243,9 +243,7 @@ push_scope(Type* t) {
   case record_type:
     steve_unreachable("unimplemented: push record scope");
   case enum_type:
-    steve_unreachable("unimplemented: push enum scope");
-  case enum_of_type:
-    return push_enum_scope(as<Enum_of_type>(t));
+    return push_enum_scope(as<Enum_type>(t));
   default:
     steve_unreachable(format("cannot push non-aggregate type '{}'", debug(t)));
   }
