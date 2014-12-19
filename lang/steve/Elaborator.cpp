@@ -540,10 +540,30 @@ elab_index(Index_tree* t) {
 // When a projection occurs as the target of an import-stmt, it
 // is a module-id.
 
+bool
+defines_scope(Type* t) {
+  switch (t->kind) {
+  case enum_type:
+  case enum_of_type:
+  case record_type:
+  case module_type:
+    return true;
+  default:
+    return false;
+  }
+}
+
 Expr*
 elab_dot(Dot_tree* t) {
-  Type* e1 = elab_type(t->scope());
-  Scope_guard scope(e1);
+  Type* s = elab_type(t->scope());
+  if (not s)
+    return nullptr;
+  if (not defines_scope(s)) {
+    error(t->loc) << format("'{}' does not define a scope", debug(s)) << '\n';
+    return nullptr;
+  }
+
+  Scope_guard scope(s);
   return elab_expr(t->member());
 }
 
@@ -1206,11 +1226,6 @@ elab_top(Top_tree* t) {
       return nullptr;
   }
   return new Top(ds);
-}
-
-Expr*
-elab_unimplemented(Tree* t) {
-  steve_unreachable(format("unimplemented elaboration of '{}'", debug(t)));
 }
 
 Expr*
