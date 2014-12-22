@@ -63,6 +63,8 @@ constexpr Node_kind field_decl     = make_decl_node(4); // n : t | c
 constexpr Node_kind alt_decl       = make_decl_node(5); // n : t
 constexpr Node_kind enum_decl      = make_decl_node(6); // n [= t] (in an enum)
 constexpr Node_kind import_decl    = make_decl_node(7); // import n;
+constexpr Node_kind using_decl     = make_decl_node(8); // using n;
+
 
 // -------------------------------------------------------------------------- //
 // Abstract terms
@@ -898,6 +900,21 @@ struct Import : Decl, Kind_of<import_decl> {
 
   Name* first;
   Type* second;
+};
+
+// A using declaration of the form `using n` binds the name of
+// the declaration into the current scope.
+struct Using : Decl, Kind_of<using_decl> {
+  Using(Name* n, Decl* d)
+    : Decl(Kind), first(n), second(d) { }
+  Using(const Location& l, Name* n, Decl* d)
+    : Decl(Kind, l), first(n), second(d) { }
+
+  Name* name() const { return first; }
+  Decl* decl() const { return second; }
+
+  Name* first;
+  Decl* second;
 };
 
 // -------------------------------------------------------------------------- //

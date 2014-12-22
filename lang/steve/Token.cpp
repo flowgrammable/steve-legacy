@@ -80,6 +80,7 @@ init_tokens() {
   init_token(record_tok, "record");
   init_token(typename_tok, "typename");
   init_token(unit_tok, "unit");
+  init_token(using_tok, "using");
   init_token(variant_tok, "variant");
   init_token(where_tok, "where");
   // Identifiers and literals

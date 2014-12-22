@@ -195,8 +195,9 @@ constexpr Token_kind or_tok                  = make_token(116);
 constexpr Token_kind record_tok              = make_token(117);
 constexpr Token_kind typename_tok            = make_token(118);
 constexpr Token_kind unit_tok                = make_token(119);
-constexpr Token_kind variant_tok             = make_token(120);
-constexpr Token_kind where_tok               = make_token(121);
+constexpr Token_kind using_tok               = make_token(120);
+constexpr Token_kind variant_tok             = make_token(121);
+constexpr Token_kind where_tok               = make_token(122);
 // Identifiers and literals
 constexpr Token_kind identifier_tok          = make_token(token_id_type, 200);
 constexpr Token_kind boolean_literal_tok     = make_token(token_bool_type, 201);

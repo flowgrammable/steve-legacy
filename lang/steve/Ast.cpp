@@ -60,6 +60,7 @@ init_exprs() {
   init_node(alt_decl, "alt-decl");
   init_node(enum_decl, "enum-decl");
   init_node(import_decl, "import-decl");
+  init_node(using_decl, "using-decl");
 }
 
 
@@ -297,6 +298,7 @@ debug_print(Printer& p, Expr* e) {
   case alt_decl: return debug_binary(p, as<Alt>(e));
   case enum_decl: return debug_constructor(p, as<Enum>(e));
   case import_decl: return debug_unary(p, as<Import>(e));
+  case using_decl: return debug_unary(p, as<Using>(e));
   // Unhandled
   default:
     // FIXME: Make a print formatter that gives complete information

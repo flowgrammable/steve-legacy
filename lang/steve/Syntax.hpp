@@ -29,6 +29,7 @@ constexpr Node_kind def_tree     = make_tree_node(33); // def n = e
 constexpr Node_kind field_tree   = make_tree_node(34); // x : T where (in record)
 constexpr Node_kind alt_tree     = make_tree_node(36); // e1 : e2 (in variant)
 constexpr Node_kind import_tree  = make_tree_node(50); // import e
+constexpr Node_kind using_tree   = make_tree_node(51); // using n
 // Misc
 constexpr Node_kind top_tree     = make_tree_node(100);
 
@@ -276,6 +277,16 @@ struct Import_tree : Tree, Kind_of<import_tree> {
     : Tree(Kind, k->loc), first(t) { }
 
   Tree* module() const { return first; }
+
+  Tree* first;
+};
+
+// A declaration of the form `using n`.
+struct Using_tree : Tree, Kind_of<using_tree> {
+  Using_tree(const Token* k, Tree* n)
+    : Tree(Kind, k->loc), first(n) { }
+
+  Tree* name() const { return first; }
 
   Tree* first;
 };

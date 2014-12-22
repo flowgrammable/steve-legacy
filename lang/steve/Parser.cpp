@@ -1254,20 +1254,39 @@ parse_def_decl(Parser& p) {
 //    import-decl ::= 'import' expr
 Tree*
 parse_import_decl(Parser& p) {
-  if (const Token* k = accept(p, import_tok))
+  if (const Token* k = accept(p, import_tok)) {
     if (Tree* t = parse_expr(p))
       return new Import_tree(k, t);
+    else
+      error(p) << "expected 'expression' after 'import'";
+  }
+  return nullptr;
+}
+
+// Parse a using declaration.
+//
+//    using-decl ::= 'using' expr
+Tree*
+parse_using_decl(Parser& p) {
+  if (const Token* k = accept(p, using_tok)) {
+    if (Tree* t = parse_expr(p))
+      return new Using_tree(k, t);
+    else
+      error(p) << "expected 'expression' after 'using'";
+  }
   return nullptr;
 }
 
 // Parse a decl-stmt.
 //
-//    decl-stmt ::= def-decl | alias-decl | import-decl
+//    decl-stmt ::= def-decl | alias-decl | import-decl | using-decl
 Tree*
 parse_decl(Parser& p) {
   if (Tree* d = parse_def_decl(p))
     return d;
   if (Tree* d = parse_import_decl(p))
+    return d;
+  if (Tree* d = parse_using_decl(p))
     return d;
   return nullptr;
 }

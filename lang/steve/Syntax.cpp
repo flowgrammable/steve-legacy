@@ -29,9 +29,9 @@ init_trees() {
   init_node(field_tree, "field-tree");
   init_node(alt_tree, "alt-tree");
   init_node(import_tree, "import-tree");
+  init_node(using_tree, "using-tree");
   // Misc
   init_node(top_tree, "top-tree");
-
 }
 
 // FIXME: A whole lot of this stuff is common in both Ast.cpp and
@@ -190,6 +190,7 @@ debug_print(Printer& p, Tree* t) {
   case field_tree: return debug_ternary(p, as<Field_tree>(t));
   case alt_tree: return debug_binary(p, as<Alt_tree>(t));
   case import_tree: return debug_unary(p, as<Import_tree>(t));
+  case using_tree: return debug_unary(p, as<Using_tree>(t));
   // Misc
   case top_tree: return debug_top(p, as<Top_tree>(t));
   // Unhandled

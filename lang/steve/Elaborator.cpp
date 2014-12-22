@@ -1188,6 +1188,39 @@ elab_import(Import_tree* t) {
   return imp;
 }
 
+
+// ---------------------------------------------------------------------------//
+// Elaboration of using declrations
+
+// A using declaration names an element in another module.
+Expr*
+elab_using(Using_tree* t) {
+  Expr* expr = elab_expr(t->name());
+  if (not expr)
+    return nullptr;
+  Decl_id* id = as<Decl_id>(expr);
+  if (not id) {
+    error(t->loc) << format("using target '{}' does not refer to a "
+                            "declaration", debug(expr));
+    return nullptr;
+  }
+
+  Name* name = id->name();
+  Decl* decl = id->decl();
+
+  // Make sure that we can actually use this!
+  if (not is<Def>(decl)) {
+    error(t->loc) << format("using target '{}' is not a definition", debug(t));
+    return nullptr;
+  }
+
+
+  declare(id->name(), id->decl());
+  return make_expr<Using>(t->loc, get_type(decl), name, decl);
+}
+
+
+
 // ---------------------------------------------------------------------------//
 // Miscellaneous expressions
 
@@ -1229,6 +1262,7 @@ elab_expr(Tree* t) {
   case def_tree: return elab_def(as<Def_tree>(t));
   case field_tree: return elab_field(as<Field_tree>(t));
   case import_tree: return elab_import(as<Import_tree>(t));
+  case using_tree: return elab_using(as<Using_tree>(t));
     break;
   // Misc
   case top_tree: return elab_top(as<Top_tree>(t));
