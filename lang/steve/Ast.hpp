@@ -485,8 +485,11 @@ struct Dep_type : Type, Kind_of<dep_type> {
   Expr_seq* second;
 };
 
-// A module is a type contains a sequence a program. Each module
+// A module is a type that contains a sequence of declarations. Each module
 // defines its own distinct type.
+//
+// TODO: Consider having a different sequence of declarations for module
+// imports. 
 struct Module : Type, Kind_of<module_type> {
   Module(const Path& p, Name* n, Decl_seq* e)
     : Type(Kind), path_(p), first(n), second(e) { }

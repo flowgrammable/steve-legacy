@@ -1,11 +1,10 @@
 
-// Common types used in OpenFlow.
-def uint(n : nat) -> typename = bitfield(nat, n, 1);
-def str(n : nat) -> typename = __net_str(n);
-def seq(t : typename) -> typename = __net_seq(t, true);
+import std.net.ofp;
 
-// TODO: define this
-def constrain(n : nat) -> bool = true;
+using std.net.ofp.uint;
+using std.net.ofp.str;
+using std.net.ofp.seq;
+using std.net.ofp.constrain;
 
 def Version : typename = enum(uint(8)) {
   OFP_1_0 = 1

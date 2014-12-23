@@ -1115,17 +1115,49 @@ elab_def(Def_tree* t) {
 
 // -------------------------------------------------------------------------- //
 // Elaboration of imports
+//
+// An import declaration causes the loading of the named module. The
+// module name is a nested name (a sequence of projections of identifiers)
+// that identifies a module (either a directory or a Steve file) in the
+// file system. For example:
+//
+//    import std.net.ofp;
+//
+// This causes the compiler to load the following modules:
+//
+//    ${STEVE_MODULE_PATH}/std           (a directory)   
+//    ${STEVE_MODULE_PATH}/std/net       (a directory)
+//    ${STEVE_MODULE_PATH}/std/ofp.steve (a file)
+//
+// Note that the resulting declaration adds only the outermost module
+// to the current scope. That is, the `import` declaration above
+// binds the name `std` to the module `${STEVE_MODULE_PATH}/std`.
+//
+// The recursive loading of modules also adds an import declaration
+// to each loaded module. That is, `std` imports `net`, and `net`
+// imports `ofp`. This allows lookup of nested names.
 
-Tree*
-elab_module_id(Module*& mod, Id_tree* t) {
-  mod = load_module(t->loc, mod, t->value()->text);
-  return nullptr;
+bool
+elab_module_id(Module*& first, Module*& current, Id_tree* t) {
+  current = load_module(t->loc, current, t->value()->text);
+  if (not current)
+    return false;
+  if (not first)
+    first = current;
+  return true;
 }
 
 Tree*
-elab_module_path(Module*& mod, Dot_tree* t) {
-  // Get the name of the enclosing module.
+elab_nested_module_name(Module*& first, Module*& current, Dot_tree* t) {
+  // Recursively load modules for nested names.  
   Tree* scope = t->scope();
+  if (Dot_tree* dot = as<Dot_tree>(scope)) {
+    scope = elab_nested_module_name(first, current, dot);
+    if (not scope)
+      return nullptr;
+  }
+
+  // Make sure that the left-most expression is an identifier.
   Id_tree* id = as<Id_tree>(scope);
   if (not id) {
     error(scope->loc) << format("ill-formed module-id '{}'", debug(scope));
@@ -1133,57 +1165,50 @@ elab_module_path(Module*& mod, Dot_tree* t) {
   }
 
   // Load the enclosing module.
-  mod = load_module(t->loc, mod, id->value()->text);
-  if (not mod)
+  if (not elab_module_id(first, current, id))
     return nullptr;
   
-  // Set the current module to right 
+  // Return the right-most expression.
   return t->member();
+}
+
+bool
+elab_module_name(Module*& first, Module*& current, Tree* t) {
+  // Adjust the elaboration for nested module names.
+  if (Dot_tree* dot = as<Dot_tree>(t))
+    t = elab_nested_module_name(first, current, dot);
+
+  // Elabarate the trailing id-expression.
+  if (Id_tree* id = as<Id_tree>(t)) {
+    if (not elab_module_id(first, current, id))
+      return false;
+  } else {
+    error(t->loc) << format("ill-formed module-id '{}'", debug(t));
+    return false;
+  }
+  return true;
 }
 
 Module*
 elab_module_name(Tree* t) {
   Module* first = nullptr;
-  Module* mod = nullptr;
-  Tree* cur = t;
-  while (cur) {
-    if (Id_tree* id = as<Id_tree>(cur)) {
-      cur = elab_module_id(mod, id);
-    } else if (Dot_tree* dot = as<Dot_tree>(cur)) {
-      cur = elab_module_path(mod, dot);
-    } else {
-      error(cur->loc) << format("ill-formed module-id '{}'", debug(cur));
-      return nullptr;
-    }
+  Module* current = nullptr;
 
-    // Save outermost target of the import statement.
-    if (not first)
-      first = mod;
-  }
-  return first;
-}
-
-// Return an id for the outermost name in the module. If the 
-// name is ill-formed, don't report the error yet. We'll do that 
-// in elab_module_name.
-Name*
-elab_outermost_module_name(Tree* t) {
-  if (Dot_tree* dot = as<Dot_tree>(t))
-    t = dot->scope();
-  if (Id_tree* id = as<Id_tree>(t))
-    return new Basic_id(id->value()->text);
-  return nullptr;
+  if (not elab_module_name(first, current, t))
+    return nullptr;
+  else
+    return first;
 }
 
 Expr*
 elab_import(Import_tree* t) {
-  Name* n = elab_outermost_module_name(t->module());
+  // Name* n = elab_outermost_module_name(t->module());
   Module* m = elab_module_name(t->module());
   if (not m)
     return nullptr;
 
   // Declare the outermost imported module.
-  Decl* imp = make_expr<Import>(t->loc, get_unit_type(), n, m);
+  Decl* imp = make_expr<Import>(t->loc, m, m->name(), m);
   declare(imp);
   return imp;
 }
@@ -1191,6 +1216,16 @@ elab_import(Import_tree* t) {
 
 // ---------------------------------------------------------------------------//
 // Elaboration of using declrations
+//
+// A using declaration adds the name of an element in a different module
+// to the current scope. For example:
+//
+//    import std.net.ofp;
+//    using std.net.ofp.uint;
+//    def x : uint(8) = 3;
+//
+// The `using` declaration makes the definition of the `uint` type
+// constructor available to the current scope.
 
 // A using declaration names an element in another module.
 Expr*

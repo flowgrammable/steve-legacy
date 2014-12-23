@@ -44,7 +44,7 @@ add_library(steve-lib
 set_target_properties(steve-lib PROPERTIES ARCHIVE_OUTPUT_NAME steve)
 target_link_libraries(steve-lib gc gmp boost_system boost_filesystem)
 
-add_executable(steve Main.cpp)
+add_executable(steve Main.cpp Cli.cpp)
 target_link_libraries(steve steve-lib)
 
 add_subdirectory(Token.test)
