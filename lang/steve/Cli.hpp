@@ -104,7 +104,8 @@ struct Version_command : Command {
   bool operator()(int, int, char**);
 };
 
-// The extract command extracts code from a Steve program.
+// The extract command extracts code from a Steve program by using
+// an extractor function (see Extractor). 
 struct Extract_command : Command {
   bool operator()(int, int, char**);
 };

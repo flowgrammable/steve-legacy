@@ -60,7 +60,7 @@ parse_arg(Parser& p, const char* arg) {
   return false;
 }
 
-} // namesapce
+} // namespace
 
 
 int
@@ -83,10 +83,7 @@ Parser::operator()(int argc, char** argv) {
 
 
 // -------------------------------------------------------------------------- //
-// Commands
-
-bool 
-Steve_command::operator()(int, int, char**) { return true; }
+// Help command
 
 bool
 Help_command::operator()(const Command_map& cmds) {
@@ -106,18 +103,38 @@ Help_command::operator()(const Command_map& cmds) {
 bool 
 Help_command::operator()(int arg, int argc, char** argv) { 
   if (arg == argc) {
-    std::cerr << "error: steve help <command>\n";
+    std::cerr << "error: missing help topic\n";
     return false;
   }
   std::cout << "help on '" << argv[arg] << "'\n";
   return true ; 
 }
 
-bool 
-Version_command::operator()(int, int, char**) { return true; }
+// -------------------------------------------------------------------------- //
+// Version command
+
+// TODO: Abstract the version, copyright, and author data into a
+// facility that can be compiled at build time.
 
 bool 
-Extract_command::operator()(int, int, char**) { return true; }
+Version_command::operator()(int arg, int argc, char** argv) { 
+  if (arg != argc) {
+    std::cerr << "error: too many arguments\n";
+    return false;
+  }
+
+  std::cout << "Steve Programming Language v0.1\n";
+  std::cout << "Copyright (c) 2013-2015 Flowgrammable.org\n";
+  return true; 
+}
+
+// -------------------------------------------------------------------------- //
+// Extract command
+
+bool 
+Extract_command::operator()(int arg, int argc, char** argv) { 
+  return true; 
+}
 
 
 } // namespace cli

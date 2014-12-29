@@ -14,6 +14,9 @@
 using namespace steve;
 
 // Commands
+//
+// TODO: Is there any reason why these are defined here and not
+// in Cli.cpp? What's the purpose of putting them here...
 cli::Help_command    help_cmd;
 cli::Version_command version_cmd;
 cli::Extract_command extract_cmd;
@@ -41,7 +44,6 @@ command_error(const char* cmd) {
 
 int
 main(int argc, char* argv[]) {
-
   // FIXME: Refactor the top-level parser into a command
   cli::Parameter_map parms { }; // FIXME: Define top-level arguments
   cli::Argument_map args;
