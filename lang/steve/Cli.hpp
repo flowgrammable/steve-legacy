@@ -94,6 +94,7 @@ struct Steve_command : Command {
 // The help command displays help about available commands and
 // their options.
 struct Help_command : Command {
+  bool operator()(const Command_map&);
   bool operator()(int, int, char**);
 };
 

@@ -13,27 +13,36 @@
 
 using namespace steve;
 
-void
-usage(std::ostream& os) {
-  os << "steve [steve-arguments] <command> [command-arguments] [command-inputs]\n";
-}
+// Commands
+cli::Help_command    help_cmd;
+cli::Version_command version_cmd;
+cli::Extract_command extract_cmd;
+
+// Populate the command map
+cli::Command_map commands {
+  {"help",    &help_cmd },
+  {"version", &version_cmd },
+  {"extract", &extract_cmd }
+};
 
 int
 usage_error() {
   std::cerr << "error: invalid arguments\n";
-  usage(std::cerr);
+  help_cmd(commands);
   return -1;
 }
 
-// Top level subcommands
-cli::Command_map commands {
-  {"help", new cli::Help_command() },
-  {"version", new cli::Version_command() },
-  {"extract", new cli::Extract_command() }
-};
+int
+command_error(const char* cmd) {
+  std::cerr << format("error: unrecognized command '{}'\n", cmd);
+  help_cmd(commands);
+  return -1;
+}
 
 int
 main(int argc, char* argv[]) {
+
+  // FIXME: Refactor the top-level parser into a command
   cli::Parameter_map parms { }; // FIXME: Define top-level arguments
   cli::Argument_map args;
   cli::Parser arg_parse(parms, args);
@@ -41,9 +50,15 @@ main(int argc, char* argv[]) {
   if (last < 0 or last == argc)
     return usage_error();
 
-  std::string cmd = argv[last];
-  std::cout << "COMMAND: " << cmd << '\n';
+  // Get the command.
+  auto iter = commands.find(argv[last]);
+  if (iter == commands.end())
+    return command_error(argv[last]);
+  cli::Command& cmd = *iter->second;
 
+  // Run the command.
+  if (not cmd(++last, argc, argv))
+    return 01;
 
   // Configuration cfg(argc, argv);
   // Language lang;

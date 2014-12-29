@@ -88,8 +88,30 @@ Parser::operator()(int argc, char** argv) {
 bool 
 Steve_command::operator()(int, int, char**) { return true; }
 
+bool
+Help_command::operator()(const Command_map& cmds) {
+  std::cout << "steve [steve-arguments] <command> [command-arguments] [command-inputs]\n";
+  std::cout << '\n';
+
+  // TODO: Print the list of global steve arguments.
+  
+  // Print the list of registered commands.
+  // TODO: Also print a brief descriptions of those commands.
+  std::cout << "Commands\n";
+  for (const auto& x : cmds)
+    std::cout << "    " << x.first << '\n';
+  return true;
+}
+
 bool 
-Help_command::operator()(int, int, char**) { return true; }
+Help_command::operator()(int arg, int argc, char** argv) { 
+  if (arg == argc) {
+    std::cerr << "error: steve help <command>\n";
+    return false;
+  }
+  std::cout << "help on '" << argv[arg] << "'\n";
+  return true ; 
+}
 
 bool 
 Version_command::operator()(int, int, char**) { return true; }
