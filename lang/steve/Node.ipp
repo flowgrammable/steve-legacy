@@ -1,13 +1,42 @@
 
 namespace steve {
 
-// Declarations
-struct Name;
-struct Type;
-struct Term;
-struct Stmt;
-struct Decl;
-struct Tree;
+// -------------------------------------------------------------------------- //
+// Node
+
+// Initialize the node as having kind k.
+inline
+Node::Node(Node_kind k)
+  : kind(k), loc(no_location) { }
+
+// Initialize the node with kind k and at location l.
+inline
+Node::Node(Node_kind k, const Location& l)
+  : kind(k), loc(l) { }
+
+
+// -------------------------------------------------------------------------- //
+// Seq<T>
+
+// Initialize an empty sequence of nodes.
+template<typename T>
+  inline
+  Seq<T>::Seq() 
+    : Node(seq_node), Base_() { }
+
+// Initialize a sequence of nodes with those given in list.
+template<typename T>
+  inline
+  Seq<T>::Seq(std::initializer_list<T*> list) 
+    : Node(seq_node), Base_(list) { }
+
+// Initizlize a sequence of n nodes, each having the given value.
+// If the given value is omitted, it is taken to be nullptr.
+template<typename T>
+  inline
+  Seq<T>::Seq(std::size_t n, T* t)
+    : Node(seq_node), Base_(n, t) { }
+
 
 // -------------------------------------------------------------------------- //
 // Node interface
@@ -46,6 +75,15 @@ is_term(const Node* n) { return is_term_node(n->kind) or is_stmt(n); }
 inline bool
 is_tree(const Node* n) { return is_tree_node(n->kind); }
 
+
+// Declarations
+struct Name;
+struct Type;
+struct Term;
+struct Stmt;
+struct Decl;
+struct Tree;
+
 namespace {
 
 // Statically cast T to U if and only if Pred is satisfied.
@@ -74,7 +112,6 @@ template<bool (*P)(const Node*)>
     bool operator()(const Node* n) const { return P(n); }
   };
 
-
 // Defines the conversion from T ot U.  The general form tests for conversions
 // specifically to a leaf type. That is, the conversion is admissable
 // only when t has exactly the node kind of U.
@@ -83,6 +120,8 @@ template<bool (*P)(const Node*)>
 // conversion from a Node to a Term).
 //
 // Note that the both T and and U may be const.
+//
+// TODO: Why isn't this in AST?
 template<typename U, typename T>
   struct as_fn : as_if_fn<U, T, has_kind_fn<U::Kind>> { };
 

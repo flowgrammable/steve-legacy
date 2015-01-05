@@ -11,7 +11,7 @@ namespace steve {
 struct Expr;
 struct Module;
 
-Module* load_file(String);
+Module* load_file(const Path&);
 Module* load_module(Module*, String);
 Module* load_module(Location, Module*, String);
 

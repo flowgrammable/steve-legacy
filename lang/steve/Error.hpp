@@ -6,10 +6,10 @@
 #include <steve/Location.hpp>
 #include <steve/Debug.hpp>
 
+#include <cerrno>
 #include <iosfwd>
 #include <vector>
-
-#include <boost/system/system_error.hpp>
+#include <system_error>
 
 // This module provides facilities for recording and printing compiler
 // diagnostics.
@@ -34,7 +34,7 @@ class Location;
 struct debug_node;
 
 // An error code.
-using Error_code = boost::system::error_code;
+using Error_code = std::error_code;
 
 // -------------------------------------------------------------------------- //
 // Expected value

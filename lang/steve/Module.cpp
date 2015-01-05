@@ -1,11 +1,11 @@
 
 #include <steve/Module.hpp>
-#include <steve/Config.hpp>
 #include <steve/Ast.hpp>
-#include <steve/Type.hpp>
+#include <steve/Config.hpp>
+#include <steve/Elaborator.hpp>
 #include <steve/Lexer.hpp>
 #include <steve/Parser.hpp>
-#include <steve/Elaborator.hpp>
+#include <steve/Type.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -69,6 +69,7 @@ finish_module(Module* m, Decl_seq* ds) {
   return m;
 }
 
+
 // -------------------------------------------------------------------------- //
 // Module loading
 
@@ -77,7 +78,7 @@ finish_module(Module* m, Decl_seq* ds) {
 //
 // FIXME: We should be recurs
 Decl_seq*
-parse_module(std::ifstream& fs) {
+parse_module(const Location& loc, File* f) {
   // Save off the current diagnostics so we don't overwrite them
   // with the lexer, parser, and elaborator.
   //
@@ -85,19 +86,15 @@ parse_module(std::ifstream& fs) {
   Diagnostics_guard guard;
 
   // Get the text.
-  // HACK: There's a GCC bug that causes exceptions to be thrown
-  // when they aren't expected (e.g., underflow errors). 
-  std::string text;
-  try {
-    using Iter = std::istreambuf_iterator<char>;
-    text = std::string(Iter{fs}, Iter{});
-  } catch (...) { 
-    // Don't do anything here...
+  Expected<std::string> text = f->text();
+  if (not text) {
+    error(loc) << text.error().message();
+    return nullptr;
   }
 
   // Lex the module.
   Lexer lex;
-  Tokens toks = lex(text);
+  Tokens toks = lex(f);
 
   // Parse the module.
   Parser parse;
@@ -119,30 +116,29 @@ parse_module(std::ifstream& fs) {
 
 // Load the file module.
 Module*
-load_file_module(const Location& loc, std::ifstream& fs, const Path& p, Name* n) {
+load_file_module(const Location& loc, File* f, const Path& p, Name* n) {
   Module* m = register_module(init_module(p, n));
-  if (Decl_seq* ds = parse_module(fs))
+  if (Decl_seq* ds = parse_module(loc, f))
     return finish_module(m, ds);
   else
     return nullptr;
 }
 
-// Try to load a module from the file with the given name. A module 
-// shall not import itself.
+// Try to load a module from the file with the given name. 
+//
+// Note that a module is free to import itself. This has no effect
+// other than the names in the module are now available via its
+// fully qualified form.
 Module*
 load_file_module(const Location& loc, const Path& p, Name* n) {
-  if (Module* m = lookup_module(p)) {
-    if (m->path() == p) {
-      error(loc) << format("module '{}' imports itself", debug(n));
-      return nullptr;
-    }
+  if (Module* m = lookup_module(p))
     return m;
+  try {
+    return load_file_module(loc, get_file(p), p, n);
+  } catch (std::system_error& err) {
+    error(loc) << format("error loading '{}': {}", p, err.what());
+    return nullptr;
   }
-  std::ifstream fs(p.c_str());
-  if (fs)
-    return load_file_module(loc, fs, p, n);
-  error(loc) << format("could not open module '{}'", p.c_str());
-  return nullptr;
 }
 
 // Create a module corresponding to the given directory. When loaded
@@ -185,6 +181,16 @@ steve_dir_name(String id) { return id.str(); }
 // Construct a path ot a Steve file from a module-id.
 inline Path
 steve_file_name(String id) { return id.str() + ".steve"; }
+
+// Normalize a path name as an id. 
+//
+// TODO: What if the input file has a non-empty directory?
+// We should probably strip the directory also.
+String
+path_to_id(Path p) {
+  p.replace_extension();
+  return p.c_str();
+}
 
 // Try to load a module in the given directory with the
 // given name. Note that id could name a file module or
@@ -265,11 +271,12 @@ load_module(Module* parent, String id) {
 // FIXME: The diagnostics are a bit wonky here... There should be a
 // uniform way of managing diagnostics for module loading.
 Module*
-load_file(String id) {
+load_file(const Path& input) {
   Diagnostics diags;
   Diagnostics_guard guard(diags);
 
-  Path p = fs::current_path() / id.str();
+  String id = path_to_id(input);
+  Path p = fs::canonical(input);
   if (Module* m = try_load_file(no_location, p, new Basic_id(id)))
     return m;
 

@@ -92,15 +92,8 @@ check_overloadable(Overload& ovl, Decl* d) {
   return true;
 }
 
-// Try to overload the definition d, given the existing overload
+// Try to overload the declaration d, given the existing overload
 // set ovl. Returns true on success and false on failure.
-//
-// TODO: This is going to be a big function. Move it into its own
-// module.
-//
-// TODO: Enforce the rule that all overloads must have the same
-// return type or kind. That is, a set of functions produces only
-// values or types.
 bool
 declare_overload(Overload& ovl, Decl* d) {
   if (check_overloadable(ovl, d)) {

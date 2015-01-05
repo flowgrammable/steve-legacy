@@ -87,10 +87,14 @@ nth_token_is(const Parser& p, std::size_t n, Token_kind t) {
 // Returns the current location in the program source.
 Location
 location(const Parser& p) { 
-  if (const Token* k = peek(p))
+  if (const Token* k = peek(p)) {
     return k->loc;
-  else
-    return eof_location;
+  } else {
+    if (p.first != p.last)
+      return {eof_location, p.first->loc.file};
+    else
+      return no_location;
+  }
 }
 
 // Emit an error at the current input location.

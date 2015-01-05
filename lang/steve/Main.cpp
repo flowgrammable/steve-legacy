@@ -20,12 +20,14 @@ using namespace steve;
 cli::Help_command    help_cmd;
 cli::Version_command version_cmd;
 cli::Extract_command extract_cmd;
+cli::Test_command    test_cmd;
 
 // Populate the command map
 cli::Command_map commands {
-  {"help",    &help_cmd },
-  {"version", &version_cmd },
-  {"extract", &extract_cmd }
+  {"help",    &help_cmd},
+  {"version", &version_cmd},
+  {"extract", &extract_cmd},
+  {"test",    &test_cmd}
 };
 
 int
@@ -44,6 +46,12 @@ command_error(const char* cmd) {
 
 int
 main(int argc, char* argv[]) {
+  // Initialize the configuration
+  Configuration cfg;
+
+  // Initialize the language environment.
+  Language lang;
+
   // FIXME: Refactor the top-level parser into a command
   cli::Parameter_map parms { }; // FIXME: Define top-level arguments
   cli::Argument_map args;
@@ -51,6 +59,8 @@ main(int argc, char* argv[]) {
   int last = arg_parse(argc, argv);
   if (last < 0 or last == argc)
     return usage_error();
+
+  // tOIDO
 
   // Get the command.
   auto iter = commands.find(argv[last]);
@@ -60,24 +70,7 @@ main(int argc, char* argv[]) {
 
   // Run the command.
   if (not cmd(++last, argc, argv))
-    return 01;
-
-  // Configuration cfg(argc, argv);
-  // Language lang;
-
-  // // FIXME: Actually parse command line arguments.
-  // if (argc < 2)
-  //   return usage_error();
-  // String input = argv[argc - 1];
-
-  // // Load the program.
-  // Module* prog = load_file(input);
-  // if (not prog)
-  //   return -1;
-
-  // // Dump output.
-  // for (Decl* d : *prog->decls())
-  //   std::cout << debug(d) << '\n';
-
+    return -1;
+  
   return 0;
 }

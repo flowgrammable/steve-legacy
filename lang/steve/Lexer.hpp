@@ -2,6 +2,7 @@
 #ifndef STEVE_LEXER_HPP
 #define STEVE_LEXER_HPP
 
+#include <steve/File.hpp>
 #include <steve/Token.hpp>
 
 // The lexer module implements the lexical analyzer for the steve
@@ -16,8 +17,9 @@ namespace steve {
 struct Lexer {
   using Iterator = std::string::const_iterator;
 
-  Tokens operator()(const std::string&);
-  Tokens operator()(Iterator, Iterator);
+  Tokens operator()(File*);
+  Tokens operator()(File*, const std::string&);
+  Tokens operator()(File*, Iterator, Iterator);
 
   Iterator first;  // The current lex position
   Iterator last;   // The final lex position

@@ -1,31 +1,25 @@
 
 namespace steve {
 
+// Default initialize a location into the current file.
+inline
+Location::Location(File* f)
+  : file(f) { }
+
 // Initialize an empty location.
 inline
 Location::Location(no_location_t)
-  : line(0), col(0) { }
+  : line(0), col(0), file(nullptr) { }
 
-// Initialize an empty location.
+// Initialize the location to the end the given file.
 inline
-Location::Location(eof_location_t)
-  : line(-1), col(0) { }
+Location::Location(eof_location_t, File* f)
+  : line(-1), col(0), file(f) { }
 
 inline bool
-Location::is_internal() const { return line == 0; }
+Location::is_internal() const { return not file; }
 
 inline bool
 Location::is_eof() const { return line == -1; }
-
-// Output for source locations.
-template<typename C, typename T>
-  std::basic_ostream<C, T>&
-  operator<<(std::basic_ostream<C, T>& os, const Location& loc) {
-    if (loc.is_internal())
-      return os << "<internal>";
-    if (loc.is_eof())
-      return os << "<eof>:";
-    return os << loc.line << ':' << loc.col;
-  }
 
 } // namespace steve

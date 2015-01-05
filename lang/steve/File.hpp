@@ -4,6 +4,11 @@
 
 // The File module contains facilities for working with paths and
 // files.
+//
+// TODO: Whenever possible, replace the use of Boost.Filesystem with
+// a std filesystem library. Otherwise, we have to translate error
+// codes between two different systems. It's fine for now, but not
+// ideal.
 
 #include <vector>
 
@@ -32,21 +37,31 @@ using Path_list = std::vector<Path>;
 // A file is a container of input source of a program and are
 // represented by a path to that file in the operating system.
 //
-// A file does not own the text that it contains, but rather retrieves
-// it on request via the text() operation.
-//
 // Note that files need not contain Steve programs; they can also
 // represent other input files to the system.
+//
+// TODO: What if I want an output file? Do I actually need file
+// modes or different kinds of file?
 class File {
 public:
   File(const Path&);
 
-  Expected<std::string> text() const;
+  const Path& path() const;
+  const std::string& text() const;
 
 private:
-  Path path_;
+  Path        path_;
+  std::string text_;
 };
 
+
+// -------------------------------------------------------------------------- //
+// File set
+
+File* get_file(const Path&);
+
 } // namespace steve
+
+#include <steve/File.ipp>
 
 #endif

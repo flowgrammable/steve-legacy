@@ -6,7 +6,7 @@ Token::Token(Token_kind k, String t)
   : loc(), kind(k), text(t) { }
 
 inline
-Token::Token(Location l, Token_kind k, String t)
+Token::Token(const Location& l, Token_kind k, String t)
   : loc(l), kind(k), text(t) { }
 
 

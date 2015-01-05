@@ -110,6 +110,17 @@ struct Extract_command : Command {
   bool operator()(int, int, char**);
 };
 
+
+// Used for testing the compiler. This emits information that can
+// be used by the testing framework to evalauate the validity of
+// lexical, syntactic, and semantic analayses.
+//
+// TODO: Actually implement a testing framework!
+struct Test_command : Command {
+  bool operator()(int, int, char**);
+};
+
+
 } // namespace cli
 } // namespace steve
 

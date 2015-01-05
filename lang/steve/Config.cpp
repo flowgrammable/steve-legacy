@@ -19,6 +19,13 @@ init_conf(Configuration* c) {
   conf_ = c;
 }
 
+void
+reset_conf(Configuration* c) {
+  steve_assert(conf_, "configuration not initialized");
+  steve_assert(conf_ == c, "reconfiguration error");
+  conf_ = nullptr;
+}
+
 // Environment variables
 
 // Get the module search path from the environment.
@@ -44,17 +51,17 @@ get_env_module_path() {
 
 } // namespace
 
-Configuration::Configuration(int argc, char* argv[]) {
+Configuration::Configuration() {
   init_conf(this);
-
-  // FIXME: Actually parse command line options for
-  // configuration and other information.
-
-  // Build the module path.
   module_path = get_env_module_path();
 }
 
-const Configuration&
+Configuration::~Configuration() {
+  reset_conf(this);
+}
+
+// Returns the global configuration object.
+Configuration&
 config() { return *conf_; }
 
 } // namespace steve

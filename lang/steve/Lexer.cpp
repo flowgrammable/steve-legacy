@@ -314,10 +314,10 @@ lex(Lexer& lex) {
 } // namespace
 
 Tokens
-Lexer::operator()(Iterator f, Iterator l) {
+Lexer::operator()(File* file, Iterator f, Iterator l) {
   first = f;
   last = l;
-  loc = Location();
+  loc = Location(file);
 
   while (first != last)
     lex(*this);

@@ -1,6 +1,10 @@
 
 #include <steve/Cli.hpp>
-#include <steve/Format.hpp>
+#include <steve/Config.hpp>
+#include <steve/Ast.hpp>
+#include <steve/Error.hpp>
+#include <steve/Module.hpp>
+#include <steve/String.hpp>
 
 #include <cctype>
 #include <cstring>
@@ -136,6 +140,44 @@ Extract_command::operator()(int arg, int argc, char** argv) {
   return true; 
 }
 
+// -------------------------------------------------------------------------- //
+// Test command
+//
+// TODO: Support a number of test modes that emit diagnosable
+// text for the following activities
+//
+//  - lexical analysis -- print the list of tokens
+//  - syntactic analysis -- print the parse tree
+//  - semantic analysis -- print the elaborated AST
+//  - other?
+//
+// TODO: Maybe rename this to 'dump' command... or define several?
+//
+// TODO: Allow multiple inputs? Maybe, but we need to fork() to
+// do that. Otherwise, we end up building a single input module.
+bool
+Test_command::operator()(int arg, int argc, char** argv) {
+  Diagnostics diags;
+  Diagnostics_guard dg = diags;
+
+  // Parse arguments, saving input files to the configuration.
+  if (arg == argc) {
+    error(no_location) << "no input files\n";
+    return false;
+  }
+  if (argc - arg != 1) {
+    error(no_location) << "too many input files\n";
+  }
+
+  // Parse the input files.
+  Module* mod = load_file(argv[arg]);
+  if (mod) {
+    for (Decl* d : *mod->decls())
+      std::cout << debug(d) << '\n';
+  } 
+
+  return mod ? true : false; 
+}
 
 } // namespace cli
 } // namespace steve

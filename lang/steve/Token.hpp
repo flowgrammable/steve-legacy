@@ -217,8 +217,8 @@ constexpr Token_kind ipv6_tok                = make_token(token_ipv6_type, 301);
 // A token represents a symbol at a particular location in a
 // program's source text.
 struct Token {
-  Token(Token_kind k, String t);
-  Token(Location l, Token_kind k, String t);
+  Token(Token_kind, String);
+  Token(const Location&, Token_kind, String);
 
   Location   loc;  // The location of the token
   Token_kind kind; // The kind of symbol represented
