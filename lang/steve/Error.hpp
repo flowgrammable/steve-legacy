@@ -2,13 +2,14 @@
 #ifndef STEVE_ERROR_HPP
 #define STEVE_ERROR_HPP
 
-#include <iosfwd>
-
 #include <steve/Memory.hpp>
-#include <steve/String.hpp>
-#include <steve/Integer.hpp>
 #include <steve/Location.hpp>
-#include <steve/Ast.hpp>
+#include <steve/Debug.hpp>
+
+#include <iosfwd>
+#include <vector>
+
+#include <boost/system/system_error.hpp>
 
 // This module provides facilities for recording and printing compiler
 // diagnostics.
@@ -27,6 +28,68 @@
 
 namespace steve {
 
+class String;
+class Integer;
+class Location;
+struct debug_node;
+
+// An error code.
+using Error_code = boost::system::error_code;
+
+// -------------------------------------------------------------------------- //
+// Expected value
+
+// The Expected class represents a value that may be returned from 
+// a system interface. In the presence of system errors, returned values 
+// may not be produced, in which case the state of this object is an
+// error code.
+//
+// FIXME: Implement assignment operators.
+template<typename T>
+  class Expected {
+  public:
+    using error_type = Error_code;
+    using value_type = T;
+
+    Expected() = delete;
+
+    // Move semantics
+    Expected(Expected&&);
+    Expected& operator=(Expected&&) = delete;
+
+    // Copy semantics
+    Expected(const Expected&);
+    Expected& operator=(const Expected&) = delete;
+
+    // Value initialization
+    Expected(const value_type&);
+    Expected(value_type&&);
+    Expected(error_type);
+
+    ~Expected();
+
+    explicit operator bool() const;
+
+    const value_type& get() const;
+    error_type error() const;
+
+  private:
+    bool valid_;
+    union Value {
+      Value() { }
+      Value(const value_type& x) : value(x) { }
+      Value(value_type&& x) : value(std::move(x)) { }
+      Value(error_type x) : error(x) { }
+      ~Value() { }
+      error_type error;
+      value_type value;
+    } state_;
+  };
+
+
+// -------------------------------------------------------------------------- //
+// Diagnostics
+
 // The Diagnostic kind describes various flavors of diagnostics
 // emitted by the compiler.
 enum Diagnostic_kind {
@@ -35,9 +98,6 @@ enum Diagnostic_kind {
   diag_note,
   diag_sorry,
 };
-
-// -------------------------------------------------------------------------- //
-// Diagnostics
 
 // The diagnostic class is the base class of all diagnostics.
 // These come in various flavors defined by the Diagnostic_kind

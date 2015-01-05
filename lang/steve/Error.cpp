@@ -1,5 +1,8 @@
 
 #include <steve/Error.hpp>
+#include <steve/String.hpp>
+#include <steve/Integer.hpp>
+#include <steve/Ast.hpp>
 #include <steve/Debug.hpp>
 
 namespace steve {
