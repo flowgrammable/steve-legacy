@@ -19,6 +19,7 @@ add_library(steve-lib
   File.cpp
   Location.cpp
   Token.cpp
+  Comment.cpp
   Node.cpp
   Syntax.cpp
   Ast.cpp

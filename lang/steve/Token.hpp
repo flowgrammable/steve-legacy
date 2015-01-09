@@ -35,7 +35,7 @@ namespace steve {
 // remaining bits in the high-order byte are flags indicating various
 // properties of the token.
 //
-//    0000tttt NNNNNNNN NNNNNNNN NNNNNNNN
+//    0ttttttt NNNNNNNN NNNNNNNN NNNNNNNN
 //
 // Where N denotes values that can be used for identifiers and t denotes
 // the type of the token (there are at most 8 types of tokens). The values
@@ -132,14 +132,15 @@ make_token(Token_type t, std::uint32_t n) { return token::make_typed(t, n); }
 // to a boolean_literal_token. See init_tokens in Token.cpp to see
 // how these are handled.
 
-constexpr Token_type token_id_type   = 1; // identifier
-constexpr Token_type token_bool_type = 2; // bools
-constexpr Token_type token_int_type  = 3; // integers
-constexpr Token_type token_real_type = 4; // reals
-constexpr Token_type token_char_type = 5; // characters
-constexpr Token_type token_str_type  = 6; // strings
-constexpr Token_type token_ipv4_type = 7; // ipv4 addresses
-constexpr Token_type token_ipv6_type = 8; // ipv6 addresses
+constexpr Token_type token_id_type      = 1;   // identifier
+constexpr Token_type token_bool_type    = 2;   // bools
+constexpr Token_type token_int_type     = 3;   // integers
+constexpr Token_type token_real_type    = 4;   // reals
+constexpr Token_type token_char_type    = 5;   // characters
+constexpr Token_type token_str_type     = 6;   // strings
+constexpr Token_type token_ipv4_type    = 7;   // ipv4 addresses
+constexpr Token_type token_ipv6_type    = 8;   // ipv6 addresses
+constexpr Token_type token_comment_type = 127; // comments
 
 // Utility tokens
 constexpr Token_kind error_tok               = make_token(0u);
@@ -209,6 +210,8 @@ constexpr Token_kind character_literal_tok   = make_token(token_char_type, 206);
 // Netowrking literals
 constexpr Token_kind ipv4_tok                = make_token(token_ipv4_type, 300);
 constexpr Token_kind ipv6_tok                = make_token(token_ipv6_type, 301);
+// Comments
+constexpr Token_kind comment_tok             = make_token(token_comment_type, 500);
 
 
 // -------------------------------------------------------------------------- //

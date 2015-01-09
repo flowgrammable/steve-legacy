@@ -36,6 +36,18 @@ struct Location {
   File* file = nullptr;
 };
 
+// Equality comparison
+bool operator==(const Location&, const Location&);
+bool operator!=(const Location&, const Location&);
+
+bool operator==(no_location_t, const Location&);
+bool operator==(const Location&, no_location_t);
+bool operator!=(no_location_t, const Location&);
+bool operator!=(const Location&, no_location_t);
+
+// Operations
+bool adjacent(const Location&, const Location&);
+
 // Streaming
 std::ostream& operator<<(std::ostream&, const Location&);
 

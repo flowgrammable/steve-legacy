@@ -94,6 +94,8 @@ init_tokens() {
   // Networking literals
   init_token(ipv4_tok, "ipv4-address");
   init_token(ipv6_tok, "ipv6-address");
+  // Comments
+  init_token(comment_tok, "comment");
   // Reserved names
   save_keyword(boolean_literal_tok, "true");
   save_keyword(boolean_literal_tok, "false");

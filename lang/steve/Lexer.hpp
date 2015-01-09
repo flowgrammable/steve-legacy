@@ -4,6 +4,7 @@
 
 #include <steve/File.hpp>
 #include <steve/Token.hpp>
+#include <steve/Error.hpp>
 
 // The lexer module implements the lexical analyzer for the steve
 // programming language.
@@ -21,10 +22,11 @@ struct Lexer {
   Tokens operator()(File*, const std::string&);
   Tokens operator()(File*, Iterator, Iterator);
 
-  Iterator first;  // The current lex position
-  Iterator last;   // The final lex position
-  Location loc;    // The current source location
-  Tokens toks;     // The current token list
+  Iterator first;    // The current lex position
+  Iterator last;     // The final lex position
+  Location loc;      // The current source location
+  Tokens toks;       // The current token list
+  Diagnostics diags;
 };
 
 } // namespace steve
