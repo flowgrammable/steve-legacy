@@ -3,6 +3,7 @@
 #include <steve/Config.hpp>
 #include <steve/Ast.hpp>
 #include <steve/Error.hpp>
+#include <steve/Extract.hpp>
 #include <steve/Module.hpp>
 #include <steve/String.hpp>
 
@@ -135,8 +136,25 @@ Version_command::operator()(int arg, int argc, char** argv) {
 // -------------------------------------------------------------------------- //
 // Extract command
 
+// TODO: Use command line parameters to provide optoins for the
+// extractor.
 bool 
 Extract_command::operator()(int arg, int argc, char** argv) { 
+  // FIXME: This is totally broken.
+  if (arg + 2 >= argc) {
+    error() << "too few arguments";
+  }
+  std::string extractor = argv[arg++];
+  std::string input = argv[arg++];
+
+  // TODO: Allow extraction as a quanlified id? Could be neat...
+  Module* mod = load_file(input);
+
+  if (Extractor* e = get_extractor(extractor))
+    (*e)(mod);
+  else
+    error() << format("no extractor named '{}'", extractor);
+
   return true; 
 }
 

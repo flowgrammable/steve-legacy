@@ -70,6 +70,23 @@ template<typename T>
     return state_.error;
   }
 
+
+// -------------------------------------------------------------------------- //
+// Error generators
+
+inline Diagnostic_stream 
+error() { return error(no_location); }
+
+inline Diagnostic_stream 
+warn() { return error(no_location); }
+
+inline Diagnostic_stream 
+note() { return error(no_location); }
+
+inline Diagnostic_stream 
+sorry() { return error(no_location); }
+
+
 // -------------------------------------------------------------------------- //
 // Diagnostics
 

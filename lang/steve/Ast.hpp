@@ -172,18 +172,6 @@ struct Operator_id : Name, Kind_of<operator_id> {
   String first;
 };
 
-// A scoped id of the form 's.n' designates a declaration within 
-// the scope, s.
-struct Scoped_id : Name, Kind_of<scoped_id> {
-  Scoped_id(Type* s, Name* n) 
-    : Name(Kind), first(s), second(n) { }
-  Scoped_id(const Location& l, Type* s, Name* n) 
-    : Name(Kind, l), first(s), second(n) { }
-  Type* first;
-  Name* second;
-};
-
-
 // A name that refers to a declaration of some kind. During elaboration,
 // names are linked to the declarations to which they refer. Note that
 // the local name is kept for diagnostics.

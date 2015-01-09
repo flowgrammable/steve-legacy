@@ -39,6 +39,7 @@ add_library(steve-lib
   Parser.cpp
   Elaborator.cpp
   Evaluator.cpp
+  Extract.cpp
   ${contrib_src}
 )
 set_target_properties(steve-lib PROPERTIES ARCHIVE_OUTPUT_NAME steve)

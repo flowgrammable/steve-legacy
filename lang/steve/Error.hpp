@@ -175,15 +175,19 @@ Diagnostic_stream operator<<(Diagnostic_stream, int);
 Diagnostic_stream operator<<(Diagnostic_stream, Integer);
 Diagnostic_stream operator<<(Diagnostic_stream, debug_node);
 
+Diagnostic_stream error();
 Diagnostic_stream error(const Location&);
 Diagnostic_stream error(Diagnostics&, const Location&);
 
+Diagnostic_stream warn();
 Diagnostic_stream warn(const Location&);
 Diagnostic_stream warn(Diagnostics&, const Location&);
 
+Diagnostic_stream note();
 Diagnostic_stream note(const Location&);
 Diagnostic_stream note(Diagnostics&, const Location&);
 
+Diagnostic_stream sorry();
 Diagnostic_stream sorry(const Location&);
 Diagnostic_stream sorry(Diagnostics&, const Location&);
 

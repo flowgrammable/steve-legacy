@@ -30,6 +30,7 @@ cli::Command_map commands {
   {"test",    &test_cmd}
 };
 
+// FIXME: Move these into the help function.
 int
 usage_error() {
   std::cerr << "error: invalid arguments\n";
@@ -51,6 +52,10 @@ main(int argc, char* argv[]) {
 
   // Initialize the language environment.
   Language lang;
+
+  // Initialize the root diagnostics.  
+  Diagnostics diags;
+  Diagnostics_guard dg = diags;
 
   // FIXME: Refactor the top-level parser into a command
   cli::Parameter_map parms { }; // FIXME: Define top-level arguments

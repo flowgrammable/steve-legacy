@@ -148,12 +148,6 @@ template<typename T>
     debug_print(p, e->fourth);
   }
 
-// TODO: Actually render a scoped name.
-void
-debug_scoped_id(Printer& p, Scoped_id* e) {
-  sexpr s(p, "scoped-id");
-}
-
 // Print a reference to a declaration.
 template<typename T>
   void
@@ -253,7 +247,6 @@ debug_print(Printer& p, Expr* e) {
   // Names
   case basic_id: return debug_terminal(p, as<Basic_id>(e));
   case operator_id: return debug_operator(p, as<Operator_id>(e));
-  case scoped_id: return debug_scoped_id(p, as<Scoped_id>(e));
   case decl_id: return debug_id(p, as<Decl_id>(e));
   // Types
   case typename_type: return print(p, "typename");
