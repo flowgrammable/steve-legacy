@@ -20,6 +20,11 @@ adjacent(const Location& a, const Location& b) {
   return true;
 }
 
+bool
+above(const Location& a, const Location& b) {
+  return b.line - a.line == 1;
+}
+
 // Output for source locations.
 std::ostream&
 operator<<(std::ostream& os, const Location& loc) {

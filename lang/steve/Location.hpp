@@ -47,6 +47,7 @@ bool operator!=(const Location&, no_location_t);
 
 // Operations
 bool adjacent(const Location&, const Location&);
+bool above(const Location&, const Location&);
 
 // Streaming
 std::ostream& operator<<(std::ostream&, const Location&);

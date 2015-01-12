@@ -13,15 +13,13 @@ namespace {
 // -------------------------------------------------------------------------- //
 // Comments
 
-Comment_manager cm_;
-
 // TODO: Only save comments on the input file, and only for certain
 // applications. We don't always need to do this.
 //
 // Save the comment.
 void 
 save_comment(Lexer& lex, String str) {
-  cm_.save(lex.loc, str);
+  comments().save(lex.loc, str);
 }
 
 // If the previous token was a comment, then we need to break
@@ -33,7 +31,7 @@ break_comment_block(Lexer& lex) {
   if (lex.toks.size() > 1) {
     Token& last = lex.toks[lex.toks.size() - 1];
     if (last.kind == comment_tok)
-      cm_.reset();
+      comments().reset();
   }
 }
 
@@ -355,9 +353,6 @@ Lexer::operator()(File* file, Iterator f, Iterator l) {
 
   while (first != last)
     lex(*this);
-
-  // for (Comment_block& b : cm_.blocks)
-  //   std::cout << "--- DOC ---\n" << b.text() << '\n';
 
   return toks;
 }

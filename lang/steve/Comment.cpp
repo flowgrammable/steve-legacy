@@ -7,6 +7,9 @@ namespace steve {
 
 namespace {
 
+// The global comment manager.
+Comment_manager cm_;
+
 // Remove the terminator from the comment block, if present.
 void strip(Comment_block& b) {
   if (b.last_location() == no_location)
@@ -14,6 +17,10 @@ void strip(Comment_block& b) {
 }
 
 } // namespace
+
+
+Comment_manager&
+comments() { return cm_; }
 
 std::string
 Comment_block::text() const {
@@ -61,14 +68,63 @@ void
 Comment_manager::reset() {
   if (blocks.empty())
     return;
-
-  // 
   Comment_block& b = blocks.back();
   if (b.last_location() != no_location)
     save(no_location, String());
 }
 
-} // namespace steve
+// Returns true if the comment block appertains to the entity
+// at the given location. A comment appertains to a declaration
+// if they are in the same file, and
+//
+//    1. the declaration appears on the same line as the beginning
+//       of the comment block, or
+//    2. the end of the comment block is immediately above the 
+//       declaration, or
+//    3. the start of the comment block is immediately below the
+//       declaration.
+//
+// Examples:
+//
+//    def r : typename = record {
+//      x : int; // appertains to x because of rule 1
+//    }
+//
+//    // appertains to y because of rule 2
+//    def y : int;
+//
+//    def f(x : int) -> int
+//    // appertains to f because of rule 3.
+//    { return x; }
+//  
+// TODO: Re-think rule 3 for cases where the declaration spans multiple
+// lines and allow the column to be indented.
+//
+// TOOD: Implement rule 3.
+bool
+appertains(const Comment_block& b, const Location& l) {
+  if (b.file() != l.file)
+    return false;
+  if (above(b.last_location(), l))
+    return true;
+  else
+    return false;
+}
 
+// Find the nearest comment block associated with a location.
+//
+// TODO: This is wildly inefficient. We should be mapping comments
+// by file and we should have a data structure that optimizes
+// location-based lookup.
+Comment_block*
+Comment_manager::find(const Location& loc) {
+  for (Comment_block& b : blocks) {
+    if (appertains(b, loc))
+      return &b;
+  }
+  return nullptr;
+}
+
+} // namespace steve
 
 

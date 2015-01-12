@@ -1,6 +1,7 @@
 
 #include <steve/Extract.hpp>
 #include <steve/Ast.hpp>
+#include <steve/Comment.hpp>
 
 #include <unordered_map>
 
@@ -148,6 +149,13 @@ List_extractor::visit(Module* m) {
 void
 List_extractor::visit(Def* d) {
   std::cout << debug(d->name()) << '\n';
+
+  const Location& loc = d->loc;
+  if (loc.is_internal() || loc.is_eof())
+    return;
+
+  if (Comment_block* c = comments().find(d->loc))
+    std::cout << "Doc: " << c->text() << '\n';
 }
 
 } // namespace steve

@@ -4,7 +4,7 @@
 
 #include <steve/Token.hpp>
 
-#include <list>
+#include <vector>
 
 namespace steve {
 
@@ -20,7 +20,7 @@ struct Comment {
   Token tok;
 };
 
-using Comment_list = std::list<Comment>;
+using Comment_list = std::vector<Comment>;
 
 // A comment block is a list of comments written on contiguous
 // lines of a program that start in the same column. For example:
@@ -37,10 +37,13 @@ using Comment_list = std::list<Comment>;
 struct Comment_block : Comment_list {
   std::string text() const;
   
+  File* file() const;
   const Location& first_location() const;
   const Location& last_location() const;
 };
 
+
+// A list of comment blocks.
 using Comment_block_list = std::vector<Comment_block>;
 
 
@@ -51,12 +54,16 @@ public:
   void save(const Location&, String);
   void reset();
 
+  Comment_block* find(const Location& loc);
+
   Comment_block_list blocks;
 
 private:
   void init(const Location&, String);
   void append(const Location&, String);
 };
+
+Comment_manager& comments();
 
 } // namespace steve
 

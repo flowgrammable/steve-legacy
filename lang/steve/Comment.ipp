@@ -11,6 +11,9 @@ Comment::text() const { return tok.text; }
 inline const Location&
 Comment::location() const { return tok.loc; }
 
+inline File*
+Comment_block::file() const { return first_location().file; }
+
 inline const Location&
 Comment_block::first_location() const { return front().location(); }
 
