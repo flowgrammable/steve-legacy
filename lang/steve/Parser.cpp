@@ -1322,7 +1322,7 @@ parse_top(Parser& p) {
 
 // Parse a range of tokens.
 Tree*
-Parser::operator()(Token_iterator f, Token_iterator l) {
+Parser::operator()(Token_iterator f, Token_iterator l, Parse_kind k) {
   // An empty sequence of tokens is an empty program.
   if (f == l)
     return new Top_tree(new Tree_seq());
@@ -1335,13 +1335,21 @@ Parser::operator()(Token_iterator f, Token_iterator l) {
   // All errors are emitted into these diagnostics.
   use_diagnostics(diags);
   
+  switch (k) {
+  case postfix_parse: return parse_postfix_expr(*this);
+  case prefix_parse: return parse_prefix_expr(*this);
+  case expr_parse: return parse_expr(*this);
+  case top_parse: return parse_top(*this);
+  default:
+    steve_unreachable("unknown parse kind");
+  }
   return parse_top(*this);
 }
 
 // Parse a sequence of tokens.
 Tree*
-Parser::operator()(const Tokens& toks) {
-  return (*this)(toks.begin(), toks.end());
+Parser::operator()(const Tokens& toks, Parse_kind k) {
+  return (*this)(toks.begin(), toks.end(), k);
 }
 
 } // namespace steve

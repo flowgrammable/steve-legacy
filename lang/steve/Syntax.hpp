@@ -30,6 +30,7 @@ constexpr Node_kind field_tree   = make_tree_node(34); // x : T where (in record
 constexpr Node_kind alt_tree     = make_tree_node(36); // e1 : e2 (in variant)
 constexpr Node_kind import_tree  = make_tree_node(50); // import e
 constexpr Node_kind using_tree   = make_tree_node(51); // using n
+constexpr Node_kind load_tree    = make_tree_node(52); // load n
 // Misc
 constexpr Node_kind top_tree     = make_tree_node(100);
 
@@ -273,8 +274,10 @@ struct Alt_tree : Tree, Kind_of<alt_tree> {
 
 // A declaration of the form `import e`.
 struct Import_tree : Tree, Kind_of<import_tree> {
+  Import_tree(const Location& l, Tree* t)
+    : Tree(Kind, l), first(t) { }
   Import_tree(const Token* k, Tree* t)
-    : Tree(Kind, k->loc), first(t) { }
+    : Import_tree(k->loc, t) { }
 
   Tree* module() const { return first; }
 
@@ -285,6 +288,18 @@ struct Import_tree : Tree, Kind_of<import_tree> {
 struct Using_tree : Tree, Kind_of<using_tree> {
   Using_tree(const Token* k, Tree* n)
     : Tree(Kind, k->loc), first(n) { }
+
+  Tree* name() const { return first; }
+
+  Tree* first;
+};
+
+// An internal syntax to support a reference to a declaration
+// that has not yet been imported. This is primarily used by
+// tools to extract information for a declaration.
+struct Load_tree : Tree, Kind_of<load_tree> {
+  Load_tree(Tree* n)
+    : Tree(Kind, no_location), first(n) { }
 
   Tree* name() const { return first; }
 

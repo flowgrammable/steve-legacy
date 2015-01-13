@@ -30,6 +30,7 @@ init_trees() {
   init_node(alt_tree, "alt-tree");
   init_node(import_tree, "import-tree");
   init_node(using_tree, "using-tree");
+  init_node(load_tree, "load-tree");
   // Misc
   init_node(top_tree, "top-tree");
 }
@@ -191,6 +192,7 @@ debug_print(Printer& p, Tree* t) {
   case alt_tree: return debug_binary(p, as<Alt_tree>(t));
   case import_tree: return debug_unary(p, as<Import_tree>(t));
   case using_tree: return debug_unary(p, as<Using_tree>(t));
+  case load_tree: return debug_unary(p, as<Load_tree>(t));
   // Misc
   case top_tree: return debug_top(p, as<Top_tree>(t));
   // Unhandled

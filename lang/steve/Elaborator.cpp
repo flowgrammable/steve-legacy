@@ -1126,12 +1126,16 @@ elab_def(Def_tree* t) {
 // The recursive loading of modules also adds an import declaration
 // to each loaded module. That is, `std` imports `net`, and `net`
 // imports `ofp`. This allows lookup of nested names.
+//
+// Note that current will always point to the last module that
+// was succesfully loaded.
 
 bool
 elab_module_id(Module*& first, Module*& current, Id_tree* t) {
-  current = load_module(t->loc, current, t->value()->text);
-  if (not current)
+  Module* mod = load_module(t->loc, current, t->value()->text);
+  if (not mod)
     return false;
+  current = mod;
   if (not first)
     first = current;
   return true;
@@ -1241,11 +1245,56 @@ elab_using(Using_tree* t) {
     return nullptr;
   }
 
-
   declare(id->name(), id->decl());
   return make_expr<Using>(t->loc, get_type(decl), name, decl);
 }
 
+
+// ---------------------------------------------------------------------------//
+// Elaboration of load expressions.
+//
+// A load expression is a reference to a declaration that is (probably)
+// not imported. The primary use of load expressions is to query a
+// program for properties of a declaration.
+//
+// Diagnostics are fully suppressed for this elaboration.
+
+// The specific method of elaboration is a little odd. First, we try
+// to elaborate the laod of a module. This will cause any module names
+// to be resolved within the loaded name. If the name happens to refer
+// to a module, we're done. If not, then we try to resolve the
+// declaration as an id. Note that we have already loaded any modules
+// occuring as part of the id.
+Expr*
+elab_load(Load_tree* t) {
+  Diagnostics diags;
+  Diagnostics_guard guard(diags);
+
+  // Try to elaborate the name as a module. If we succeed,
+  // the we don't need to do anything else.
+  Module* first = nullptr;
+  Module* current = nullptr;
+  bool ok = elab_module_name(first, current, t->name());
+  if (ok)
+    return first;
+  if (not first)
+    return nullptr;
+
+  // Otherwise, declare the first resolved module.
+  Decl* imp = make_expr<Import>(t->loc, first, first->name(), first);
+  declare(imp);
+
+  // Now, try to resolve the name in the usual way.
+  Expr* e = elab_expr(t->name());
+  if (not e)
+    return nullptr;
+
+  // See through declaration.
+  if (Decl_id* id = as<Decl_id>(e))
+    return id->decl();
+  else
+    return e;
+}
 
 
 // ---------------------------------------------------------------------------//
@@ -1290,6 +1339,7 @@ elab_expr(Tree* t) {
   case field_tree: return elab_field(as<Field_tree>(t));
   case import_tree: return elab_import(as<Import_tree>(t));
   case using_tree: return elab_using(as<Using_tree>(t));
+  case load_tree: return elab_load(as<Load_tree>(t));
     break;
   // Misc
   case top_tree: return elab_top(as<Top_tree>(t));

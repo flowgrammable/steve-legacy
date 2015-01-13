@@ -74,8 +74,10 @@ main(int argc, char* argv[]) {
   cli::Command& cmd = *iter->second;
 
   // Run the command.
-  if (not cmd(++last, argc, argv))
+  if (not cmd(++last, argc, argv)) {
+    std::cerr << diags;
     return -1;
+  }
   
   return 0;
 }

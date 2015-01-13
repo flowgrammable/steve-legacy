@@ -5,6 +5,9 @@
 #include <steve/Elaborator.hpp>
 #include <steve/Lexer.hpp>
 #include <steve/Parser.hpp>
+#include <steve/Scope.hpp>
+#include <steve/Syntax.hpp>
+#include <steve/Token.hpp>
 #include <steve/Type.hpp>
 
 #include <fstream>
@@ -81,8 +84,6 @@ Decl_seq*
 parse_module(const Location& loc, File* f) {
   // Save off the current diagnostics so we don't overwrite them
   // with the lexer, parser, and elaborator.
-  //
-  // TODO: This is dumb; those components should do that already.
   Diagnostics_guard guard;
 
   // Get the text.
@@ -95,6 +96,10 @@ parse_module(const Location& loc, File* f) {
   // Lex the module.
   Lexer lex;
   Tokens toks = lex(f);
+  if (not lex.diags.empty()) {
+    std::cerr << lex.diags;
+    return nullptr;
+  }
 
   // Parse the module.
   Parser parse;
@@ -285,6 +290,28 @@ load_file(const Path& input) {
   if (not diags.empty())
     std::cerr << diags;
   return nullptr;
+}
+
+// Load the declaration corresponding to the given identifier.
+Expr*
+load_name(const std::string& s) {
+  Lexer lex;
+  Tokens toks = lex(nullptr, s.begin(), s.end());
+  if (not lex.diags.empty()) {
+    std::cerr << lex.diags;
+    return nullptr;
+  }
+
+  Parser parse;
+  Tree* id = parse(toks, postfix_parse);
+  if (not parse.diags.empty()) {
+    std::cerr << parse.diags;
+    return nullptr;
+  }
+  id = new Load_tree(id);
+
+  Elaborator elab;
+  return elab(id);
 }
 
 } // namesapce steve
