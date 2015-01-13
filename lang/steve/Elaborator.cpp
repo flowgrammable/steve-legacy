@@ -175,15 +175,6 @@ elab_int(Lit_tree* t, const Token* k) {
   return make_expr<Int>(t->loc, get_int_type(), as_integer(*k));
 }
 
-template<typename F>
-  Expr*
-  elab_intrinsic(Tree* t, F fn) {
-    Decl* decl = fn();
-    Name* name = get_name(decl);
-    Type* type = get_type(decl);
-    return make_expr<Decl_id>(t->loc, type, name, decl);
-  }
-
 // Elaborate a literal. The type of a literal depends on its token.
 // In the rules for elaborating literals
 //
@@ -209,7 +200,6 @@ elab_lit(Lit_tree* t) {
   case nat_tok: return make_nat_type(t->loc);
   case int_tok: return make_int_type(t->loc);
   case char_tok: return make_char_type(t->loc);
-  case bitfield_tok: return elab_intrinsic(t, get_bitfield);
   case unit_tok: return elab_unit(t, k);
   case boolean_literal_tok: return elab_bool(t, k);
   case binary_literal_tok: return elab_int(t, k);
@@ -1177,6 +1167,8 @@ elab_module_name(Module*& first, Module*& current, Tree* t) {
   // Adjust the elaboration for nested module names.
   if (Dot_tree* dot = as<Dot_tree>(t))
     t = elab_nested_module_name(first, current, dot);
+  if (not t)
+    return false;
 
   // Elabarate the trailing id-expression.
   if (Id_tree* id = as<Id_tree>(t)) {

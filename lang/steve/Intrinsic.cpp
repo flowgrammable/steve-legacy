@@ -502,17 +502,13 @@ init_intrinsics() {
     { or_tok,             {bool_, bool_}, bool_, bool_or},
     { not_tok,            {bool_, bool_}, bool_, bool_not},
 
-    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield},
+    { "__bits",           {typename_, nat_, nat_}, typename_, eval_bitfield},
     { "__net_str",        {nat_}, typename_,                  eval_net_str_type},
 
     // FIXME: the second argument tyoe should be (t)->bool 
     // where t is the type given as the first argument.
     { "__net_seq",        {typename_, bool_}, typename_,       eval_net_seq_type},
   };
-
-  // Extract the declared features
-  // TODO: Actually do this, or just allow lookups in the usual way?
-  bitfield_ = lookup_single(make_name("bitfield"));
 
   // FIXME: This could be improved.
   if (not current_diagnostics()->empty()) {

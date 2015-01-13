@@ -780,8 +780,8 @@ parse_id_expr(Parser& p) {
 //                      | decimal-integer-literal
 //                      | hexadecimal-integer-literal
 //
-//    type-literal ::= 'typename' | 'unit' | bool' | nat' 
-//                   | 'int' | 'char' | 'bitfield'
+//    type-literal ::= 'typename' | 'unit' | 'bool' | 'nat' 
+//                   | 'int' | 'char'
 //
 // Note all literals correspond to tokens.
 Tree*
@@ -804,7 +804,6 @@ parse_literal_expr(Parser& p) {
   case nat_tok:
   case int_tok:
   case char_tok:
-  case bitfield_tok:
     consume(p); 
     return new Lit_tree(k);
   default: 

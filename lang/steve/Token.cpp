@@ -65,7 +65,6 @@ init_tokens() {
   init_token(and_tok, "and");
   init_token(array_tok, "array");
   init_token(bool_tok, "bool");
-  init_token(bitfield_tok, "bitfield");
   init_token(char_tok, "char");
   init_token(def_tok, "def");
   init_token(else_tok, "else");
