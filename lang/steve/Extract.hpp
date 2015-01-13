@@ -159,6 +159,17 @@ struct List_extractor : Extractor, Visitor {
   List_extraction what;
 };
 
+// -------------------------------------------------------------------------- //
+// Documentation
+//
+// The documentation extractor extracts the associated documentation
+// for a declaration in a given module.
+
+struct Doc_extractor : Extractor {
+  Doc_extractor();
+  void operator()(const std::string&);
+};
+
 } // namespace steve
 
 #include <steve/Extract.ipp>

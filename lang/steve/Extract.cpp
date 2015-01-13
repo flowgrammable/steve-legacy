@@ -158,4 +158,14 @@ List_extractor::visit(Def* d) {
     std::cout << "Doc: " << c->text() << '\n';
 }
 
+// -------------------------------------------------------------------------- //
+// Documentation extractor
+
+Doc_extractor::Doc_extractor() { }
+
+void
+Doc_extractor::operator()(const std::string& s) {
+
+}
+
 } // namespace steve
