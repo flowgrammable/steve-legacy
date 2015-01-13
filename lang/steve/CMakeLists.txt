@@ -1,11 +1,10 @@
 
-# Build configuration.
-include_directories(.. ${BOOST_INCLUDE_DIR})
-link_directories(${BOOST_LIBRARY_DIR})
+include_directories(.. ${GMP_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 
 set(cppformat_src contrib/cppformat/format.cc)
 set(contrib_src ${cppformat_src})
 
+# TODO: Factor this into smaller libraries (core, lang, cli, etc.).
 add_library(steve-lib
   Meta.cpp
   Debug.cpp
@@ -44,10 +43,10 @@ add_library(steve-lib
   ${contrib_src}
 )
 set_target_properties(steve-lib PROPERTIES ARCHIVE_OUTPUT_NAME steve)
-target_link_libraries(steve-lib gc gmp boost_system boost_filesystem)
+target_link_libraries(steve-lib ${GMP_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(steve Main.cpp Cli.cpp)
 target_link_libraries(steve steve-lib)
 
-add_subdirectory(Token.test)
-add_subdirectory(Ast.test)
+# add_subdirectory(Token.test)
+# add_subdirectory(Ast.test)

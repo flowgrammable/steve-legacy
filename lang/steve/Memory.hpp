@@ -3,8 +3,6 @@
 
 #include <memory>
 
-// Boehm GC
-
 namespace steve {
 
 struct Gc { };
@@ -15,6 +13,8 @@ template<typename T>
 } // namespace steve
 
 #if 0
+
+// Boehm GC
 
 // Force GC-related code to be scoped to boehmgc.
 // FIXME: Older versions may not install this.

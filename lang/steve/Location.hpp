@@ -6,7 +6,7 @@
 
 namespace steve {
 
-struct File;
+class File;
 
 // A univalent type used to construct a location that does not
 // refer to a source code location.
@@ -22,7 +22,8 @@ enum eof_location_t { eof_location };
 // enregistered? This is a large project and probably entails
 // the restructing of locations as simply pointers into another
 // data structure.
-struct Location {
+class Location {
+public:
   Location() = default;
   Location(File*);
   Location(no_location_t);
