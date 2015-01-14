@@ -65,7 +65,10 @@ init_tokens() {
   init_token(and_tok, "and");
   init_token(array_tok, "array");
   init_token(bool_tok, "bool");
+  init_token(break_tok, "break");
+  init_token(case_tok, "case");
   init_token(char_tok, "char");
+  init_token(continue_tok, "continue");
   init_token(def_tok, "def");
   init_token(else_tok, "else");
   init_token(enum_tok, "enum");

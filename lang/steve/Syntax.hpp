@@ -10,6 +10,7 @@ namespace steve {
 // Expressions
 constexpr Node_kind id_tree      = make_tree_node(1);  // identfiers
 constexpr Node_kind lit_tree     = make_tree_node(2);  // literals
+constexpr Node_kind brace_tree   = make_tree_node(3);  // { s1; s2; ... }
 constexpr Node_kind call_tree    = make_tree_node(10); // e1(e*)
 constexpr Node_kind index_tree   = make_tree_node(11); // e1[e2]
 constexpr Node_kind dot_tree     = make_tree_node(12); // e1.e2
@@ -18,15 +19,17 @@ constexpr Node_kind app_tree     = make_tree_node(14); // e1 e2
 constexpr Node_kind unary_tree   = make_tree_node(15); // op e
 constexpr Node_kind binary_tree  = make_tree_node(16); // e1 op e2
 constexpr Node_kind if_tree      = make_tree_node(17); // if e1 then s1 else s2
-constexpr Node_kind while_tree   = make_tree_node(18); // while (e1) s
-constexpr Node_kind switch_tree  = make_tree_node(19); // switch (e1) s
 // Types
 constexpr Node_kind record_tree  = make_tree_node(20); // record { ... }
 constexpr Node_kind variant_tree = make_tree_node(21); // variant { ... }
 constexpr Node_kind enum_tree    = make_tree_node(22); // enum { ... }
 // Statements
-constexpr Node_kind block_tree   = make_tree_node(100); // { e }
-constexpr Node_kind return_tree  = make_tree_node(101); // return e
+constexpr Node_kind return_tree  = make_tree_node(101); // return e;
+constexpr Node_kind break_tree   = make_tree_node(102); // break;
+constexpr Node_kind cont_tree    = make_tree_node(103); // continue;
+constexpr Node_kind while_tree   = make_tree_node(104); // while (e1) s
+constexpr Node_kind switch_tree  = make_tree_node(105); // switch (e1) s
+constexpr Node_kind case_tree    = make_tree_node(106); // case e: s
 constexpr Node_kind load_tree    = make_tree_node(120); // load n
 // Declarations
 constexpr Node_kind value_tree   = make_tree_node(30); // x : T (in def)
@@ -69,6 +72,16 @@ struct Lit_tree : Tree, Kind_of<lit_tree> {
   const Token* value() const { return first; }
 
   const Token* first;
+};
+
+// A brace tree is an enclosed sequence of statements.
+struct Brace_tree : Tree, Kind_of<brace_tree> {
+  Brace_tree(const Token* k, Tree_seq* s)
+    : Tree(Kind, k->loc), first(s) { }
+
+  Tree_seq* stmts() const { return first; }
+
+  Tree_seq* first;
 };
 
 // A call expression of the form 'f(as*)' where 'f' is a function
@@ -176,6 +189,32 @@ struct If_tree : Tree, Kind_of<if_tree> {
   Tree* third;
 };
 
+
+// -------------------------------------------------------------------------- //
+// Statements
+
+// A return statement defines the value of a block statement.
+struct Return_tree : Tree, Kind_of<return_tree> {
+  Return_tree(const Token* k, Tree* t)
+    : Tree(Kind, k->loc), first(t) { }
+
+  Tree* value() const { return first; }
+
+  Tree* first;
+};
+
+// A break statement.
+struct Break_tree : Tree, Kind_of<break_tree> {
+  Break_tree(const Token* k)
+    : Tree(Kind, k->loc) { }
+};
+
+// A continue statement.
+struct Cont_tree : Tree, Kind_of<cont_tree> {
+  Cont_tree(const Token* k)
+    : Tree(Kind, k->loc) { }
+};
+
 // A while expression.
 struct While_tree : Tree, Kind_of<while_tree> {
   While_tree(const Token* k, Tree* c, Tree* b)
@@ -200,28 +239,16 @@ struct Switch_tree : Tree, Kind_of<switch_tree> {
   Tree* second;
 };
 
+// A case label within a switch.
+struct Case_tree : Tree, Kind_of<case_tree> {
+  Case_tree(const Token* k, Tree* t, Tree* b)
+    : Tree(Kind, k->loc), first(t), second(b) { }
 
-// -------------------------------------------------------------------------- //
-// Statements
-
-// A block statement is a sequence of statements.
-struct Block_tree : Tree, Kind_of<block_tree> {
-  Block_tree(const Token* k, Tree_seq* s)
-    : Tree(Kind, k->loc), first(s) { }
-
-  Tree_seq* stmts() const { return first; }
-
-  Tree_seq* first;
-};
-
-// A return statement defines the value of a block statement.
-struct Return_tree : Tree, Kind_of<return_tree> {
-  Return_tree(const Token* k, Tree* t)
-    : Tree(Kind, k->loc), first(t) { }
-
-  Tree* value() const { return first; }
+  Tree* label() const { return first; }
+  Tree* body() const { return second; }
 
   Tree* first;
+  Tree* second;
 };
 
 // An internal syntax to support a reference to a declaration

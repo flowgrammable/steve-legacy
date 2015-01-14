@@ -35,13 +35,14 @@ constexpr Node_kind array_type        = make_type_node(14); // T[n]
 constexpr Node_kind dep_type          = make_type_node(30); // f(args) -> typename
 constexpr Node_kind module_type       = make_type_node(50); // module
 // Intrinsic types for networking
-constexpr Node_kind net_str_type      = make_type_node(100);  // string(n)
-constexpr Node_kind net_seq_type      = make_type_node(101);  // sequence(t, p)
+constexpr Node_kind net_str_type      = make_type_node(100);  // __net_str(n)
+constexpr Node_kind net_seq_type      = make_type_node(101);  // __net_seq(t, p)
 // Terms
 constexpr Node_kind unit_term      = make_term_node(1);  // ()
 constexpr Node_kind bool_term      = make_term_node(2);  // {true, false}
 constexpr Node_kind int_term       = make_term_node(3);  // {0, 1, 2, ..., n}
 constexpr Node_kind default_term   = make_term_node(4);  // default
+constexpr Node_kind if_term        = make_term_node(5);  // if t1 then t2 else t3
 // Misc terms
 constexpr Node_kind block_term     = make_term_node(20); // { ... }
 constexpr Node_kind fn_term        = make_term_node(21); // fn(p*)->t.e
@@ -53,8 +54,13 @@ constexpr Node_kind variant_term   = make_term_node(30); // <e:t> (value of a va
 constexpr Node_kind unary_term     = make_term_node(40); // op t
 constexpr Node_kind binary_term    = make_term_node(41); // t1 op t2
 constexpr Node_kind builtin_term   = make_term_node(50); // <intrinsic>
-
 // Statements
+constexpr Node_kind block_stmt     = make_stmt_node(1); // { s1; s2; ...}
+constexpr Node_kind return_stmt    = make_stmt_node(2); // return s;
+constexpr Node_kind break_stmt     = make_stmt_node(3); // break;
+constexpr Node_kind continue_stmt  = make_stmt_node(4); // continue;
+constexpr Node_kind while_stmt     = make_stmt_node(3); // while (e) s
+constexpr Node_kind switch_stmt    = make_stmt_node(4); // switch (e) s
 // Declarations
 constexpr Node_kind top_decl       = make_decl_node(1); // decl*
 constexpr Node_kind def_decl       = make_decl_node(2); // def n : t = e

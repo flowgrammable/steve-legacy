@@ -454,7 +454,6 @@ template<typename T, typename... Args>
 // Parsers
 
 Tree* parse_name(Parser&);
-Tree* parse_init(Parser&);
 Tree* parse_expr(Parser&);
 Tree* parse_decl(Parser&);
 Tree* parse_stmt(Parser&);
@@ -469,19 +468,10 @@ Tree* parse_stmt(Parser&);
 
 // Parse an argument.
 //
-//    argument ::= init
-//
-// An argument is an initializer. This allows the full range of
-// initializers to be used as arguments to a function. For 
-// example, this:
-//
-//    f({e1, e2})
-//
-// is a call to f where the argument is a block-stmt representing
-// an initialization list.
+//    argument ::= expr
 Tree*
 parse_argument(Parser& p) { 
-  return parse_init(p); 
+  return parse_expr(p); 
 }
 
 // Parse an argument-list, a comma-separated list of arguments.
@@ -535,14 +525,14 @@ parse_required_return_type(Parser& p) {
 Tree*
 parse_initializer_clause(Parser& p) {
   if (accept(p, equal_tok))
-    return parse_init(p);
+    return parse_expr(p);
   return nullptr;
 }
 
 Tree*
 parse_required_initializer_clause(Parser& p) {
   if (expect(p, equal_tok))
-    return parse_init(p);
+    return parse_expr(p);
   return nullptr;
 }
 
@@ -872,11 +862,26 @@ parse_literal_expr(Parser& p) {
 // Note that a grouping expression allows a nested comma expression.
 Tree*
 parse_paren_expr(Parser& p) {
-  extern Tree* parse_comma_expr(Parser&); // Yes, this works.
+  extern Tree* parse_comma_expr(Parser&);
   if (accept(p, lparen_tok))
     if (Tree* t = parse_expected(p, parse_comma_expr, "expression"))
       if (expect(p, rparen_tok))
         return t;
+  return nullptr;
+}
+
+// Parse a braced expresssion.
+//
+//    brace-expr ::= '{' statement-seq '}'
+//
+// A braced expression allows a sequence of statements. Note that this
+// may alternately be elaborated as a block-stmt or some other form
+// of aggregate initializer.
+Tree*
+parse_brace_expr(Parser& p) {
+  const Token* k = peek(p);
+  if (Tree_seq* s =  parse_brace_enclosed(p, parse_stmt_seq))
+    return new Brace_tree(k, s);
   return nullptr;
 }
 
@@ -894,6 +899,8 @@ parse_primary_expr(Parser& p) {
   if (Tree* t = parse_id_expr(p))
     return t;
   if (Tree* t = parse_paren_expr(p))
+    return t;
+  if (Tree* t = parse_brace_expr(p))
     return t;
   return nullptr;
 }
@@ -1217,6 +1224,18 @@ parse_comma_expr(Parser& p) {
 // -------------------------------------------------------------------------- //
 // Statements
 
+
+// Parse a return statement.
+//
+//    return-stmt ::= 'return' expr
+Tree*
+parse_return_stmt(Parser& p) {
+  if (const Token* k = accept(p, return_tok))
+    if (Tree* t = parse_expr(p))
+      return new Return_tree(k, t);
+  return nullptr;
+}
+
 // Parse a while expression.
 //
 //    while-expr ::= 'while' '(' expr ')' stmt
@@ -1226,6 +1245,26 @@ parse_while_stmt(Parser& p) {
     if (Tree* c = parse_paren_enclosed(p, parse_expr))
       if (Tree* b = parse_stmt(p))
         return new While_tree(k, c, b);
+  return nullptr;
+}
+
+// Parse a break statement.
+//
+//    break-stmt ::= break ';'
+Tree*
+parse_break_stmt(Parser& p) {
+  if (const Token* k = accept(p, break_tok))
+    if (expect(p, semicolon_tok))
+      return new Break_tree(k);
+  return nullptr;
+}
+
+// Parse a continue
+Tree*
+parse_continue_stmt(Parser& p) {
+  if (const Token* k = accept(p, continue_tok))
+    if (expect(p, semicolon_tok))
+      return new Cont_tree(k);
   return nullptr;
 }
 
@@ -1241,25 +1280,25 @@ parse_switch_stmt(Parser& p) {
   return nullptr;
 }
 
-// Parse a return statement.
+// Parse a case statement.
 //
-//    return-stmt ::= 'return' expr
-Tree*
-parse_return_stmt(Parser& p) {
-  if (const Token* k = accept(p, return_tok))
-    if (Tree* t = parse_expr(p))
-      return new Return_tree(k, t);
-  return nullptr;
-}
-
-// Parse a block statement.
+//    case-stmt ::= 'case' expr ':' stmt
 //
-//    block-stmt ::= '{' stmt-seq '}'
+// A case-stmt shall appear only with the a switch-stmt.
 Tree*
-parse_block_stmt(Parser& p) {
-  const Token* k = peek(p);
-  if (Tree_seq* s =  parse_brace_enclosed(p, parse_stmt_seq))
-    return new Block_tree(k, s);
+parse_case_stmt(Parser& p) {
+  if (const Token* k = accept(p, case_tok)) {
+    if (Tree* e = parse_expr(p)) {
+      if (expect(p, colon_tok)) {
+        if (Tree* s = parse_stmt(p))
+          return new Case_tree(k, e, s);
+        else
+          error(p) << "exected 'statement' after ':'";
+      }
+    } else {
+      error(p) << "exected 'expression' after 'case'";
+    }
+  }
   return nullptr;
 }
 
@@ -1269,6 +1308,9 @@ parse_block_stmt(Parser& p) {
 inline Tree*
 parse_decl_stmt(Parser& p) { return parse_decl(p); }
 
+// Parse an expression statement.
+//
+//    expr-stmt ::= expr ';'
 Tree*
 parse_expr_stmt(Parser& p) {
   if (Tree* t = parse_expr(p))
@@ -1277,16 +1319,34 @@ parse_expr_stmt(Parser& p) {
   return nullptr;
 }
 
+// Parse a block statement.
+//
+//    block-stmt ::= brace-expr
+inline Tree*
+parse_block_stmt(Parser& p) { return parse_brace_expr(p); }
+
 // Parse a statement.
 //
-//    stmt ::= return-stmt | decl-stmt | expr-stmt
+//    stmt ::= return-stmt | decl-stmt | block-stmt | expr-stmt
+//
+// A brace-expression appearing as a statement is a block-stmt.
 Tree*
 parse_stmt(Parser& p) {
-  if (Tree* s = parse_block_stmt(p))
-    return s;
   if (Tree* s = parse_return_stmt(p))
     return s;
+  if (Tree* s = parse_while_stmt(p))
+    return s;
+  if (Tree* s = parse_break_stmt(p))
+    return s;
+  if (Tree* s = parse_continue_stmt(p))
+    return s;
+  if (Tree* s = parse_switch_stmt(p))
+    return s;
+  if (Tree* s = parse_case_stmt(p))
+    return s;
   if (Tree* s = parse_decl_stmt(p))
+    return s;
+  if (Tree* s = parse_block_stmt(p))
     return s;
   if (Tree* s = parse_expr_stmt(p))
     return s;
@@ -1385,7 +1445,7 @@ parse_fn_declarator(Parser& p, Tree* n) {
 inline bool
 is_braced_initializer(Tree* t) {
   switch (t->kind) {
-  case block_tree:
+  case brace_tree:
   case record_tree:
   case variant_tree:
   case enum_tree:
@@ -1398,7 +1458,7 @@ is_braced_initializer(Tree* t) {
 // Parse a definition.
 //
 //    def-decl ::= declarator '=' expr ';'
-//               | declarator '=' block-stmt
+//               | declarator '=' brace-expr
 //               | declarator '=' tag-type
 //
 //    declarator ::= value-declarator | fn-declatator
