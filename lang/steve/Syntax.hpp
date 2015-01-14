@@ -17,11 +17,18 @@ constexpr Node_kind range_tree   = make_tree_node(13); // e1..e2
 constexpr Node_kind app_tree     = make_tree_node(14); // e1 e2
 constexpr Node_kind unary_tree   = make_tree_node(15); // op e
 constexpr Node_kind binary_tree  = make_tree_node(16); // e1 op e2
+constexpr Node_kind if_tree      = make_tree_node(17); // if e1 then s1 else s2
+constexpr Node_kind while_tree   = make_tree_node(18); // while (e1) s
+constexpr Node_kind switch_tree  = make_tree_node(19); // switch (e1) s
 // Types
 constexpr Node_kind record_tree  = make_tree_node(20); // record { ... }
 constexpr Node_kind variant_tree = make_tree_node(21); // variant { ... }
 constexpr Node_kind enum_tree    = make_tree_node(22); // enum { ... }
-// Statements and declarations
+// Statements
+constexpr Node_kind block_tree   = make_tree_node(100); // { e }
+constexpr Node_kind return_tree  = make_tree_node(101); // return e
+constexpr Node_kind load_tree    = make_tree_node(120); // load n
+// Declarations
 constexpr Node_kind value_tree   = make_tree_node(30); // x : T (in def)
 constexpr Node_kind parm_tree    = make_tree_node(31); // x : T (in parms)
 constexpr Node_kind fn_tree      = make_tree_node(32); // f(p)->T (in def)
@@ -30,9 +37,8 @@ constexpr Node_kind field_tree   = make_tree_node(34); // x : T where (in record
 constexpr Node_kind alt_tree     = make_tree_node(36); // e1 : e2 (in variant)
 constexpr Node_kind import_tree  = make_tree_node(50); // import e
 constexpr Node_kind using_tree   = make_tree_node(51); // using n
-constexpr Node_kind load_tree    = make_tree_node(52); // load n
 // Misc
-constexpr Node_kind top_tree     = make_tree_node(100);
+constexpr Node_kind top_tree     = make_tree_node(1000);
 
 // The base class of all tree nodes.
 struct Tree : Node { 
@@ -42,6 +48,8 @@ struct Tree : Node {
 // Sequences of trees.
 using Tree_seq = Seq<Tree>;
 
+// -------------------------------------------------------------------------- //
+// Expressions
 
 // An identifier.
 struct Id_tree : Tree, Kind_of<id_tree> {
@@ -154,6 +162,83 @@ struct Binary_tree : Tree, Kind_of<binary_tree> {
   Tree* third;
 };
 
+// An if expression.
+struct If_tree : Tree, Kind_of<if_tree> {
+  If_tree(const Token* k, Tree* c, Tree* t, Tree* f)
+    : Tree(Kind, k->loc), first(c), second(t), third(f) { }
+
+  Tree* cond() const { return first; }
+  Tree* succ() const { return second; }
+  Tree* fail() const { return third; }
+
+  Tree* first;
+  Tree* second;
+  Tree* third;
+};
+
+// A while expression.
+struct While_tree : Tree, Kind_of<while_tree> {
+  While_tree(const Token* k, Tree* c, Tree* b)
+    : Tree(Kind, k->loc), first(c), second(b) { }
+
+  Tree* cond() const { return first; }
+  Tree* body() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+// A switch expression.
+struct Switch_tree : Tree, Kind_of<switch_tree> {
+  Switch_tree(const Token* k, Tree* t, Tree* b)
+    : Tree(Kind, k->loc), first(t), second(b) { }
+
+  Tree* term() const { return first; }
+  Tree* body() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+
+// -------------------------------------------------------------------------- //
+// Statements
+
+// A block statement is a sequence of statements.
+struct Block_tree : Tree, Kind_of<block_tree> {
+  Block_tree(const Token* k, Tree_seq* s)
+    : Tree(Kind, k->loc), first(s) { }
+
+  Tree_seq* stmts() const { return first; }
+
+  Tree_seq* first;
+};
+
+// A return statement defines the value of a block statement.
+struct Return_tree : Tree, Kind_of<return_tree> {
+  Return_tree(const Token* k, Tree* t)
+    : Tree(Kind, k->loc), first(t) { }
+
+  Tree* value() const { return first; }
+
+  Tree* first;
+};
+
+// An internal syntax to support a reference to a declaration
+// that has not yet been imported. This is primarily used by
+// tools to extract information for a declaration.
+struct Load_tree : Tree, Kind_of<load_tree> {
+  Load_tree(Tree* n)
+    : Tree(Kind, no_location), first(n) { }
+
+  Tree* name() const { return first; }
+
+  Tree* first;
+};
+
+
+// -------------------------------------------------------------------------- //
+// Types
 
 // A record type of the form 'record { f* }' where 'f*' is a sequence
 // of fields.
@@ -288,18 +373,6 @@ struct Import_tree : Tree, Kind_of<import_tree> {
 struct Using_tree : Tree, Kind_of<using_tree> {
   Using_tree(const Token* k, Tree* n)
     : Tree(Kind, k->loc), first(n) { }
-
-  Tree* name() const { return first; }
-
-  Tree* first;
-};
-
-// An internal syntax to support a reference to a declaration
-// that has not yet been imported. This is primarily used by
-// tools to extract information for a declaration.
-struct Load_tree : Tree, Kind_of<load_tree> {
-  Load_tree(Tree* n)
-    : Tree(Kind, no_location), first(n) { }
 
   Tree* name() const { return first; }
 

@@ -454,9 +454,10 @@ template<typename T, typename... Args>
 // Parsers
 
 Tree* parse_name(Parser&);
+Tree* parse_init(Parser&);
 Tree* parse_expr(Parser&);
 Tree* parse_decl(Parser&);
-Tree* pares_stmt(Parser&);
+Tree* parse_stmt(Parser&);
 
 
 // -------------------------------------------------------------------------- //
@@ -464,12 +465,23 @@ Tree* pares_stmt(Parser&);
 //
 // this also includes parsers for expression-related constructs.
 
+
+
 // Parse an argument.
 //
-//    argument ::= expr
+//    argument ::= init
+//
+// An argument is an initializer. This allows the full range of
+// initializers to be used as arguments to a function. For 
+// example, this:
+//
+//    f({e1, e2})
+//
+// is a call to f where the argument is a block-stmt representing
+// an initialization list.
 Tree*
 parse_argument(Parser& p) { 
-  return parse_expr(p); 
+  return parse_init(p); 
 }
 
 // Parse an argument-list, a comma-separated list of arguments.
@@ -519,30 +531,52 @@ parse_required_return_type(Parser& p) {
 // Parse an initializer clause. This associates a definition with a
 // declarator.
 //
-//    initializer-clause ::= '=' expr
+//    initializer-clause ::= '=' stmt
 Tree*
 parse_initializer_clause(Parser& p) {
   if (accept(p, equal_tok))
-    return parse_expr(p);
+    return parse_init(p);
   return nullptr;
 }
 
 Tree*
 parse_required_initializer_clause(Parser& p) {
   if (expect(p, equal_tok))
-    return parse_expr(p);
+    return parse_init(p);
   return nullptr;
 }
 
 // Parse a where clause.
 //
-//    where-clause ::= 'where' constraint
+//    where-clause ::= 'where' expr
 Tree*
 parse_where_clause(Parser& p) {
   if (accept(p, where_tok)) {
     return parse_expected(p, parse_expr, "expression");
   }
   return nullptr;
+}
+
+// Parse a sequence of statements.
+//
+//    stmt-seq ::= stmt*
+Tree_seq*
+parse_stmt_seq(Parser& p) {
+  Tree_seq* stmts = new Tree_seq();
+  while (Tree* s = parse_stmt(p))
+    stmts->push_back(s);
+  return stmts;
+}
+
+// Parse a sequence of declarations.
+//
+//    decl-seq ::= decl*
+Tree_seq*
+parse_decl_seq(Parser& p) {
+  Tree_seq* decls = new Tree_seq();
+  while (Tree* s = parse_decl(p))
+    decls->push_back(s);
+  return decls;
 }
 
 
@@ -570,6 +604,26 @@ Tree*
 parse_name(Parser& p) {
   if (Tree* n = parse_basic_id(p)) 
     return n;
+  return nullptr;
+}
+
+
+// -------------------------------------------------------------------------- //
+// Initializers
+
+// Parse an initializer.
+//
+//    init ::= expr | block-stmt
+//
+// An initializer is an expression used to initialize a value. In
+// general, these are simply expressions, but 
+Tree*
+parse_init(Parser& p) {
+  extern Tree* parse_block_stmt(Parser&);
+  if (Tree* s = parse_block_stmt(p))
+    return s;
+  if (Tree* e = parse_expr(p))
+    return e;
   return nullptr;
 }
 
@@ -931,8 +985,34 @@ parse_postfix_expr(Parser& p) {
   return nullptr;
 }
 
+Tree*
+parse_if_expr(Parser& p) {
+  if (const Token* k = accept(p, if_tok)) {
+    if (Tree* c = parse_expr(p)) {
+      if (expect(p, then_tok)) {
+        if (Tree* t = parse_stmt(p)) {
+          if (expect(p, else_tok)) {
+            if (Tree* f = parse_stmt(p))
+              return new If_tree(k, c, t, f);
+            else
+              error(p) << "exected 'statement' after 'else'";
+          }
+        } else {
+          error(p) << "exected 'statement' after 'then'";
+        }
+      }
+    } else {
+      error(p) << "expected 'expession' after 'if'";
+    }
+  }
+  return nullptr;
+}
+
 // Parse a unary expression. A unary expression is typically a single-operand
 // expression whose operator preceds the operand (e.g., not e).
+//
+//    prefix-expr ::= if-expr | record-type | variant-type | enum-type
+//                  | postfix-expr
 Tree*
 parse_prefix_expr(Parser& p) {
   if (Tree* t = parse_record_type(p))
@@ -1123,8 +1203,7 @@ parse_assignment_expr(Parser& p) {
 
 // Parse a comma expression: a sequence of comma separated expressions.
 //
-//    comma-expr ::= expr
-//                 | comma-expr ',' expr
+//    comma-expr ::= expr | comma-expr ',' expr
 //
 // Note that the comma epxr has lower precedence than a usual
 // expression.
@@ -1136,11 +1215,91 @@ parse_comma_expr(Parser& p) {
 
 
 // -------------------------------------------------------------------------- //
+// Statements
+
+// Parse a while expression.
+//
+//    while-expr ::= 'while' '(' expr ')' stmt
+Tree*
+parse_while_stmt(Parser& p) {
+  if (const Token* k = accept(p, while_tok))
+    if (Tree* c = parse_paren_enclosed(p, parse_expr))
+      if (Tree* b = parse_stmt(p))
+        return new While_tree(k, c, b);
+  return nullptr;
+}
+
+// Parse a switch statement.
+//
+//    switch-stmt ::= 'switch' '(' expr ')' stmt
+Tree*
+parse_switch_stmt(Parser& p) {
+  if (const Token* k = accept(p, switch_tok))
+    if (Tree* v = parse_paren_enclosed(p, parse_expr))
+      if (Tree* b = parse_stmt(p))
+        return new Switch_tree(k, v, b);
+  return nullptr;
+}
+
+// Parse a return statement.
+//
+//    return-stmt ::= 'return' expr
+Tree*
+parse_return_stmt(Parser& p) {
+  if (const Token* k = accept(p, return_tok))
+    if (Tree* t = parse_expr(p))
+      return new Return_tree(k, t);
+  return nullptr;
+}
+
+// Parse a block statement.
+//
+//    block-stmt ::= '{' stmt-seq '}'
+Tree*
+parse_block_stmt(Parser& p) {
+  const Token* k = peek(p);
+  if (Tree_seq* s =  parse_brace_enclosed(p, parse_stmt_seq))
+    return new Block_tree(k, s);
+  return nullptr;
+}
+
+// Parse a declaration statement.
+//
+//    decl-stmt ::= decl
+inline Tree*
+parse_decl_stmt(Parser& p) { return parse_decl(p); }
+
+Tree*
+parse_expr_stmt(Parser& p) {
+  if (Tree* t = parse_expr(p))
+    if (expect(p, semicolon_tok))
+      return t;
+  return nullptr;
+}
+
+// Parse a statement.
+//
+//    stmt ::= return-stmt | decl-stmt | expr-stmt
+Tree*
+parse_stmt(Parser& p) {
+  if (Tree* s = parse_block_stmt(p))
+    return s;
+  if (Tree* s = parse_return_stmt(p))
+    return s;
+  if (Tree* s = parse_decl_stmt(p))
+    return s;
+  if (Tree* s = parse_expr_stmt(p))
+    return s;
+  return nullptr;
+}
+
+
+// -------------------------------------------------------------------------- //
 // Declarations
 
-// Parse an const-decl.
+// Parse a value declarator.
 //
-//    const-decl ::= 'def' name declared-type inititializer-clause;
+//    value-declarator ::= name declared-type
 //
 // The point of declaration is after the declarator (n : t), before
 // the initializer.
@@ -1148,7 +1307,7 @@ parse_comma_expr(Parser& p) {
 // TODO: Allow the declared-type to be ommitted so that it can be
 // deduced from its initializer.
 Tree*
-parse_const_decl(Parser& p, Tree* n) {
+parse_value_declarator(Parser& p, Tree* n) {
   if (Tree* t = parse_declared_type(p))
     return new Value_tree(n, t);
   return nullptr;
@@ -1156,7 +1315,7 @@ parse_const_decl(Parser& p, Tree* n) {
 
 // Parse a parmaeter-decl. Note that the initializer is option.
 //
-//    parmaeter-decl ::= name declared-type [initializer-clause]
+//    parmaeter-decl ::= name declared-type initializer-clause?
 //
 // The point of declaration for a parmater is after its complete
 // declarator (n : t).
@@ -1208,23 +1367,46 @@ parse_parameter_clause(Parser& p) {
 
 // Parse a function declarator.
 //
-//    fn-decl ::= 'def' name parameter-clause result-clause initializer-clause
+//    fn-declarator ::= name parameter-clause return-type
 //
 // Function scope begins immediately after the name in the function
 // declarator. The point of declaration is after the declarator 
 // (n(p1, p2, ...) -> t), before the function body. Note thta this
 // means the name of the function is not available in the parameter list.
 Tree*
-parse_fn_decl(Parser& p, Tree* n) {
+parse_fn_declarator(Parser& p, Tree* n) {
   if (Tree_seq* ps = parse_parameter_clause(p))
     if (Tree* t = parse_required_return_type(p))
       return new Fn_tree(n, ps, t);
   return nullptr;
 }
 
-// Parse a def-decl.
+// Returns true if t is a brace-enclosed initializer. 
+inline bool
+is_braced_initializer(Tree* t) {
+  switch (t->kind) {
+  case block_tree:
+  case record_tree:
+  case variant_tree:
+  case enum_tree:
+    return true;
+  default:
+    return false;
+  }
+}
+
+// Parse a definition.
 //
-//    def-decl ::= const-decl | fn-decl
+//    def-decl ::= declarator '=' expr ';'
+//               | declarator '=' block-stmt
+//               | declarator '=' tag-type
+//
+//    declarator ::= value-declarator | fn-declatator
+//
+//    tag-type ::= record-type | variant-type | enum-type
+//
+// The differnet forms of definitions determine whether or not the
+// initializer must be followed by a semicolon. 
 //
 // Note that all definitions begin with a name. They are differentiated
 // by the the tokens following the name.
@@ -1235,18 +1417,23 @@ parse_def_decl(Parser& p) {
 
       // Parse the declarator.
       Tree* d1 = nullptr;
-      if (Tree* d2 = parse_const_decl(p, n))
+      if (Tree* d2 = parse_value_declarator(p, n))
         d1 = d2;
-      else if (Tree* d2 = parse_fn_decl(p, n))
+      else if (Tree* d2 = parse_fn_declarator(p, n))
         d1 = d2;
       if (not d1) {
         error(p) << "expected 'parameter-list' or ':' after 'name'";
         return nullptr;
       }
 
-      // Parse the initializer.
-      if (Tree* e = parse_required_initializer_clause(p))
+      // Parse the initializer and check for the trailing
+      // semicolon. If it's missng, just emit the error and
+      // keep going.
+      if (Tree* e = parse_required_initializer_clause(p)) {
+        if (not is_braced_initializer(e))
+          expect(p, semicolon_tok);
         return new Def_tree(k, d1, e);
+      }
     }
   return nullptr;
 }
@@ -1254,28 +1441,32 @@ parse_def_decl(Parser& p) {
 
 // Parse an import-decl.
 //
-//    import-decl ::= 'import' expr
+//    import-decl ::= 'import' expr ';'
 Tree*
 parse_import_decl(Parser& p) {
   if (const Token* k = accept(p, import_tok)) {
-    if (Tree* t = parse_expr(p))
-      return new Import_tree(k, t);
-    else
+    if (Tree* t = parse_expr(p)) {
+      if (expect(p, semicolon_tok))
+        return new Import_tree(k, t);
+    } else {
       error(p) << "expected 'expression' after 'import'";
+    }
   }
   return nullptr;
 }
 
 // Parse a using declaration.
 //
-//    using-decl ::= 'using' expr
+//    using-decl ::= 'using' expr ';'
 Tree*
 parse_using_decl(Parser& p) {
   if (const Token* k = accept(p, using_tok)) {
-    if (Tree* t = parse_expr(p))
-      return new Using_tree(k, t);
-    else
+    if (Tree* t = parse_expr(p)) {
+      if (expect(p, semicolon_tok))
+        return new Using_tree(k, t);
+    } else {
       error(p) << "expected 'expression' after 'using'";
+    }
   }
   return nullptr;
 }
@@ -1294,26 +1485,18 @@ parse_decl(Parser& p) {
   return nullptr;
 }
 
+
 // -------------------------------------------------------------------------- //
 // Top-level
 
 // Parse a top-level list of statements.
 //
-//    top ::= decl*
+//    top ::= decl-seq
 Tree*
 parse_top(Parser& p) {
-  Tree_seq* ds = new Tree_seq();
-  while (not end_of_stream(p)) {
-    if (Tree* d = parse_expected(p, parse_decl, "declaration"))
-      ds->push_back(d);
-    else
-      return nullptr;
-
-    // Allow a semicolon after a declaration. It isn't strictly 
-    // necessary, but some people like it.
-    accept(p, semicolon_tok);
-  }
-  return new Top_tree(ds);
+  if (Tree_seq* ds = parse_decl_seq(p))
+    return new Top_tree(ds);
+  return nullptr;
 }
 
 

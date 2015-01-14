@@ -17,10 +17,17 @@ init_trees() {
   init_node(app_tree, "app-tree");
   init_node(unary_tree, "unary-tree");
   init_node(binary_tree, "binary-tree");
+  init_node(if_tree, "if-tree");
+  init_node(while_tree, "while-tree");
+  init_node(switch_tree, "switch-tree");
   // Types
   init_node(record_tree, "record-tree");
   init_node(variant_tree, "variant-tree");
   init_node(enum_tree, "enum-tree");
+  // Statements
+  init_node(block_tree, "block-tree");
+  init_node(return_tree, "return-tree");
+  init_node(load_tree, "load-tree");
   // Declarations
   init_node(value_tree, "value-tree");
   init_node(parm_tree, "parm-tree");
@@ -30,7 +37,6 @@ init_trees() {
   init_node(alt_tree, "alt-tree");
   init_node(import_tree, "import-tree");
   init_node(using_tree, "using-tree");
-  init_node(load_tree, "load-tree");
   // Misc
   init_node(top_tree, "top-tree");
 }
@@ -128,7 +134,7 @@ template<typename T>
 
 
 void
-debug_binary(Printer& p, Unary_tree* t) {
+debug_unary(Printer& p, Unary_tree* t) {
     sexpr s(p, t->op()->text);
     debug_print(p, t->arg());
 }
@@ -155,12 +161,6 @@ debug_top(Printer& p, Top_tree* t) {
   print_indent(p);
 }
 
-
-void
-debug_unimplemented(Tree* t) { 
-  steve_unreachable(format("unhandled parse tree '{}'", node_name(t))); 
-}
-
 void
 debug_print(Printer& p, Tree* t) {
   if (not t) {
@@ -179,20 +179,26 @@ debug_print(Printer& p, Tree* t) {
   case range_tree: return debug_binary(p, as<Range_tree>(t));
   case unary_tree: return debug_unary(p, as<Unary_tree>(t));
   case binary_tree: return debug_binary(p, as<Binary_tree>(t));
+  case if_tree: return debug_ternary(p, as<If_tree>(t));
+  case while_tree: return debug_binary(p, as<While_tree>(t));
+  case switch_tree: return debug_binary(p, as<Switch_tree>(t));
   // Types
   case record_tree: return debug_unary(p, as<Record_tree>(t));
   case variant_tree: return debug_binary(p, as<Variant_tree>(t));
   case enum_tree: return debug_binary(p, as<Enum_tree>(t));
+  // Statements
+  case block_tree: return debug_unary(p, as<Block_tree>(t));
+  case return_tree: return debug_unary(p, as<Return_tree>(t));
+  case load_tree: return debug_unary(p, as<Load_tree>(t));
   // Declarations
   case value_tree: return debug_binary(p, as<Value_tree>(t));
   case parm_tree: return debug_ternary(p, as<Parm_tree>(t));
-  case fn_tree: return debug_unimplemented(t);
+  case fn_tree: return debug_ternary(p, as<Fn_tree>(t));
   case def_tree: return debug_binary(p, as<Def_tree>(t));
   case field_tree: return debug_ternary(p, as<Field_tree>(t));
   case alt_tree: return debug_binary(p, as<Alt_tree>(t));
   case import_tree: return debug_unary(p, as<Import_tree>(t));
   case using_tree: return debug_unary(p, as<Using_tree>(t));
-  case load_tree: return debug_unary(p, as<Load_tree>(t));
   // Misc
   case top_tree: return debug_top(p, as<Top_tree>(t));
   // Unhandled

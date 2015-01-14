@@ -77,11 +77,15 @@ init_tokens() {
   init_token(not_tok, "not");
   init_token(or_tok, "or");
   init_token(record_tok, "record");
+  init_token(return_tok, "return");
+  init_token(switch_tok, "switch");
+  init_token(then_tok, "then");
   init_token(typename_tok, "typename");
   init_token(unit_tok, "unit");
   init_token(using_tok, "using");
   init_token(variant_tok, "variant");
   init_token(where_tok, "where");
+  init_token(while_tok, "while");
   // Identifiers and literals
   init_token(identifier_tok, "identifier");
   init_token(boolean_literal_tok, "boolean-literal");
