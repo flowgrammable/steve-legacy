@@ -24,6 +24,7 @@ init_trees() {
   init_node(variant_tree, "variant-tree");
   init_node(enum_tree, "enum-tree");
   // Statements
+  init_node(block_tree, "block-tree");
   init_node(return_tree, "return-tree");
   init_node(break_tree, "break-tree");
   init_node(cont_tree, "cont-tree");

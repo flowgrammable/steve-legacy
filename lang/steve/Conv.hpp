@@ -14,6 +14,8 @@ struct Type;
 Expr* convert(Expr*, Type*);
 Term* convert(Term*, Type*);
 
+Term* convert_to_bool(Term*);
+
 // A ranked conversion is a numeric quantity that describes the
 // conversions applied to an expression.
 using Conversion = int;

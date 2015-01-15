@@ -12,15 +12,21 @@ namespace steve {
 const char*
 scope_name(Scope_kind k) {
   switch (k) {
-  case builtin_scope: return "builtin scope";
-  case module_scope: return "module scope";
-  case record_scope: return "record scope";
-  case variant_scope: return "variant scope";
-  case enum_scope: return "enum scope";
-  case function_scope: return "function scope";
-  case block_scope: return "block scope";
+  case builtin_scope: return "builtin";
+  case module_scope: return "module";
+  case record_scope: return "record";
+  case variant_scope: return "variant";
+  case enum_scope: return "enum";
+  case function_scope: return "function";
+  case block_scope: return "block";
   }
   steve_unreachable("unkown scope kind");
+}
+
+// Return a textual representation of the scope kind.
+const char*
+scope_name(const Scope* s) {
+  return scope_name(s->kind);
 }
 
 // -------------------------------------------------------------------------- //
@@ -267,6 +273,10 @@ current_scope() { return stack_; }
 Expr*
 current_context() { return current_scope()->context; }
 
+// FIXME: These may not be right. If we allow the definition of
+// member functions, then we might want to walk upwards to the
+// innermost record scope, for example
+
 Type* 
 current_type() { return as<Type>(current_scope()->context); }
 
@@ -278,6 +288,17 @@ current_variant() { return as<Variant_type>(current_scope()->context); }
 
 Enum_type* 
 current_enumeration() { return as<Enum_type>(current_scope()->context); }
+
+// Return the current function. This will search outwards to the
+// innermost function scope.
+Fn*
+current_function() {
+  Scope* s = current_scope();
+  while (s->kind != function_scope) {
+    s = s->parent;
+  }
+  return s ? as<Fn>(s->context) : nullptr;
+}
 
 // -------------------------------------------------------------------------- //
 // Debugging support

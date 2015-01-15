@@ -44,6 +44,7 @@ init_exprs() {
   init_node(int_term, "int");
   init_node(default_term, "default");
   init_node(fn_term, "fn");
+  init_node(builtin_term, "builtin");
   init_node(call_term, "call");
   init_node(promo_term, "promo");
   init_node(pred_term, "pred");
@@ -51,7 +52,10 @@ init_exprs() {
   init_node(variant_term, "variant");
   init_node(unary_term, "unary");
   init_node(binary_term, "binary");
-  init_node(builtin_term, "builtin");
+  init_node(if_term, "if");
+  // Statements
+  init_node(block_stmt, "block");
+  init_node(return_stmt, "return");
   // Decls
   init_node(top_decl, "top-decl");
   init_node(def_decl, "def-decl");
@@ -274,6 +278,7 @@ debug_print(Printer& p, Expr* e) {
   case int_term: return debug_terminal(p, as<Int>(e));
   case default_term: return print(p, "default");
   case fn_term: return debug_fn(p, as<Fn>(e));
+  case builtin_term: return print(p, "<builtin>");
   case call_term: return debug_binary(p, as<Call>(e));
   case promo_term: return debug_binary(p, as<Promo>(e));
   case pred_term: return debug_binary(p, as<Pred>(e));
@@ -281,8 +286,10 @@ debug_print(Printer& p, Expr* e) {
   case variant_term: return debug_binary(p, as<Variant>(e));
   case unary_term: return debug_binary(p, as<Unary>(e));
   case binary_term: return debug_ternary(p, as<Binary>(e));
-  case builtin_term: return print(p, "<builtin>");
+  case if_term: return debug_ternary(p, as<If>(e));
   // Statements
+  case block_stmt: return debug_nested_unary(p, as<Block>(e));
+  case return_stmt: return debug_unary(p, as<Return>(e));
   // Declarations
   case top_decl: return debug_nested_unary(p, as<Top>(e));
   case def_decl: return debug_ternary(p, as<Def>(e));

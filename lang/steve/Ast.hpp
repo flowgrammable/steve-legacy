@@ -44,7 +44,6 @@ constexpr Node_kind int_term       = make_term_node(3);  // {0, 1, 2, ..., n}
 constexpr Node_kind default_term   = make_term_node(4);  // default
 constexpr Node_kind if_term        = make_term_node(5);  // if t1 then t2 else t3
 // Misc terms
-constexpr Node_kind block_term     = make_term_node(20); // { ... }
 constexpr Node_kind fn_term        = make_term_node(21); // fn(p*)->t.e
 constexpr Node_kind call_term      = make_term_node(22); // f(a*) -- TODO: Should be in values
 constexpr Node_kind promo_term     = make_term_node(23); // t as N for an integral type
@@ -57,10 +56,11 @@ constexpr Node_kind builtin_term   = make_term_node(50); // <intrinsic>
 // Statements
 constexpr Node_kind block_stmt     = make_stmt_node(1); // { s1; s2; ...}
 constexpr Node_kind return_stmt    = make_stmt_node(2); // return s;
-constexpr Node_kind break_stmt     = make_stmt_node(3); // break;
-constexpr Node_kind continue_stmt  = make_stmt_node(4); // continue;
 constexpr Node_kind while_stmt     = make_stmt_node(3); // while (e) s
-constexpr Node_kind switch_stmt    = make_stmt_node(4); // switch (e) s
+constexpr Node_kind continue_stmt  = make_stmt_node(4); // continue;
+constexpr Node_kind break_stmt     = make_stmt_node(5); // break;
+constexpr Node_kind switch_stmt    = make_stmt_node(6); // switch (e) s
+constexpr Node_kind case_stmt      = make_stmt_node(7); // case e: s
 // Declarations
 constexpr Node_kind top_decl       = make_decl_node(1); // decl*
 constexpr Node_kind def_decl       = make_decl_node(2); // def n : t = e
@@ -588,21 +588,6 @@ struct Default : Term, Kind_of<default_term> {
     : Term(Kind, l) { }
 };
 
-
-
-// A compound expression of the form '{ s* }' where 's*' are a 
-// sequence of statements.
-struct Block : Term, Kind_of<block_term> {
-  Block(Stmt_seq* ss)
-    : Term(Kind), first(ss) { }
-  Block(const Location& l, Stmt_seq* ss)
-    : Term(Kind, l), first(ss) { }
-
-  Stmt_seq* stmts() const { return first; }
-
-  Stmt_seq* first;
-};
-
 // An anonymous function of the form \(p*)->t.e where p* is
 // a sequence of parameters, t is the result type and e is its
 // definition.
@@ -766,6 +751,128 @@ struct Binary : Term, Kind_of<binary_term> {
   Expr* third;
 };
 
+// A term of the form `e1 if t else e2`.
+//
+// The term `t` shall be be convertible to `bool`, and types of `e1` and 
+// `e2` shall be the same.
+//
+// If the converted term `t` is `true`, then its evaluation of this
+// term is the value of `e1`, otherwise it is the value of `e2`.
+//
+// TODO: Relax the same-type constraints on these terms.
+struct If : Term, Kind_of<if_term> {
+  If(Term* c, Expr* t, Expr* f)
+    : Term(Kind), first(c), second(t), third(f) { }
+  If(const Location& l, Term* c, Expr* t, Expr* f)
+    : Term(Kind, l), first(c), second(t), third(f) { }
+
+  Term* cond() const { return first; }
+  Expr* pass() const { return second; }
+  Expr* fail() const { return third; }
+
+  Term* first;
+  Expr* second;
+  Expr* third;
+};
+
+// -------------------------------------------------------------------------- //
+// Statement
+
+// A compound expression of the form `{ s1; s2; ... }` where each
+// `si` is a statement. Note that the sequence of statements may
+// be empty.
+struct Block : Stmt, Kind_of<block_stmt> {
+  Block(Stmt_seq* s)
+    : Stmt(Kind), first(s) { }
+  Block(const Location& l, Stmt_seq* s)
+    : Stmt(Kind, l), first(s) { }
+
+  Stmt_seq* stmts() const { return first; }
+
+  Stmt_seq* first;
+};
+
+
+// A return statement of the form `return e` where `e` is an 
+// expression. A return statement shall appear only within the
+// block scope of the definition of a function `f`.
+//
+// The return value `e` shall be convertible to the return type
+// of `f`.
+struct Return : Stmt, Kind_of<return_stmt> {
+  Return(Expr* t)
+    : Stmt(Kind), first(t) { }
+  Return(const Location& l, Expr* t)
+    : Stmt(Kind, l), first(t) { }
+  
+  Expr* value() const { return first; }
+
+  Expr* first;
+};
+
+struct While : Stmt, Kind_of<while_stmt> {
+  While(Term* c, Stmt* b)
+    : Stmt(Kind), first(c), second(b) { }
+  While(const Location& l, Term* c, Stmt* b)
+    : Stmt(Kind, l), first(c), second(b) { }
+
+  Term* cond() const { return first; }
+  Stmt* body() const { return second; }
+
+  Term* first;
+  Stmt* second;
+};
+
+struct Break : Stmt, Kind_of<break_stmt> {
+  Break()
+    : Stmt(Kind) { }
+  Break(const Location& l)
+    : Stmt(Kind, l) { }
+};
+
+struct Continue : Stmt, Kind_of<continue_stmt> {
+  Continue()
+    : Stmt(Kind) { }
+  Continue(const Location& l)
+    : Stmt(Kind, l) { }
+};
+
+// A switch statement has the form `switch (e) s` where `e` is an
+// expression and `s` is a statement.
+//
+// TODO: Should we allow the full range of expression in C/C++, or
+// should we restrict this to a list of cases?
+struct Switch : Stmt, Kind_of<switch_stmt> {
+  Switch(Expr* t, Stmt* b)
+    : Stmt(Kind), first(t), second(b) { }
+  Switch(const Location& l, Expr* t, Stmt* b)
+    : Stmt(Kind, l), first(t), second(b) { }
+
+  Expr* value() const { return first; }
+  Stmt* body() const { return second; }
+
+  Expr* first;
+  Stmt* second;
+};
+
+// Within a switch statement `switch(e1)`, a case statement
+// of the form `case e2:e3` associates the value `e3` with a 
+// case value `e2`.
+//
+// The case value `e2` shall be convertible to the switch 
+// expression `e1`.
+struct Case : Stmt, Kind_of<case_stmt> {
+  Case(Expr* t, Expr* b)
+    : Stmt(Kind), first(t), second(b) { }
+  Case(const Location& l, Expr* t, Expr* b)
+    : Stmt(Kind, l), first(t), second(b) { }
+
+  Expr* match() const { return first; }
+  Expr* result() const { return first; }
+
+  Expr* first;
+  Expr* second;
+};
 
 // -------------------------------------------------------------------------- //
 // Declarations

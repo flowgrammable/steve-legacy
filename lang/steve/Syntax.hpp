@@ -24,6 +24,7 @@ constexpr Node_kind record_tree  = make_tree_node(20); // record { ... }
 constexpr Node_kind variant_tree = make_tree_node(21); // variant { ... }
 constexpr Node_kind enum_tree    = make_tree_node(22); // enum { ... }
 // Statements
+constexpr Node_kind block_tree   = make_tree_node(100); // {s1; s2; ...}
 constexpr Node_kind return_tree  = make_tree_node(101); // return e;
 constexpr Node_kind break_tree   = make_tree_node(102); // break;
 constexpr Node_kind cont_tree    = make_tree_node(103); // continue;
@@ -181,7 +182,7 @@ struct If_tree : Tree, Kind_of<if_tree> {
     : Tree(Kind, k->loc), first(c), second(t), third(f) { }
 
   Tree* cond() const { return first; }
-  Tree* succ() const { return second; }
+  Tree* pass() const { return second; }
   Tree* fail() const { return third; }
 
   Tree* first;
@@ -192,6 +193,16 @@ struct If_tree : Tree, Kind_of<if_tree> {
 
 // -------------------------------------------------------------------------- //
 // Statements
+
+// A block tree is an enclosed sequence of statements.
+struct Block_tree : Tree, Kind_of<block_tree> {
+  Block_tree(const Token* k, Tree_seq* s)
+    : Tree(Kind, k->loc), first(s) { }
+
+  Tree_seq* stmts() const { return first; }
+
+  Tree_seq* first;
+};
 
 // A return statement defines the value of a block statement.
 struct Return_tree : Tree, Kind_of<return_tree> {

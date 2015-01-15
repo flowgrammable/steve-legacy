@@ -83,6 +83,10 @@ convert(Term* e, Type* t) {
   return nullptr;
 }
 
+// Return a conversion to bool, or diagnose the failed conversion.
+Term*
+convert_to_bool(Term* t) { return convert(t, get_bool_type()); }
+
 // Rank an expression based on its top-level conversions.
 Conversion
 rank_conversion(Expr* e) { return is<Promo>(e) or is<Pred>(e); }

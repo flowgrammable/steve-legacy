@@ -50,7 +50,7 @@ public:
 
   Overload* lookup(Name*);
   Overload* declare(Name*, Decl*);
-  
+
   Scope_kind kind;
   Scope* parent;
   Expr* context;
@@ -70,15 +70,20 @@ Decl* lookup_single(Name*);
 // -------------------------------------------------------------------------- //
 // Scope management
 
-Scope* push_scope(Scope_kind k, Expr* = nullptr);
+const char* scope_name(Scope_kind);
+const char* scope_name(const Scope*);
+
+Scope* push_scope(Scope_kind, Expr* = nullptr);
 Scope* push_scope(Type*);
 Scope* pop_scope();
 Scope* current_scope();
+
 Expr* current_context();
 Type* current_type();
 Record_type* current_record();
 Variant_type* current_variant();
 Enum_type* current_enumeration();
+Fn* current_function();
 
 
 // -------------------------------------------------------------------------- //
