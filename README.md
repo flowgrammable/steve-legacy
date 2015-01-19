@@ -3,7 +3,6 @@ steve
 
 The Steve programming language.
 
-
 ## Dependencies
 
 Boost 1.55 or greater. See these
