@@ -1,10 +1,18 @@
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 project(steve CXX)
 
+# CMake configuration
+#
+# Add local local prefixes to all of the find_* functions
+# in order to support custom installations.
+set(CMAKE_PREFIX_PATH $ENV{HOME}/local $ENV{HOME}/opt)
+
+
 # Compiler configuration
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
+
 
 # Configure GMP
 #
@@ -24,7 +32,7 @@ set(GC_LIBRARY "")
 
 
 # Configure Boost
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.55 REQUIRED COMPONENTS system filesystem)
 
 
 add_subdirectory(lang)

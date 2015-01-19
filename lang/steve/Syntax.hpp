@@ -10,6 +10,7 @@ namespace steve {
 // Expressions
 constexpr Node_kind id_tree      = make_tree_node(1);  // identfiers
 constexpr Node_kind lit_tree     = make_tree_node(2);  // literals
+constexpr Node_kind brace_tree   = make_tree_node(3);  // { s1; s2; ... }
 constexpr Node_kind call_tree    = make_tree_node(10); // e1(e*)
 constexpr Node_kind index_tree   = make_tree_node(11); // e1[e2]
 constexpr Node_kind dot_tree     = make_tree_node(12); // e1.e2
@@ -17,11 +18,21 @@ constexpr Node_kind range_tree   = make_tree_node(13); // e1..e2
 constexpr Node_kind app_tree     = make_tree_node(14); // e1 e2
 constexpr Node_kind unary_tree   = make_tree_node(15); // op e
 constexpr Node_kind binary_tree  = make_tree_node(16); // e1 op e2
+constexpr Node_kind if_tree      = make_tree_node(17); // if e1 then s1 else s2
 // Types
 constexpr Node_kind record_tree  = make_tree_node(20); // record { ... }
 constexpr Node_kind variant_tree = make_tree_node(21); // variant { ... }
 constexpr Node_kind enum_tree    = make_tree_node(22); // enum { ... }
-// Statements and declarations
+// Statements
+constexpr Node_kind block_tree   = make_tree_node(100); // {s1; s2; ...}
+constexpr Node_kind return_tree  = make_tree_node(101); // return e;
+constexpr Node_kind break_tree   = make_tree_node(102); // break;
+constexpr Node_kind cont_tree    = make_tree_node(103); // continue;
+constexpr Node_kind while_tree   = make_tree_node(104); // while (e1) s
+constexpr Node_kind switch_tree  = make_tree_node(105); // switch (e1) s
+constexpr Node_kind case_tree    = make_tree_node(106); // case e: s
+constexpr Node_kind load_tree    = make_tree_node(120); // load n
+// Declarations
 constexpr Node_kind value_tree   = make_tree_node(30); // x : T (in def)
 constexpr Node_kind parm_tree    = make_tree_node(31); // x : T (in parms)
 constexpr Node_kind fn_tree      = make_tree_node(32); // f(p)->T (in def)
@@ -31,7 +42,7 @@ constexpr Node_kind alt_tree     = make_tree_node(36); // e1 : e2 (in variant)
 constexpr Node_kind import_tree  = make_tree_node(50); // import e
 constexpr Node_kind using_tree   = make_tree_node(51); // using n
 // Misc
-constexpr Node_kind top_tree     = make_tree_node(100);
+constexpr Node_kind top_tree     = make_tree_node(1000);
 
 // The base class of all tree nodes.
 struct Tree : Node { 
@@ -41,6 +52,8 @@ struct Tree : Node {
 // Sequences of trees.
 using Tree_seq = Seq<Tree>;
 
+// -------------------------------------------------------------------------- //
+// Expressions
 
 // An identifier.
 struct Id_tree : Tree, Kind_of<id_tree> {
@@ -60,6 +73,16 @@ struct Lit_tree : Tree, Kind_of<lit_tree> {
   const Token* value() const { return first; }
 
   const Token* first;
+};
+
+// A brace tree is an enclosed sequence of statements.
+struct Brace_tree : Tree, Kind_of<brace_tree> {
+  Brace_tree(const Token* k, Tree_seq* s)
+    : Tree(Kind, k->loc), first(s) { }
+
+  Tree_seq* stmts() const { return first; }
+
+  Tree_seq* first;
 };
 
 // A call expression of the form 'f(as*)' where 'f' is a function
@@ -153,6 +176,107 @@ struct Binary_tree : Tree, Kind_of<binary_tree> {
   Tree* third;
 };
 
+// An if expression.
+struct If_tree : Tree, Kind_of<if_tree> {
+  If_tree(const Token* k, Tree* c, Tree* t, Tree* f)
+    : Tree(Kind, k->loc), first(c), second(t), third(f) { }
+
+  Tree* cond() const { return first; }
+  Tree* pass() const { return second; }
+  Tree* fail() const { return third; }
+
+  Tree* first;
+  Tree* second;
+  Tree* third;
+};
+
+
+// -------------------------------------------------------------------------- //
+// Statements
+
+// A block tree is an enclosed sequence of statements.
+struct Block_tree : Tree, Kind_of<block_tree> {
+  Block_tree(const Token* k, Tree_seq* s)
+    : Tree(Kind, k->loc), first(s) { }
+
+  Tree_seq* stmts() const { return first; }
+
+  Tree_seq* first;
+};
+
+// A return statement defines the value of a block statement.
+struct Return_tree : Tree, Kind_of<return_tree> {
+  Return_tree(const Token* k, Tree* t)
+    : Tree(Kind, k->loc), first(t) { }
+
+  Tree* value() const { return first; }
+
+  Tree* first;
+};
+
+// A break statement.
+struct Break_tree : Tree, Kind_of<break_tree> {
+  Break_tree(const Token* k)
+    : Tree(Kind, k->loc) { }
+};
+
+// A continue statement.
+struct Cont_tree : Tree, Kind_of<cont_tree> {
+  Cont_tree(const Token* k)
+    : Tree(Kind, k->loc) { }
+};
+
+// A while expression.
+struct While_tree : Tree, Kind_of<while_tree> {
+  While_tree(const Token* k, Tree* c, Tree* b)
+    : Tree(Kind, k->loc), first(c), second(b) { }
+
+  Tree* cond() const { return first; }
+  Tree* body() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+// A switch expression.
+struct Switch_tree : Tree, Kind_of<switch_tree> {
+  Switch_tree(const Token* k, Tree* t, Tree* b)
+    : Tree(Kind, k->loc), first(t), second(b) { }
+
+  Tree* term() const { return first; }
+  Tree* body() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+// A case label within a switch.
+struct Case_tree : Tree, Kind_of<case_tree> {
+  Case_tree(const Token* k, Tree* t, Tree* b)
+    : Tree(Kind, k->loc), first(t), second(b) { }
+
+  Tree* label() const { return first; }
+  Tree* body() const { return second; }
+
+  Tree* first;
+  Tree* second;
+};
+
+// An internal syntax to support a reference to a declaration
+// that has not yet been imported. This is primarily used by
+// tools to extract information for a declaration.
+struct Load_tree : Tree, Kind_of<load_tree> {
+  Load_tree(Tree* n)
+    : Tree(Kind, no_location), first(n) { }
+
+  Tree* name() const { return first; }
+
+  Tree* first;
+};
+
+
+// -------------------------------------------------------------------------- //
+// Types
 
 // A record type of the form 'record { f* }' where 'f*' is a sequence
 // of fields.
@@ -273,8 +397,10 @@ struct Alt_tree : Tree, Kind_of<alt_tree> {
 
 // A declaration of the form `import e`.
 struct Import_tree : Tree, Kind_of<import_tree> {
+  Import_tree(const Location& l, Tree* t)
+    : Tree(Kind, l), first(t) { }
   Import_tree(const Token* k, Tree* t)
-    : Tree(Kind, k->loc), first(t) { }
+    : Import_tree(k->loc, t) { }
 
   Tree* module() const { return first; }
 

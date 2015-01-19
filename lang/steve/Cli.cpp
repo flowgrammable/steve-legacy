@@ -112,14 +112,18 @@ Help_command::operator()(int arg, int argc, char** argv) {
     return false;
   }
   std::cout << "help on '" << argv[arg] << "'\n";
-  return true ; 
+  return true;
 }
+
 
 // -------------------------------------------------------------------------- //
 // Version command
-
+// 
 // TODO: Abstract the version, copyright, and author data into a
 // facility that can be compiled at build time.
+//
+// TOOD: Version information should be set by configuration, not
+// in code.
 
 bool 
 Version_command::operator()(int arg, int argc, char** argv) { 
@@ -133,27 +137,43 @@ Version_command::operator()(int arg, int argc, char** argv) {
   return true; 
 }
 
+
 // -------------------------------------------------------------------------- //
 // Extract command
+//
+// The extract command applies a function (an extractor) to a 
+// qualified-id that designates a declaration. For example:
+//
+//    steve extract doc std.net.ofp.uint
+//
+// Will extract the associated documentation for the uint function
+// in that module.
 
-// TODO: Use command line parameters to provide optoins for the
+// TODO: Use command line parameters to provide options for the
 // extractor.
 bool 
 Extract_command::operator()(int arg, int argc, char** argv) { 
-  // FIXME: This is totally broken.
+  // FIXME: This is totally broken. Also, use the help command to
+  // print the actual help for this extractor.
   if (arg + 2 >= argc) {
     error() << "too few arguments";
+    error() << "usage: steve extract <extractor> <id>";
   }
-  std::string extractor = argv[arg++];
-  std::string input = argv[arg++];
+  std::string what = argv[arg++];
+  std::string from = argv[arg++];
 
-  // TODO: Allow extraction as a quanlified id? Could be neat...
-  Module* mod = load_file(input);
+  // Load the name.
+  Expr* e = load_name(from);
+  if (not e) {
+    error() << format("no matching declaration for '{}'", from);
+    return false;
+  }
 
-  if (Extractor* e = get_extractor(extractor))
-    (*e)(mod);
-  else
-    error() << format("no extractor named '{}'", extractor);
+
+  // if (Extractor* e = get_extractor(extractor))
+  //   (*e)(mod);
+  // else
+  //   error() << format("no extractor named '{}'", extractor);
 
   return true; 
 }

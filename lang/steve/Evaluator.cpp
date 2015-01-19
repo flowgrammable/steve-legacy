@@ -253,6 +253,44 @@ eval_binary(Binary* e) {
                     debug(e->fn())));
 }
 
+Eval
+eval_if(If* e) {
+  Eval r = eval(e->cond());
+  if (is_value(r)) {
+    const Value& v = r.as_value();
+    if (v.as_bool())
+      return eval(e->pass());
+    else
+      return eval(e->fail());
+  }
+  return partial(e);
+}
+
+// Evaluate a block statement.
+//
+// FIXME: This is totally incorrect. How do we, e.g., return from
+// within an if expression. We need different facilities for
+// compile-time evaluation.
+Eval
+eval_block(Block* e) {
+  Eval result = value(unit);
+  for (Stmt* s : *e->stmts()) {
+    result = eval(s);
+    // If the evalated statement was a return statement,
+    // then I guess we should return...
+    if (as<Return>(s))
+      break;
+  }
+  return result;
+}
+
+// Evaluate a return statement.
+//
+// FIXME: This needs to transfer control to a different function.
+Eval
+eval_return(Return* e) {
+  return eval(e->value());
+}
 
 Eval
 eval_expr(Expr* e) {
@@ -272,15 +310,18 @@ eval_expr(Expr* e) {
   case bool_term: return eval_literal(as<Bool>(e));
   case int_term: return eval_literal(as<Int>(e));
   // Misc terms
-  case block_term: return e;
   case fn_term: return value(as<Fn>(e));
+  case builtin_term: return e;
   case call_term: return eval_call(as<Call>(e));
   case promo_term: return eval_promo(as<Promo>(e));
   case pred_term: return eval_pred(as<Pred>(e));
   case range_term: return e;
   case unary_term: return e;
   case binary_term: return eval_binary(as<Binary>(e));
-  case builtin_term: return e;
+  case if_term: return eval_if(as<If>(e));
+  // Statements
+  case block_stmt: return eval_block(as<Block>(e));
+  case return_stmt: return eval_return(as<Return>(e));
   default:
     break;
   }

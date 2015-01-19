@@ -117,6 +117,10 @@ struct Visitor {
   virtual void visit(Using*) { }
 };
 
+
+// -------------------------------------------------------------------------- //
+// Extractors
+
 // An extractor is a function that recursively visits elements
 // of a module to generate a fragment of a program. For example,
 // An extractor could be used to enumerate top-level types in
@@ -127,6 +131,7 @@ struct Extractor {
 };
 
 Extractor* get_extractor(const std::string&);
+
 
 // -------------------------------------------------------------------------- //
 // Lists
@@ -157,6 +162,18 @@ struct List_extractor : Extractor, Visitor {
   void visit(Def*);
 
   List_extraction what;
+};
+
+
+// -------------------------------------------------------------------------- //
+// Documentation
+//
+// The documentation extractor extracts the associated documentation
+// for a declaration in a given module.
+
+struct Doc_extractor : Extractor {
+  Doc_extractor();
+  void operator()(const std::string&);
 };
 
 } // namespace steve

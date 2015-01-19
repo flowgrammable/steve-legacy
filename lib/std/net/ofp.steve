@@ -1,6 +1,6 @@
 
 // Common types used in OpenFlow.
-def uint(n : nat) -> typename = bitfield(nat, n, 1);
+def uint(n : nat) -> typename = __bits(nat, n, 1);
 def str(n : nat) -> typename = __net_str(n);
 def seq(t : typename) -> typename = __net_seq(t, true);
 

@@ -134,6 +134,14 @@ is_type_constructor_type(Type* t) {
 // -------------------------------------------------------------------------- //
 // Type queries
 
+// Returns the type of a function.
+Fn_type*
+get_type(Fn* f)  { 
+  steve_assert(is<Fn_type>(f->tr), "ill-typed function object");
+  return as<Fn_type>(f->tr); 
+}
+
+
 namespace {
 
 Type*

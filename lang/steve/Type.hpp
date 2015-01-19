@@ -38,6 +38,7 @@ bool is_type_constructor_type(Type*);
 
 // Type queries
 Type* get_type(Expr*);
+Fn_type* get_type(Fn*);
 
 Integer size_in_bits(Type*);
 

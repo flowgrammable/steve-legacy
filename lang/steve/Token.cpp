@@ -65,8 +65,10 @@ init_tokens() {
   init_token(and_tok, "and");
   init_token(array_tok, "array");
   init_token(bool_tok, "bool");
-  init_token(bitfield_tok, "bitfield");
+  init_token(break_tok, "break");
+  init_token(case_tok, "case");
   init_token(char_tok, "char");
+  init_token(continue_tok, "continue");
   init_token(def_tok, "def");
   init_token(else_tok, "else");
   init_token(enum_tok, "enum");
@@ -78,11 +80,15 @@ init_tokens() {
   init_token(not_tok, "not");
   init_token(or_tok, "or");
   init_token(record_tok, "record");
+  init_token(return_tok, "return");
+  init_token(switch_tok, "switch");
+  init_token(then_tok, "then");
   init_token(typename_tok, "typename");
   init_token(unit_tok, "unit");
   init_token(using_tok, "using");
   init_token(variant_tok, "variant");
   init_token(where_tok, "where");
+  init_token(while_tok, "while");
   // Identifiers and literals
   init_token(identifier_tok, "identifier");
   init_token(boolean_literal_tok, "boolean-literal");

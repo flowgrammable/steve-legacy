@@ -16,9 +16,6 @@ namespace steve {
 
 namespace {
 
-// Builtin functions
-Expr* eval_bitfield(Expr*, Expr*, Expr*);
-
 // -------------------------------------------------------------------------- //
 // Construction framework
 //
@@ -125,7 +122,7 @@ Spec::complete() {
 // Builtin implementations
 
 Expr*
-eval_bitfield(Expr* t, Expr* n, Expr* b) {
+eval_bits(Expr* t, Expr* n, Expr* b) {
   // Get the underlying type of the bitfield. 
   // TODO: It must be one of bool, nat, int, or char.
   Type* t1 = as<Type>(t);
@@ -502,17 +499,13 @@ init_intrinsics() {
     { or_tok,             {bool_, bool_}, bool_, bool_or},
     { not_tok,            {bool_, bool_}, bool_, bool_not},
 
-    { "bitfield",         {typename_, nat_, nat_}, typename_, eval_bitfield},
+    { "__bits",           {typename_, nat_, nat_}, typename_, eval_bits},
     { "__net_str",        {nat_}, typename_,                  eval_net_str_type},
 
     // FIXME: the second argument tyoe should be (t)->bool 
     // where t is the type given as the first argument.
     { "__net_seq",        {typename_, bool_}, typename_,       eval_net_seq_type},
   };
-
-  // Extract the declared features
-  // TODO: Actually do this, or just allow lookups in the usual way?
-  bitfield_ = lookup_single(make_name("bitfield"));
 
   // FIXME: This could be improved.
   if (not current_diagnostics()->empty()) {

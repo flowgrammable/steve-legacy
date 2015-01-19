@@ -40,6 +40,10 @@ template<typename T>
     return nullptr;
   }
 
+// Elaborate the parse tree as a statement.
+Stmt*
+elab_stmt(Tree* t) { return elaborate_as<Stmt>(t, "statement"); }
+
 // Elaborate the parse tree as a declaration. If the tree is not a
 // declaration, behavior is undefined.
 Decl* 
@@ -175,15 +179,6 @@ elab_int(Lit_tree* t, const Token* k) {
   return make_expr<Int>(t->loc, get_int_type(), as_integer(*k));
 }
 
-template<typename F>
-  Expr*
-  elab_intrinsic(Tree* t, F fn) {
-    Decl* decl = fn();
-    Name* name = get_name(decl);
-    Type* type = get_type(decl);
-    return make_expr<Decl_id>(t->loc, type, name, decl);
-  }
-
 // Elaborate a literal. The type of a literal depends on its token.
 // In the rules for elaborating literals
 //
@@ -209,7 +204,6 @@ elab_lit(Lit_tree* t) {
   case nat_tok: return make_nat_type(t->loc);
   case int_tok: return make_int_type(t->loc);
   case char_tok: return make_char_type(t->loc);
-  case bitfield_tok: return elab_intrinsic(t, get_bitfield);
   case unit_tok: return elab_unit(t, k);
   case boolean_literal_tok: return elab_bool(t, k);
   case binary_literal_tok: return elab_int(t, k);
@@ -241,9 +235,8 @@ elab_args(Tree_seq* t) {
   return args;
 }
 
-// Returns the type of e1 and e2 if they have the same type.
-//
-// TODO: The diagnostic could be better.
+// Returns the type of e1 and e2 if they have the same type, and return
+// the unified type (or nullptr if not the same).
 Type*
 check_same_type(Expr* e1, Expr* e2) {
   Type* t1 = get_type(e1);
@@ -256,17 +249,20 @@ check_same_type(Expr* e1, Expr* e2) {
   return nullptr;
 }
 
-// Check that that the expression e can be converted to t, possbily
-// returning a conversion.
-Expr*
-check_convertible(Expr* e, Type* t) {
-  if (Expr* c = convert(e, t))
-    return c;
-  error(e->loc) << format("no known conversion from {} to '{}'", 
-                          typed(e), 
-                          debug(t));
-  return nullptr;
-}
+// Check that that the expression e can be converted to t, returning
+// the converted expression.
+inline Expr*
+check_convertible(Expr* e, Type* t) { return convert(e, t); }
+
+// Check that the term t1 can be converted to the type t2, returning
+// the covnerted expression.
+inline Term*
+check_convertible(Term* t1, Type* t2) { return convert(t1, t2); }
+
+// Check that t can be converted to bool, returning the converted
+// expression.
+inline Term*
+check_convertible_to_bool(Term* t) { return convert_to_bool(t); }
 
 // Check that the expression is a constant, that it can be fully
 // reduced to a value. This returns the constant evaluation if so,
@@ -617,6 +613,31 @@ elab_binary(Binary_tree* t) {
   Type* result = as<Fn_type>(type)->result();
 
   return make_expr<Binary>(t->loc, result, fn, left, right);
+}
+
+// -------------------------------------------------------------------------- //
+// Elaboration of conditions
+
+// Elaborate an if expression.
+Expr*
+elab_if(If_tree* t) {
+  Term* t0 = elab_term(t->cond());
+  Expr* e1 = elab_expr(t->pass());
+  Expr* e2 = elab_expr(t->fail());
+  if (not t or not e1 or not e2)
+    return nullptr;
+
+  // The condition shall be convertible to bool.
+  t0 = check_convertible_to_bool(t0);
+  if (not t)
+    return nullptr;
+
+  // The then and else expressions shall have the same type.
+  Type* type = check_same_type(e1, e2);
+  if (not type)
+    return nullptr;
+
+  return make_expr<If>(t->loc, type, t0, e1, e2);
 }
 
 // -------------------------------------------------------------------------- //
@@ -1136,12 +1157,16 @@ elab_def(Def_tree* t) {
 // The recursive loading of modules also adds an import declaration
 // to each loaded module. That is, `std` imports `net`, and `net`
 // imports `ofp`. This allows lookup of nested names.
+//
+// Note that current will always point to the last module that
+// was succesfully loaded.
 
 bool
 elab_module_id(Module*& first, Module*& current, Id_tree* t) {
-  current = load_module(t->loc, current, t->value()->text);
-  if (not current)
+  Module* mod = load_module(t->loc, current, t->value()->text);
+  if (not mod)
     return false;
+  current = mod;
   if (not first)
     first = current;
   return true;
@@ -1177,6 +1202,8 @@ elab_module_name(Module*& first, Module*& current, Tree* t) {
   // Adjust the elaboration for nested module names.
   if (Dot_tree* dot = as<Dot_tree>(t))
     t = elab_nested_module_name(first, current, dot);
+  if (not t)
+    return false;
 
   // Elabarate the trailing id-expression.
   if (Id_tree* id = as<Id_tree>(t)) {
@@ -1249,11 +1276,134 @@ elab_using(Using_tree* t) {
     return nullptr;
   }
 
-
   declare(id->name(), id->decl());
   return make_expr<Using>(t->loc, get_type(decl), name, decl);
 }
 
+
+// ---------------------------------------------------------------------------//
+// Elaboration of block statements
+
+// FIXME: We need to elaborate function definitions separately
+// from arbitrary block statements since they have no (or rather
+// unit) type. When elaborating a function body, we need to check
+// that the return values are all convertible to the function's
+// return type.
+
+namespace {
+
+// Return the type of the current function.
+inline Fn_type*
+current_function_type() {
+  steve_assert(current_function(), "no current function");
+  Fn* f = current_function();
+  return get_type(f);
+}
+
+// The type of a block is determined by its context. If the block
+// defines a function body, then its type is that of the function's
+// return type. Otherwise, it has unit type.
+inline Type*
+determine_block_type() {
+  Fn* fn = current_function();
+  if (current_context() == fn)
+    return get_type(fn)->result();
+  else
+    return get_unit_type();
+}
+
+} // namespace
+
+
+Expr*
+elab_block(Block_tree* t) {
+  // The type of the block is determined from its context.
+  Type *type = determine_block_type();
+
+  // Elaborate the statements within the block.
+  Scope_guard scope(block_scope);
+  Stmt_seq* stmts = new Stmt_seq();
+  for (Tree* s0 : *t->stmts()) {
+    if (Stmt* s1 = elab_stmt(s0)) {
+      stmts->push_back(s1);
+    }
+    else
+      return nullptr;
+  }
+  return make_expr<Block>(t->loc, type, stmts);
+}
+
+Expr*
+elab_return(Return_tree* t) {
+  Expr* e = elab_expr(t->value());
+  if (not e)
+    return nullptr;
+
+  // A return statement shall appear in the block scope of a function
+  // definition. Note that block scope is guaranteed to within a 
+  // function definition.
+  Scope* current = current_scope();
+  if (current->kind != block_scope) {
+    error(t->loc) << "return statement in non-block scope";
+    return nullptr;
+  }
+
+  // The return value shall be convertible to the return type
+  // of the function.
+  Fn_type* ft = current_function_type();
+  e = convert(e, ft->result());
+  if (not e)
+    return nullptr;
+
+  return make_expr<Return>(t->loc, get_type(e), e);
+}
+
+
+// ---------------------------------------------------------------------------//
+// Elaboration of load statements
+//
+// A load expression is a reference to a declaration that is (probably)
+// not imported. The primary use of load expressions is to query a
+// program for properties of a declaration.
+//
+// Diagnostics are fully suppressed for this elaboration.
+
+// The specific method of elaboration is a little odd. First, we try
+// to elaborate the laod of a module. This will cause any module names
+// to be resolved within the loaded name. If the name happens to refer
+// to a module, we're done. If not, then we try to resolve the
+// declaration as an id. Note that we have already loaded any modules
+// occuring as part of the id.
+Expr*
+elab_load(Load_tree* t) {
+  Diagnostics diags;
+  Diagnostics_guard guard(diags);
+
+  // Try to elaborate the name as a module. If we succeed,
+  // the we don't need to do anything else.
+  Module* first = nullptr;
+  Module* current = nullptr;
+  bool ok = elab_module_name(first, current, t->name());
+  if (ok)
+    return first;
+  if (not first)
+    return nullptr;
+
+  // Otherwise, declare the first resolved module.
+  Decl* imp = make_expr<Import>(t->loc, first, first->name(), first);
+  declare(imp);
+
+  // Now, try to resolve the name in the usual way.
+  Expr* e = elab_expr(t->name());
+  if (not e)
+    return nullptr;
+
+  // See through declaration.
+  if (Decl_id* id = as<Decl_id>(e))
+    return id->decl();
+  else
+    return e;
+}
 
 
 // ---------------------------------------------------------------------------//
@@ -1280,6 +1430,11 @@ elab_expr(Tree* t) {
     return nullptr;
 
   switch (t->kind) {
+  // Types
+  case record_tree: return elab_record(as<Record_tree>(t));
+  case variant_tree: return elab_variant_type(as<Variant_tree>(t));
+  case enum_tree: return elab_enum_type(as<Enum_tree>(t));
+  // Expressions
   case id_tree: return elab_id(as<Id_tree>(t));
   case lit_tree: return elab_lit(as<Lit_tree>(t));
   case call_tree: return elab_call(as<Call_tree>(t));
@@ -1288,16 +1443,17 @@ elab_expr(Tree* t) {
   case range_tree: return elab_range(as<Range_tree>(t));
   case unary_tree: return elab_unary(as<Unary_tree>(t));
   case binary_tree: return elab_binary(as<Binary_tree>(t));
-  // Types
-  case record_tree: return elab_record(as<Record_tree>(t));
-  case variant_tree: return elab_variant_type(as<Variant_tree>(t));
-  case enum_tree: return elab_enum_type(as<Enum_tree>(t));
+  case if_tree: return elab_if(as<If_tree>(t));
+  // Statements
+  case block_tree: return elab_block(as<Block_tree>(t));
+  case return_tree: return elab_return(as<Return_tree>(t));
   // Declarations
   case parm_tree: return elab_parm(as<Parm_tree>(t));
   case def_tree: return elab_def(as<Def_tree>(t));
   case field_tree: return elab_field(as<Field_tree>(t));
   case import_tree: return elab_import(as<Import_tree>(t));
   case using_tree: return elab_using(as<Using_tree>(t));
+  case load_tree: return elab_load(as<Load_tree>(t));
     break;
   // Misc
   case top_tree: return elab_top(as<Top_tree>(t));

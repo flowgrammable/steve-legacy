@@ -15,6 +15,8 @@ Module* load_file(const Path&);
 Module* load_module(Module*, String);
 Module* load_module(Location, Module*, String);
 
+Expr* load_name(const std::string&);
+
 } // namespace steve
 
 #endif

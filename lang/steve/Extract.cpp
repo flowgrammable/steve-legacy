@@ -66,7 +66,6 @@ Visitor::visit(Term* t) {
   case bool_term: return visit(as<Bool>(t));
   case int_term: return visit(as<Int>(t));
   case default_term: return visit(as<Default>(t));
-  case block_term: return visit(as<Block>(t));
   case fn_term: return visit(as<Fn>(t));
   case call_term: return visit(as<Call>(t));
   case promo_term: return visit(as<Promo>(t));
@@ -156,6 +155,16 @@ List_extractor::visit(Def* d) {
 
   if (Comment_block* c = comments().find(d->loc))
     std::cout << "Doc: " << c->text() << '\n';
+}
+
+// -------------------------------------------------------------------------- //
+// Documentation extractor
+
+Doc_extractor::Doc_extractor() { }
+
+void
+Doc_extractor::operator()(const std::string& s) {
+
 }
 
 } // namespace steve
