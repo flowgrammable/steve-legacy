@@ -14,26 +14,32 @@ struct Json {
 };
 
 struct Number : Json {
+  Number(double);
   std::string stringify();
   
   double value;
 };
 
 struct Object : Json, std::map<std::string, Json *> {
-  std::string stringify();
-};
-
-struct Array : Json, std::vector<std::string> {
-  std::string stringify();
-};
-
-struct String : Json {
+  Object();
   std::string stringify();
   
-  std::string value;
+  ~Object();
+};
+
+struct Array : Json, std::vector<Json *> {
+  std::string stringify();
+  
+  ~Array();
+};
+
+struct String : Json, std::string {
+  String(std::string);
+  std::string stringify();  
 };
 
 struct Bool : Json {
+  Bool(bool);
   std::string stringify();
   
   bool value;

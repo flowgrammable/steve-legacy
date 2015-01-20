@@ -13,6 +13,7 @@
 #include <string>
 
 #include "JSON.hpp"
+#include "JSON.ipp"
 
 
 
@@ -21,7 +22,7 @@ namespace json {
 
 std::string
 String::stringify() {
-  return value;
+  return std::string(*this);
 }
 
 std::string
@@ -40,13 +41,40 @@ Array::stringify() {
   
   for(size_t i = 0; i < size(); i++) {
     if(i != 0)
-      s += "," + at(i);
+      s += ", " + at(i)->stringify();
     else
-      s += at(i);
+      s += at(i)->stringify();
   }
   
   return s + "]";
 }
+
+Array::~Array() {
+  for(auto i : *this)
+    delete i;
+}
+
+std::string
+Object::stringify() {
+  std::string s = "{";
+  int count = 0;
+  
+  for(auto i : *this) {
+    if(count++ != 0)
+      s += ", " + i.first + ": " + i.second->stringify();
+    else
+      s += i.first + ": " + i.second->stringify();
+  }
+  
+  return s + "}";
+}
+
+Object::~Object() {
+  for(auto i : *this) {
+    delete i.second;
+  }
+}
+
 
 
 } // namespace json
