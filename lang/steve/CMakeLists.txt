@@ -40,6 +40,7 @@ add_library(steve-lib
   Elaborator.cpp
   Evaluator.cpp
   Extract.cpp
+  JSON.cpp
   ${contrib_src}
 )
 set_target_properties(steve-lib PROPERTIES ARCHIVE_OUTPUT_NAME steve)
