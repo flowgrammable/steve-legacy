@@ -1,0 +1,4 @@
+
+def Ipv6 : typename = record {
+  
+};
