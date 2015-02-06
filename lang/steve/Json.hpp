@@ -1,5 +1,5 @@
-#ifndef JSON_HPP
-#define JSON_HPP
+#ifndef STEVE_JSON_HPP
+#define STEVE_JSON_HPP
 
 #include <map>
 #include <vector>
@@ -48,5 +48,6 @@ struct Bool : Json {
 } // namespace json
 } // namespace steve
 
+#include <steve/Json.ipp>
 
 #endif
