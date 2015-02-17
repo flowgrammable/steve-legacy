@@ -10,8 +10,9 @@ struct Name;
 struct Decl;
 struct Fn;
 
-Decl* context(Decl*);
+Expr* context(Decl*);
 Name* name(Decl*);
+Decl* definition(Expr*);
 
 Fn* get_declared_fn(Decl*);
 

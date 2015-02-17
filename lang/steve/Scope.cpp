@@ -138,6 +138,10 @@ Scope::declare(Name* n, Decl* d) {
     else
       return nullptr;
   }
+
+  // Associate this declaration with its enclosing context.
+  d->cxt_ = current_context();
+
   return &ovl;
 }
 
@@ -269,9 +273,17 @@ pop_scope() {
 Scope* 
 current_scope() { return stack_; }
 
-// Returns the context associated with the current scope.
+// Returns the context associated with the current scope. This
+// is the nearest enclosing scope that defines an associated
+// context. Note that block scopes do not associate a context,
+// so we need to "look through them".
 Expr*
-current_context() { return current_scope()->context; }
+current_context() {
+  Scope* s = current_scope();
+  while (s && !s->context)
+    s = s->parent;
+  return s->context; 
+}
 
 // FIXME: These may not be right. If we allow the definition of
 // member functions, then we might want to walk upwards to the

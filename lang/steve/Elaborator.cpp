@@ -964,15 +964,12 @@ elab_enum_type(Enum_tree* t) {
 
 // -------------------------------------------------------------------------- //
 // Elaboration of constants
-//
-// Note that the initializer is provided, making it par
 
-// Elaboborate a constant definition.
+// Elaborate a constant definition.
 //
-//       G, n : T |- e : T
-//    ------------------------ E-const
-//    G |- (def n : T = e) : T
-Expr*
+// The initializer of the must be convertible to the declared
+// type of the constant. The initializer is reduced.
+Def*
 elab_const(Value_tree* t, Tree* e) {
   Name* name = elab_name(t->name());
   Type* type = elab_type(t->type());
@@ -983,7 +980,7 @@ elab_const(Value_tree* t, Tree* e) {
   // Emit the declaration before elaborating the initializer.
   Def* d = make_expr<Def>(t->loc, type, name, type, nullptr);
   if (not declare(d))
-    return d;
+    return nullptr;
 
   // Check that the initializer is convertible to the declared
   // type, and then partiually evaluate it. Update the definition 
@@ -1045,13 +1042,22 @@ elab_parms(Fn_tree* t, Decl_seq* parms) {
 // Elaborate a function definition. Note that the function
 // declartor syntax:
 //
-//    def f(pi : Ti)->T = e;
+//    def f(p : T1) -> T2 = e;
 //
 // is equivalent to the long-form syntax:
 //
-//    def f : (Ti)->T = \(pi : Ti).e
+//    def f : (T1) -> T2 = \(p : T).e
 //
-Expr*
+// The definition of a function introduces a new function scope. 
+// All parameters are declared within that scope, and the
+// function itself is declared prior to the elaboration of the
+// function body; this allows for recursive functions.
+//
+// The type of the initializer must be convertible to the declared 
+// return type of the function. 
+//
+// The initializer is reduced.
+Def*
 elab_fn(Fn_tree* t, Tree* e) {
   // Elaborate the name.
   Name* name = elab_name(t->name());
@@ -1104,29 +1110,43 @@ elab_fn(Fn_tree* t, Tree* e) {
 // -------------------------------------------------------------------------- //
 // Elaboration of definitions
 
-// A definition declares either a constant or a function. The two 
-// elaboration rules are given below.
+namespace {
+
+Def*
+elab_const_or_fn(Def_tree* t) {
+  Def* def;
+  if (Value_tree* v = as<Value_tree>(t->decl()))
+    def = elab_const(v, t->init());
+  else if (Fn_tree* f = as<Fn_tree>(t->decl()))
+    def = elab_fn(f, t->init());
+  else
+    steve_unreachable(format("unhandled definition syntax '{}'", debug(t)));
+  return def;
+}
+
+Def*
+bind_definition(Def* def) {
+  Expr* init = def->init();
+  if (Type* t = as<Type>(init))
+    t->def_ = def;
+  else if (Term* t = as<Term>(init))
+    t->def_ = def;
+  else
+    steve_unreachable(format("unknown initializer kind '{}'", node_name(init)));
+  return def;
+}
+
+} // namespace
+
+// A definition declares either a constant or a function, and the
+// elaboration of a definition differs accordingly.
 //
-//     G, n : T |- e : T
-//    ------------------- T-def-const
-//    G |- def n : T = e
-//
-//    G, n(pi)->T : (Ti)->T |- e : T
-//    ------------------------------- T-def-fn
-//         G |- def n(pi)->T = e
-//
-// Note that the typing of the initializer is handled by elab_const
-// and elab_fn.
-//
-// TODO: Weaken the same-type requirement to allow for conversion of
-// the initializer to the returned type (e.g., nat to int?).
+// Note that we 
 Expr*
 elab_def(Def_tree* t) {
-  if (Value_tree* v = as<Value_tree>(t->decl()))
-    return elab_const(v, t->init());
-  if (Fn_tree* f = as<Fn_tree>(t->decl()))
-    return elab_fn(f, t->init());
-  steve_unreachable(format("{}: elaboration failure", t->loc));
+  if (Def* def = elab_const_or_fn(t))
+    return bind_definition(def);
+  return nullptr;
 }
 
 // -------------------------------------------------------------------------- //

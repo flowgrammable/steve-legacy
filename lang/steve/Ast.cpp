@@ -167,6 +167,20 @@ debug_operator(Printer& p, Operator_id* e) {
   print(p, e->op());
 }
 
+void
+debug_scoped(Printer& p, Scoped_id* e) {
+  sexpr s(p, node_name(e));
+  print(p, "scope"); // FIXME: Not right!
+  debug_print(p, e->name());
+}
+
+// FIXME: Print the name of the funciton followed
+// by the sequence of arguments.
+void
+debug_indexed(Printer& p, Indexed_id* e) {
+  sexpr s(p, node_name(e));
+}
+
 template<typename T>
   inline void
   debug_ref(Printer& p, T* t) {
@@ -175,19 +189,7 @@ template<typename T>
   }
 
 void
-debug_fn(Printer& p, Fn* e) {
-  debug_ternary(p, e);
-  // if (e->is_intrinsic()) {
-  //   sexpr s(p, "intrinsic");
-  //   debug_print(p, e->first);
-  //   print_space(p);
-  //   debug_print(p, e->second);
-  //   print_space(p);
-  //   print(p, "<intrinsic>");
-  // } else {
-  //   debug_ternary(p, e);
-  // }
-}
+debug_fn(Printer& p, Fn* e) { debug_ternary(p, e); }
 
 // Decls
 
@@ -252,6 +254,8 @@ debug_print(Printer& p, Expr* e) {
   // Names
   case basic_id: return debug_terminal(p, as<Basic_id>(e));
   case operator_id: return debug_operator(p, as<Operator_id>(e));
+  case scoped_id: return debug_scoped(p, as<Scoped_id>(e));
+  case indexed_id: return debug_indexed(p, as<Indexed_id>(e));
   case decl_id: return debug_id(p, as<Decl_id>(e));
   // Types
   case typename_type: return print(p, "typename");
