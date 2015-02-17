@@ -12,11 +12,14 @@
 
 namespace steve {
 
+// FIXME: Decl-id should not exist. Identifiers should resolve
+// during elaboration to their named declaraitons.
+
 // Names
-constexpr Node_kind basic_id       = make_name_node(1);  // id
-constexpr Node_kind operator_id    = make_name_node(2);  // operator <op>
-constexpr Node_kind scoped_id      = make_name_node(3);  // scope.id
-constexpr Node_kind decl_id        = make_name_node(10); // x, referring to a decl
+constexpr Node_kind basic_id          = make_name_node(1);  // id
+constexpr Node_kind operator_id       = make_name_node(2);  // operator <op>
+constexpr Node_kind scoped_id         = make_name_node(3);  // scope.id
+constexpr Node_kind decl_id           = make_name_node(10); // x, referring to a decl
 // Types
 constexpr Node_kind typename_type     = make_type_node(1);  // typename
 constexpr Node_kind unit_type         = make_type_node(2);  // unit
