@@ -15,8 +15,7 @@ namespace {
 // compare values of the argument type.
 Term*
 make_discriminator_eq(Decl* parm, Expr* arg) {
-  Type* type = get_type(parm);
-  Term* fake = make_expr<Default>(no_location, type);
+  Term* fake = make_expr<Default>(no_location, type(parm));
   Name* name = new Operator_id("==");
   Overload* ovl = lookup(name);
   Resolution res = resolve_binary(arg->loc, *ovl, arg, fake);
@@ -38,7 +37,7 @@ make_discriminator_eq(Decl* parm, Expr* arg) {
 // left and right arguments and whose result is convertible to bool.
 bool
 compare_alternative(Expr* left, Expr* right, Term* cmp) {
-  Type* result = as<Fn_type>(get_type(cmp))->result();
+  Type* result = as<Fn_type>(type(cmp))->result();
   Term* comp = make_expr<Binary>({}, result, cmp, left, right);
   Term* expr = as<Term>(convert(comp, get_bool_type()));
   return eval_boolean(expr);

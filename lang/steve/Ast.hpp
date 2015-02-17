@@ -112,8 +112,7 @@ struct Decl;
 struct Expr : Node {
   using Node::Node;
 
-  Type* tr = nullptr; // The cached type or kind of the node.
-  Decl* od = nullptr; // An originating declaration for the expression
+  Type* type_ = nullptr; // The type of the node.
 };
 
 // A name designates a declaration.
@@ -137,9 +136,15 @@ struct Stmt : Term {
 };
 
 // A declaration is a statement that introduces an entity into
-// a declaration, typing, or logical context.
+// a context.
+//
+// Note that each declaration maintains a reference to its
+// enclosing declaration context. This is accessible via
+// the 'context' function (see Decl.hpp).
 struct Decl : Stmt {
   using Stmt::Stmt;
+
+  Decl* cxt_ = nullptr; // Parent declaration context.
 };
 
 // Helper types
@@ -1036,8 +1041,6 @@ template<typename T, typename... Args>
 bool is_same(Expr*, Expr*);
 bool is_less(Expr*, Expr*);
 
-Type* get_type(Expr*);
-
 // -------------------------------------------------------------------------- //
 // Printing
 
@@ -1062,15 +1065,7 @@ struct typed_printer { Expr* e; };
 inline typed_printer 
 typed(Expr* e) { return {e}; }
 
-// FIXME: This should call out to the pretty printer, not the
-// debug printer.
-template<typename C, typename T>
-  std::basic_ostream<C, T>&
-  operator<<(std::basic_ostream<C, T>& os, typed_printer p) {
-    Expr* e = p.e;
-    Type* t = get_type(p.e);
-    return os << format("'{}' (of type '{}')", debug(e), debug(t));
-  }
+std::ostream& operator<<(std::ostream&, typed_printer);
 
 } // namespace steve
 

@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include <steve/Ast.hpp>
+#include <steve/Type.hpp>
 #include <steve/Decl.hpp>
 #include <steve/Print.hpp>
 #include <steve/Debug.hpp>
@@ -312,6 +313,15 @@ operator<<(std::ostream& os, debug_node d) {
   Printer p(os);
   debug_print(p, d.e);
   return os;
+}
+
+// FIXME: This should call out to the pretty printer, not the
+// debug printer.
+std::ostream&
+operator<<(std::ostream& os, typed_printer p) {
+  Expr* e = p.e;
+  Type* t = type(p.e);
+  return os << format("'{}' (of type '{}')", debug(e), debug(t));
 }
 
 } // namespace steve

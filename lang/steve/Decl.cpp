@@ -14,9 +14,10 @@ template<typename T>
 
 } // namespace
 
-// Returns the name of the declaration.
+// Returns the name of the declaration. Note that not all
+// declarations have names.
 Name* 
-get_name(Decl* d) {
+name(Decl* d) {
   switch (d->kind) {
   case def_decl: return decl_name(as<Def>(d));
   case parm_decl: return decl_name(as<Parm>(d));

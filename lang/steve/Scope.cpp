@@ -190,7 +190,7 @@ declare(Name* n, Decl* d) {
 // particular scope. Return the overload of the new declaration.
 Overload*
 declare_outside(Decl* d) { 
-  return stack_->parent->declare(get_name(d), d); 
+  return stack_->parent->declare(name(d), d); 
 }
 
 // -------------------------------------------------------------------------- //

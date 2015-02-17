@@ -53,7 +53,7 @@ to_expr(const Location& l, const Value& v, Type* t) {
 // expression.
 Expr* 
 to_expr(const Value& v, Expr* e) {
-  return to_expr(e->loc, v, get_type(e));
+  return to_expr(e->loc, v, type(e));
 }
 
 } // namespace

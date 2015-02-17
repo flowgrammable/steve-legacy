@@ -92,7 +92,7 @@ elab_type(Tree* t) {
 
   // If the elaboration refers to a type function, then evaluate it.
   if (Call *call = as<Call>(e)) {
-    if (not is_same(get_type(call), get_typename_type())) {
+    if (not is_same(type(call), get_typename_type())) {
       error(call->loc) << format("'{}' does not yield a type", debug(call));
       return nullptr;
     }
@@ -146,7 +146,7 @@ elab_id(Id_tree* t) {
   //
   // TODO: Change to lookup(n) when we want to support overloading.
   if (Decl* d = lookup_single(n))
-    return make_expr<Decl_id>(t->loc, get_type(d), n, d);
+    return make_expr<Decl_id>(t->loc, type(d), n, d);
   else
     return nullptr;
 }
@@ -239,8 +239,8 @@ elab_args(Tree_seq* t) {
 // the unified type (or nullptr if not the same).
 Type*
 check_same_type(Expr* e1, Expr* e2) {
-  Type* t1 = get_type(e1);
-  Type* t2 = get_type(e2);
+  Type* t1 = type(e1);
+  Type* t2 = type(e2);
   if (is_same(t1, t2))
     return t1;
   error(e2->loc) << format("{} does not have the same type as {}",
@@ -279,7 +279,7 @@ check_constant(Expr* e) {
 // Check that expr is a boolean term.
 Term*
 check_boolean(Term* e) {
-  Type* t = get_type(e);
+  Type* t = type(e);
   if (is_same(t, get_bool_type())) 
     return e;
   error(e->loc) << format("'{}' is not a boolean term", debug(e));
@@ -435,7 +435,7 @@ elab_call(Call_tree* t) {
       Expr* init = def->init();
       if (Term* f = as<Term>(init)) {
         fn = f;
-        ft = as<Fn_type>(get_type(fn));
+        ft = as<Fn_type>(type(fn));
       } else if (Type* ty = as<Type>(init)) {
         // FIXME: This shouldn't be here...
         return elab_type_call(t, ty);
@@ -609,8 +609,7 @@ elab_binary(Binary_tree* t) {
 
   Decl* decl = res.solution();
   Term* fn = as<Term>(as<Def>(decl)->init()); // FIXME: Gross
-  Type* type = get_type(fn);
-  Type* result = as<Fn_type>(type)->result();
+  Type* result = as<Fn_type>(type(fn))->result();
 
   return make_expr<Binary>(t->loc, result, fn, left, right);
 }
@@ -997,10 +996,6 @@ elab_const(Value_tree* t, Tree* e) {
     return nullptr;
   d->third = reduce(init);
 
-
-  // Bind the initializer to its definition.
-  d->third->od = d;
-
   return d;
 }
 
@@ -1082,7 +1077,7 @@ elab_fn(Fn_tree* t, Tree* e) {
   // Compute the type of the function and update
   // the parsed function.
   Type* type = make_fn_type(parms, result);
-  fn->tr = type;
+  fn->type_ = type;
   
   // Emit the declaration of the (as-of-yet) incomplete function
   // into the enclosing scope (we pushed the function paramter
@@ -1277,7 +1272,7 @@ elab_using(Using_tree* t) {
   }
 
   declare(id->name(), id->decl());
-  return make_expr<Using>(t->loc, get_type(decl), name, decl);
+  return make_expr<Using>(t->loc, type(decl), name, decl);
 }
 
 
@@ -1297,7 +1292,7 @@ inline Fn_type*
 current_function_type() {
   steve_assert(current_function(), "no current function");
   Fn* f = current_function();
-  return get_type(f);
+  return type(f);
 }
 
 // The type of a block is determined by its context. If the block
@@ -1307,7 +1302,7 @@ inline Type*
 determine_block_type() {
   Fn* fn = current_function();
   if (current_context() == fn)
-    return get_type(fn)->result();
+    return type(fn)->result();
   else
     return get_unit_type();
 }
@@ -1355,7 +1350,7 @@ elab_return(Return_tree* t) {
   if (not e)
     return nullptr;
 
-  return make_expr<Return>(t->loc, get_type(e), e);
+  return make_expr<Return>(t->loc, type(e), e);
 }
 
 

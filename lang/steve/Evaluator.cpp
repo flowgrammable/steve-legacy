@@ -133,7 +133,7 @@ Eval
 eval_call(Call* e) {
   // Reduce the function.
   Term* fn = as<Term>(reduce(e->fn()));
-  Type* ft = get_type(fn);
+  Type* ft = type(fn);
 
   // Evaluate the function arguments first.
   Eval_seq evals = eval_args(e->args());
