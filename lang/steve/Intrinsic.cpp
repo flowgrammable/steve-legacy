@@ -108,11 +108,11 @@ void
 Spec::complete() {
   // Finish the function typoe
   Type* type = new Fn_type(parms, result);
-  fn->tr = type;
+  fn->type_ = type;
 
   // Build the declaration.
   def = new Def(name, type, fn);
-  def->tr = type;
+  def->type_ = type;
 
   // Declare it, saving the overload set.
   ovl = declare(def);
@@ -243,14 +243,14 @@ integer_not_equal(Expr* a, Expr* b) {
 // Returns true when two types are the same.
 Expr*
 type_equal(Expr* a, Expr* b) {
-  Value result = is_same(get_type(a), get_type(b));
+  Value result = is_same(type(a), type(b));
   return to_expr(result, get_bool_type());
 }
 
 // Returns true when two types are different.
 Expr*
 type_not_equal(Expr* a, Expr* b) {
-  Value result = not is_same(get_type(a), get_type(b));
+  Value result = not is_same(type(a), type(b));
   return to_expr(result, get_bool_type());
 }
 

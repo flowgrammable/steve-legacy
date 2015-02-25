@@ -19,7 +19,7 @@ Scope::Scope(Scope_kind k, Scope* p)
 // Declarations
 
 inline Overload* 
-declare(Decl* d) { return declare(get_name(d), d); }
+declare(Decl* d) { return declare(name(d), d); }
 
 // -------------------------------------------------------------------------- //
 // Scope guaard

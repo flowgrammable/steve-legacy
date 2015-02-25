@@ -14,9 +14,10 @@ template<typename T>
 
 } // namespace
 
-// Returns the name of the declaration.
+// Returns the name of the declaration. Note that not all
+// declarations have names.
 Name* 
-get_name(Decl* d) {
+name(Decl* d) {
   switch (d->kind) {
   case def_decl: return decl_name(as<Def>(d));
   case parm_decl: return decl_name(as<Parm>(d));
@@ -28,6 +29,20 @@ get_name(Decl* d) {
   steve_unreachable(format("no declaration name for '{}'", node_name(d)));
 }
 
+// Return the definition of the expression e, if it has one.
+// Note that e must be a type or a term.
+inline Decl*
+definition(Expr* e) {
+  if (Type* t = as<Type>(e))
+    return t->def_;
+  if (Term* t = as<Term>(e))
+    return t->def_;
+  steve_unreachable(format("expression kind '{}' "
+                           "does not have a definition", node_name(e)));
+}
+
+
+
 // When 'd' declares a function, return that. Otherwise,
 // return nullptr.
 Fn*
@@ -36,5 +51,6 @@ get_declared_fn(Decl* d) {
     return as<Fn>(def->init());
   return nullptr;
 }
+
 
 } // namespace steve

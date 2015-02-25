@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include <steve/Ast.hpp>
+#include <steve/Type.hpp>
 #include <steve/Decl.hpp>
 #include <steve/Print.hpp>
 #include <steve/Debug.hpp>
@@ -166,6 +167,20 @@ debug_operator(Printer& p, Operator_id* e) {
   print(p, e->op());
 }
 
+void
+debug_scoped(Printer& p, Scoped_id* e) {
+  sexpr s(p, node_name(e));
+  print(p, "scope"); // FIXME: Not right!
+  debug_print(p, e->name());
+}
+
+// FIXME: Print the name of the funciton followed
+// by the sequence of arguments.
+void
+debug_indexed(Printer& p, Indexed_id* e) {
+  sexpr s(p, node_name(e));
+}
+
 template<typename T>
   inline void
   debug_ref(Printer& p, T* t) {
@@ -174,19 +189,7 @@ template<typename T>
   }
 
 void
-debug_fn(Printer& p, Fn* e) {
-  debug_ternary(p, e);
-  // if (e->is_intrinsic()) {
-  //   sexpr s(p, "intrinsic");
-  //   debug_print(p, e->first);
-  //   print_space(p);
-  //   debug_print(p, e->second);
-  //   print_space(p);
-  //   print(p, "<intrinsic>");
-  // } else {
-  //   debug_ternary(p, e);
-  // }
-}
+debug_fn(Printer& p, Fn* e) { debug_ternary(p, e); }
 
 // Decls
 
@@ -251,6 +254,8 @@ debug_print(Printer& p, Expr* e) {
   // Names
   case basic_id: return debug_terminal(p, as<Basic_id>(e));
   case operator_id: return debug_operator(p, as<Operator_id>(e));
+  case scoped_id: return debug_scoped(p, as<Scoped_id>(e));
+  case indexed_id: return debug_indexed(p, as<Indexed_id>(e));
   case decl_id: return debug_id(p, as<Decl_id>(e));
   // Types
   case typename_type: return print(p, "typename");
@@ -312,6 +317,15 @@ operator<<(std::ostream& os, debug_node d) {
   Printer p(os);
   debug_print(p, d.e);
   return os;
+}
+
+// FIXME: This should call out to the pretty printer, not the
+// debug printer.
+std::ostream&
+operator<<(std::ostream& os, typed_printer p) {
+  Expr* e = p.e;
+  Type* t = type(p.e);
+  return os << format("'{}' (of type '{}')", debug(e), debug(t));
 }
 
 } // namespace steve

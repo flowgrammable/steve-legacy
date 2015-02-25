@@ -12,11 +12,15 @@
 
 namespace steve {
 
+// FIXME: Decl-id should not exist. Identifiers should resolve
+// during elaboration to their named declaraitons.
+
 // Names
-constexpr Node_kind basic_id       = make_name_node(1);  // id
-constexpr Node_kind operator_id    = make_name_node(2);  // operator <op>
-constexpr Node_kind scoped_id      = make_name_node(3);  // scope.id
-constexpr Node_kind decl_id        = make_name_node(10); // x, referring to a decl
+constexpr Node_kind basic_id          = make_name_node(1);  // id
+constexpr Node_kind operator_id       = make_name_node(2);  // operator <op>
+constexpr Node_kind scoped_id         = make_name_node(3);  // s.id
+constexpr Node_kind indexed_id        = make_name_node(4);  // id(args)
+constexpr Node_kind decl_id           = make_name_node(10); // x, referring to a decl
 // Types
 constexpr Node_kind typename_type     = make_type_node(1);  // typename
 constexpr Node_kind unit_type         = make_type_node(2);  // unit
@@ -109,8 +113,7 @@ struct Decl;
 struct Expr : Node {
   using Node::Node;
 
-  Type* tr = nullptr; // The cached type or kind of the node.
-  Decl* od = nullptr; // An originating declaration for the expression
+  Type* type_ = nullptr; // The type of the node.
 };
 
 // A name designates a declaration.
@@ -119,13 +122,30 @@ struct Name : Expr {
 };
 
 // A type expression denotes a type, describing a set of values.
+//
+// A type maintains a reference to its definition (if it is
+// declared). This allows, for example, a name to be associated
+// with a type.
 struct Type : Expr {
   using Expr::Expr;
+
+  Decl* def_ = nullptr; // The definition of the type.
 };
 
 // A term denotes a computable value.
+//
+// Each term optionally refers to its definition. This is
+// primarily used to bind functions to their definition
+// site, so that a name can be associated.
+//
+// TODO: This is extraordinarily wasteful. Only a handful
+// of terms really need to be bound to their definition. We
+// could subclass term specifically for that set. But what
+// should we call it?
 struct Term : Expr {
   using Expr::Expr;
+
+  Decl* def_ = nullptr; // The definition of the term.
 };
 
 // A statement is a term whose result is computed and discarded.
@@ -134,9 +154,16 @@ struct Stmt : Term {
 };
 
 // A declaration is a statement that introduces an entity into
-// a declaration, typing, or logical context.
+// a context.
+//
+// Note that each declaration maintains a reference to its
+// enclosing context. The context is typically a type (e.g.,
+// a module or record), or in the case of local declarations,
+// a function. This is accessible via the 'context' function.
 struct Decl : Stmt {
   using Stmt::Stmt;
+
+  Expr* cxt_ = nullptr; // Declaration context.
 };
 
 // Helper types
@@ -177,6 +204,56 @@ struct Operator_id : Name, Kind_of<operator_id> {
 
   String first;
 };
+
+// A scoped-id is scoped representation of a name. Note that
+// scoped-id's are not intended to appear in an elaborated
+// program. They are primarily used to synthesize names for
+// externally referring to declarations.
+//
+// A scoped id is a pair comprised of of a type (denoting the
+// enclosing scope) and its inner name. Note that the inner
+// name may also be a scoped-id. For example, the name s1.s2.n,
+// is comprised of two scoped-ids: s2.n and the scoped-id
+// with s1 as its scope and s2.n as its name.
+struct Scoped_id : Name, Kind_of<scoped_id> {
+  Scoped_id(Type* s, Name* n)
+    : Name(Kind), first(s), second(n) { }
+  Scoped_id(const Location& l, Type* s, Name* n)
+    : Name(Kind, l), first(s), second(n) { }
+
+  Type* scope() const { return first; }
+  Name* name() const { return second; }
+
+  Type* first;
+  Name* second;
+};
+
+// An indexed-id is a name followed by a sequence of arguments.
+// It is an opaque representation of a function call. Note
+// that indexed-id's are not intended to appear in an elaborated
+// program; they are primarily used for to synthesize names
+// for externally referring to declarations.
+//
+// The term "indexed" derives from the notion that a template
+// can be viewed as a family indexed by its arguments.
+//
+// An indexed name is represented as a pair comprised of a
+// a term (a function) and a sequence of arguments.
+//
+// In C++, this is synonymous with a tmplate-id.
+struct Indexed_id : Name, Kind_of<indexed_id> {
+  Indexed_id(Term* f, Expr_seq* a)
+    : Name(Kind), first(f), second(a) { }
+  Indexed_id(const Location& l, Term* f, Expr_seq* a)
+    : Name(Kind, l), first(f), second(a) { }
+
+  Term* fn() const { return first; }
+  Expr_seq* args() const { return second; }
+
+  Term* first;
+  Expr_seq* second;
+};
+
 
 // A name that refers to a declaration of some kind. During elaboration,
 // names are linked to the declarations to which they refer. Note that
@@ -1033,8 +1110,6 @@ template<typename T, typename... Args>
 bool is_same(Expr*, Expr*);
 bool is_less(Expr*, Expr*);
 
-Type* get_type(Expr*);
-
 // -------------------------------------------------------------------------- //
 // Printing
 
@@ -1059,15 +1134,7 @@ struct typed_printer { Expr* e; };
 inline typed_printer 
 typed(Expr* e) { return {e}; }
 
-// FIXME: This should call out to the pretty printer, not the
-// debug printer.
-template<typename C, typename T>
-  std::basic_ostream<C, T>&
-  operator<<(std::basic_ostream<C, T>& os, typed_printer p) {
-    Expr* e = p.e;
-    Type* t = get_type(p.e);
-    return os << format("'{}' (of type '{}')", debug(e), debug(t));
-  }
+std::ostream& operator<<(std::ostream&, typed_printer);
 
 } // namespace steve
 

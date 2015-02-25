@@ -29,7 +29,6 @@ Type* make_char_type(const Location&);
 // TODO: Clean this up?
 Type* make_fn_type(Decl_seq*, Type*);
 
-
 // Type categories
 bool is_typename_type(Type*);
 bool is_boolean_type(Type*);
@@ -37,8 +36,8 @@ bool is_integral_type(Type*);
 bool is_type_constructor_type(Type*);
 
 // Type queries
-Type* get_type(Expr*);
-Fn_type* get_type(Fn*);
+Type* type(Expr*);
+Fn_type* type(Fn*);
 
 Integer size_in_bits(Type*);
 

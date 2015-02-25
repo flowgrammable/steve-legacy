@@ -39,8 +39,8 @@ equivalent_parameters(Fn_type* t1, Fn_type* t2) {
 bool
 check_overloadable(Decl* d1, Decl* d2) {
   // Determine overloading based on the types of d1 and d2.
-  Fn_type* t1 = as<Fn_type>(get_type(d1));
-  Fn_type* t2 = as<Fn_type>(get_type(d2));
+  Fn_type* t1 = as<Fn_type>(type(d1));
+  Fn_type* t2 = as<Fn_type>(type(d2));
 
   // Only functions can be overloaded.
   if (not t1) {
@@ -116,7 +116,7 @@ get_function_candidate(Def* def) {
 Term*
 get_builtin_candidate(Def* def) {
   if (Builtin* b = as<Builtin>(def->init()))
-    if (as<Fn_type>(get_type(b)))
+    if (as<Fn_type>(type(b)))
       return b;
   return nullptr;
 }
@@ -213,7 +213,7 @@ Candidate
 viable_candidate(Location loc, Candidate& c, Expr_seq* args) {
   Diagnostics_guard guard(c.diags);
 
-  Fn_type* ft = as<Fn_type>(get_type(c.fn));
+  Fn_type* ft = as<Fn_type>(type(c.fn));
   steve_assert(ft, "candidate with non-function type");
   
   // If the arguments match, update the candidate with the new

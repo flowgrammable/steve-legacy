@@ -21,7 +21,7 @@ namespace {
 // If e has type t, no conversion is required.
 Expr*
 identity(Expr* e, Type* t) {
-  Type* u = get_type(e);
+  Type* u = type(e);
   if (is_same(u, t))
     return e;
   return nullptr;
@@ -31,7 +31,7 @@ identity(Expr* e, Type* t) {
 // promotion.
 Expr*
 promote(Expr* e, Type* t) {
-  Type* u = get_type(e);
+  Type* u = type(e);
   if (is_integral_type(u) and is_integral_type(t))
     return make_expr<Promo>(e->loc, t, e, t);
   return nullptr;
@@ -41,7 +41,7 @@ promote(Expr* e, Type* t) {
 // convert by predicate evaluation.
 Expr*
 predicate(Expr* e, Type* t) {
-  Type* u = get_type(e);
+  Type* u = type(e);
   if ((is_boolean_type(u) || is_integral_type(u)) && is_boolean_type(t))
     return make_expr<Pred>(e->loc, t, e, t);
   return nullptr;

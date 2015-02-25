@@ -92,7 +92,7 @@ elab_type(Tree* t) {
 
   // If the elaboration refers to a type function, then evaluate it.
   if (Call *call = as<Call>(e)) {
-    if (not is_same(get_type(call), get_typename_type())) {
+    if (not is_same(type(call), get_typename_type())) {
       error(call->loc) << format("'{}' does not yield a type", debug(call));
       return nullptr;
     }
@@ -146,7 +146,7 @@ elab_id(Id_tree* t) {
   //
   // TODO: Change to lookup(n) when we want to support overloading.
   if (Decl* d = lookup_single(n))
-    return make_expr<Decl_id>(t->loc, get_type(d), n, d);
+    return make_expr<Decl_id>(t->loc, type(d), n, d);
   else
     return nullptr;
 }
@@ -239,8 +239,8 @@ elab_args(Tree_seq* t) {
 // the unified type (or nullptr if not the same).
 Type*
 check_same_type(Expr* e1, Expr* e2) {
-  Type* t1 = get_type(e1);
-  Type* t2 = get_type(e2);
+  Type* t1 = type(e1);
+  Type* t2 = type(e2);
   if (is_same(t1, t2))
     return t1;
   error(e2->loc) << format("{} does not have the same type as {}",
@@ -279,7 +279,7 @@ check_constant(Expr* e) {
 // Check that expr is a boolean term.
 Term*
 check_boolean(Term* e) {
-  Type* t = get_type(e);
+  Type* t = type(e);
   if (is_same(t, get_bool_type())) 
     return e;
   error(e->loc) << format("'{}' is not a boolean term", debug(e));
@@ -435,7 +435,7 @@ elab_call(Call_tree* t) {
       Expr* init = def->init();
       if (Term* f = as<Term>(init)) {
         fn = f;
-        ft = as<Fn_type>(get_type(fn));
+        ft = as<Fn_type>(type(fn));
       } else if (Type* ty = as<Type>(init)) {
         // FIXME: This shouldn't be here...
         return elab_type_call(t, ty);
@@ -609,8 +609,7 @@ elab_binary(Binary_tree* t) {
 
   Decl* decl = res.solution();
   Term* fn = as<Term>(as<Def>(decl)->init()); // FIXME: Gross
-  Type* type = get_type(fn);
-  Type* result = as<Fn_type>(type)->result();
+  Type* result = as<Fn_type>(type(fn))->result();
 
   return make_expr<Binary>(t->loc, result, fn, left, right);
 }
@@ -965,15 +964,12 @@ elab_enum_type(Enum_tree* t) {
 
 // -------------------------------------------------------------------------- //
 // Elaboration of constants
-//
-// Note that the initializer is provided, making it par
 
-// Elaboborate a constant definition.
+// Elaborate a constant definition.
 //
-//       G, n : T |- e : T
-//    ------------------------ E-const
-//    G |- (def n : T = e) : T
-Expr*
+// The initializer of the must be convertible to the declared
+// type of the constant. The initializer is reduced.
+Def*
 elab_const(Value_tree* t, Tree* e) {
   Name* name = elab_name(t->name());
   Type* type = elab_type(t->type());
@@ -984,7 +980,7 @@ elab_const(Value_tree* t, Tree* e) {
   // Emit the declaration before elaborating the initializer.
   Def* d = make_expr<Def>(t->loc, type, name, type, nullptr);
   if (not declare(d))
-    return d;
+    return nullptr;
 
   // Check that the initializer is convertible to the declared
   // type, and then partiually evaluate it. Update the definition 
@@ -996,10 +992,6 @@ elab_const(Value_tree* t, Tree* e) {
   if (not init)
     return nullptr;
   d->third = reduce(init);
-
-
-  // Bind the initializer to its definition.
-  d->third->od = d;
 
   return d;
 }
@@ -1050,13 +1042,22 @@ elab_parms(Fn_tree* t, Decl_seq* parms) {
 // Elaborate a function definition. Note that the function
 // declartor syntax:
 //
-//    def f(pi : Ti)->T = e;
+//    def f(p : T1) -> T2 = e;
 //
 // is equivalent to the long-form syntax:
 //
-//    def f : (Ti)->T = \(pi : Ti).e
+//    def f : (T1) -> T2 = \(p : T).e
 //
-Expr*
+// The definition of a function introduces a new function scope. 
+// All parameters are declared within that scope, and the
+// function itself is declared prior to the elaboration of the
+// function body; this allows for recursive functions.
+//
+// The type of the initializer must be convertible to the declared 
+// return type of the function. 
+//
+// The initializer is reduced.
+Def*
 elab_fn(Fn_tree* t, Tree* e) {
   // Elaborate the name.
   Name* name = elab_name(t->name());
@@ -1082,7 +1083,7 @@ elab_fn(Fn_tree* t, Tree* e) {
   // Compute the type of the function and update
   // the parsed function.
   Type* type = make_fn_type(parms, result);
-  fn->tr = type;
+  fn->type_ = type;
   
   // Emit the declaration of the (as-of-yet) incomplete function
   // into the enclosing scope (we pushed the function paramter
@@ -1109,29 +1110,43 @@ elab_fn(Fn_tree* t, Tree* e) {
 // -------------------------------------------------------------------------- //
 // Elaboration of definitions
 
-// A definition declares either a constant or a function. The two 
-// elaboration rules are given below.
+namespace {
+
+Def*
+elab_const_or_fn(Def_tree* t) {
+  Def* def;
+  if (Value_tree* v = as<Value_tree>(t->decl()))
+    def = elab_const(v, t->init());
+  else if (Fn_tree* f = as<Fn_tree>(t->decl()))
+    def = elab_fn(f, t->init());
+  else
+    steve_unreachable(format("unhandled definition syntax '{}'", debug(t)));
+  return def;
+}
+
+Def*
+bind_definition(Def* def) {
+  Expr* init = def->init();
+  if (Type* t = as<Type>(init))
+    t->def_ = def;
+  else if (Term* t = as<Term>(init))
+    t->def_ = def;
+  else
+    steve_unreachable(format("unknown initializer kind '{}'", node_name(init)));
+  return def;
+}
+
+} // namespace
+
+// A definition declares either a constant or a function, and the
+// elaboration of a definition differs accordingly.
 //
-//     G, n : T |- e : T
-//    ------------------- T-def-const
-//    G |- def n : T = e
-//
-//    G, n(pi)->T : (Ti)->T |- e : T
-//    ------------------------------- T-def-fn
-//         G |- def n(pi)->T = e
-//
-// Note that the typing of the initializer is handled by elab_const
-// and elab_fn.
-//
-// TODO: Weaken the same-type requirement to allow for conversion of
-// the initializer to the returned type (e.g., nat to int?).
+// Note that we 
 Expr*
 elab_def(Def_tree* t) {
-  if (Value_tree* v = as<Value_tree>(t->decl()))
-    return elab_const(v, t->init());
-  if (Fn_tree* f = as<Fn_tree>(t->decl()))
-    return elab_fn(f, t->init());
-  steve_unreachable(format("{}: elaboration failure", t->loc));
+  if (Def* def = elab_const_or_fn(t))
+    return bind_definition(def);
+  return nullptr;
 }
 
 // -------------------------------------------------------------------------- //
@@ -1277,7 +1292,7 @@ elab_using(Using_tree* t) {
   }
 
   declare(id->name(), id->decl());
-  return make_expr<Using>(t->loc, get_type(decl), name, decl);
+  return make_expr<Using>(t->loc, type(decl), name, decl);
 }
 
 
@@ -1297,7 +1312,7 @@ inline Fn_type*
 current_function_type() {
   steve_assert(current_function(), "no current function");
   Fn* f = current_function();
-  return get_type(f);
+  return type(f);
 }
 
 // The type of a block is determined by its context. If the block
@@ -1307,7 +1322,7 @@ inline Type*
 determine_block_type() {
   Fn* fn = current_function();
   if (current_context() == fn)
-    return get_type(fn)->result();
+    return type(fn)->result();
   else
     return get_unit_type();
 }
@@ -1355,7 +1370,7 @@ elab_return(Return_tree* t) {
   if (not e)
     return nullptr;
 
-  return make_expr<Return>(t->loc, get_type(e), e);
+  return make_expr<Return>(t->loc, type(e), e);
 }
 
 

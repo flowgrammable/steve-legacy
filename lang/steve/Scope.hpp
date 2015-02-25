@@ -79,6 +79,7 @@ Scope* pop_scope();
 Scope* current_scope();
 
 Expr* current_context();
+Decl* current_decl_context();
 Type* current_type();
 Record_type* current_record();
 Variant_type* current_variant();

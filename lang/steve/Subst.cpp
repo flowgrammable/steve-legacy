@@ -108,7 +108,7 @@ subst_call(Call* e, const Subst& sub) {
   // Rebuild the call expression. Note that you can't substitute
   // directly into the body. We need to build a new substutition
   // that covers the complete set of arguments.
-  return make_expr<Call>(e->loc, get_type(e), fn, args);
+  return make_expr<Call>(e->loc, type(e), fn, args);
 }
 
 Expr*
@@ -126,7 +126,7 @@ subst_dependent(Dep_type* e, const Subst& sub) {
     args->push_back(subst(arg, sub));
 
   // Re-evaluate the type function.
-  Expr* call = make_expr<Call>(no_location, get_type(e), e->fn(), args);
+  Expr* call = make_expr<Call>(no_location, type(e), e->fn(), args);
   return reduce(call);
 }
 
