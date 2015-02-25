@@ -208,7 +208,7 @@ lex_num(Lexer& lex) {
 bool
 lex_ipv4_decimal(Lexer& lex) {
   auto iter = lex.first;
-  while (iter != lex.last and is_digit(*iter))
+  while (iter != lex.last && (is_digit(*iter) || *iter == 'x'))
     ++iter;
   if (iter == lex.first)
     return false;
@@ -227,17 +227,33 @@ lex_ipv4_dotted_decimal(Lexer& lex) {
   return false;
 }
 
+// Determines whether the ip address is masked or not
+bool
+ip_is_optional(String &s) {
+  for(auto i : s) {
+    if(i == 'x')
+      return true;
+  }
+  
+  return false;
+}
+
 // Lex an IPv4 token, returning true if there is a match
 // and false otherwise.
 bool
 lex_ipv4(Lexer& lex) {
   auto iter = lex.first;
+  
   if (lex_ipv4_dotted_decimal(lex))
     if (lex_ipv4_dotted_decimal(lex))
       if (lex_ipv4_dotted_decimal(lex))
         if (lex_ipv4_decimal(lex)) {
           String str(iter, lex.first);
-          save(lex, ipv4_tok, str);
+          
+          if(ip_is_optional(str))
+            save(lex, ipv4_masked_tok, str);
+          else
+            save(lex, ipv4_tok, str);
           return true;
         }
 
