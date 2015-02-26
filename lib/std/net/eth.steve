@@ -1,4 +1,10 @@
 
+def uint(n : nat) -> typename = __bits(nat, n, 1);
+def seq(t : typename) -> typename = __net_seq(t, true);
+
 def Ethernet : typename = record {
-  
+  src     : uint(48);
+  dest    : uint(48);
+  type    : uint(16);
+  payload : seq(uint(8));
 };

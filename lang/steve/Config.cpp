@@ -33,7 +33,7 @@ Path_list
 get_env_module_path() {
   const char* var = getenv("STEVE_MODULE_PATH");
   if (not var)
-    return {};
+    return Path_list{};
 
   // FIXME: Refactor as an algorithm.
   Path_list paths;
