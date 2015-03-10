@@ -277,12 +277,19 @@ current_scope() { return stack_; }
 // is the nearest enclosing scope that defines an associated
 // context. Note that block scopes do not associate a context,
 // so we need to "look through them".
+//
+// Note that there is no context for built-in types and
+// intrinsics.
 Expr*
 current_context() {
   Scope* s = current_scope();
-  while (s && !s->context)
+  while (s && !s->context) {
     s = s->parent;
-  return s->context; 
+  }
+  if (s)
+    return s->context; 
+  else
+    return nullptr;
 }
 
 // FIXME: These may not be right. If we allow the definition of
