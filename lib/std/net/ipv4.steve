@@ -1,4 +1,28 @@
 
+def uint(n : nat) -> typename = __bits(nat, n, 1);
+def seq(t : typename) -> typename = __net_seq(t, true);
+
+// Structure for an ipv4 packet
 def Ipv4 : typename = record {
-  
+  version         : uint(4);  // 4 bit ip version number
+  ihl             : uint(4);  // 4 bit ip header length in 32 bit words
+  tos             : uint(8);  // 8 bit type of service (not used)
+  total_length    : uint(16); // 16 bit total length of packet in 8 bit words
+  identification  : uint(16); // 16 bit identification for packet fragments
+  // flags bits:
+    // 0: unused
+    // 1: don't fragment
+    // 2: more fragments follow
+  flags           : uint(3); 
+  frag_offset     : uint(13); // 13 bit fragment offset
+  ttl             : uint(8);  // 8 bit time to live
+  protocol        : uint(8);  // 8 bit protocol
+  header_checksum : uint(16); // 16 bit checksum to detect IP header corruption
+  src             : uint(32); // 32 bit source IP address
+  dest            : uint(32); // 32 bit destination IP address
+  // The options field is present only if the ihl value is greater
+  // than 4. If so, the options length (in 32 bit increments) is the 
+  // ihl value - 4. 
+  options         : seq(uint(32)) where constrain(ihl - 4);
+  data            : seq(uint(8)) where constrain(total_length - (ihl * 8)); 
 };

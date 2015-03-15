@@ -2,14 +2,14 @@
 def uint(n : nat) -> typename = __bits(nat, n, 1);
 def seq(t : typename) -> typename = __net_seq(t, true);
 
-// Structure for an ethernet packet ...
+// Structure for an ethernet packet
 def Ethernet : typename = record {
   dest      : uint(48);     // 6 byte mac address
   src       : uint(48);     // 6 byte mac address
   // Note: In most packets the following field will be the ethertype or 
   // length. However, it may also be the 2 byte VLAN ID, in which case 
   // there will be 2 more bytes for control information followed by the
-  // 2 byte ethertype or length which 
+  // 2 byte ethertype or length
   ethertype : uint(16);     // 2 byte type or length field
-  payload   : seq(uint(8)); // where constrain(length - 4);  // variable length payload
+  payload   : seq(uint(8)); // where constrain(ethertype - 4);  // variable length payload
 };

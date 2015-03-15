@@ -1,7 +1,7 @@
 
-def empty : typename = record { };
+def Empty : typename = record { };
 
 def optional(T : typename, b : bool) -> typename = variant(t) {
-  true : T;
-  false : Nothing;
+  true  : T;
+  false : Empty;
 }
