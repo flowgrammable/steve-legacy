@@ -1,4 +1,15 @@
 
+def uint(n : nat) -> typename = __bits(nat, n, 1);
+def seq(t : typename) -> typename = __net_seq(t, true);
+
 def Ipv6 : typename = record {
-  
+  version         : uint(4);   // ip version number
+  traffic_class   : uint(8);   
+  flow_label      : uint(20);  
+  payload_length  : uint(16);  // length of the packet's payload in bytes
+  next_header     : uint(8);   // type of extension header following this header
+  hop_limit       : uint(8);   // counter for when this packet gets discarded
+  src_addr        : uint(128); 
+  dest_addr       : uint(128); 
+  payload         : uint(8)[payload_length];
 };
