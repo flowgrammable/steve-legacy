@@ -1,5 +1,36 @@
 
+def uint(n : nat) -> typename = __bits(nat, n, 1);
+def seq(t : typename) -> typename = __net_seq(t, true);
+
+def ChunkType : typename = enum(uint(8)) {
+	DATA 							= 0,  // Payload data
+	INIT 							= 1,	// Initiation
+	INIT_ACK 					= 2,  // Initiation acknowledgement
+	SACK 							= 3,  // Selective acknowledgement
+	HEARTBEAT 				= 4,  // Heartbeat request
+	HEARTBEAT_ACK 		= 5,  // Heartbeat acknowledgement
+	ABORT 		    		= 6,  // Abort
+	SHUTDOWN 		  		= 7,  // Shutdown
+	SHUTDOWN_ACK  		= 8,  // Shutdown acknowledgement
+	ERROR 			  		= 9,  // Operation error
+	COOKIE_ECHO   		= 10, // State cookie
+	COOKIE_ACK    		= 11, // Cookie acknowledgement
+	ECNE 							= 12, // Explicit congestion notification echo (reserved)
+	CWR 							= 13, // Congestion window reduced (reserved)
+	SHUTDOWN_COMPLETE = 14  // Shutdown complete
+}
+
+def Chunk : typename = record {
+	type   : ChunkType; // type of the chunk
+	flags  : uint(8);   // flags - vary depending on chunk type
+	length : uint(16);  // total length of the chunk in bytes
+	data   : uint(8)[(length % 4 == 0) ? length - 4 : length - length % 4]; // does ternary work?
+}
 
 def Sctp : typename = record {
-  
+  src_port  : uint(16); // source port
+  dest_port : uint(16); // destination port
+  ver_tag   : uint(32); // verification tag
+  checksum  : uint(32); // checksum to detect corruption of packets
+  data      : seq(Chunk);
 };
