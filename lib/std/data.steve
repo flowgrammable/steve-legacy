@@ -1,6 +1,7 @@
 
 def Empty : typename = record { };
 
+// TODO: move this type from the std library and make it built in
 def optional(T : typename, b : bool) -> typename = variant(t) {
   true  : T;
   false : Empty;
