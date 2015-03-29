@@ -9,10 +9,10 @@ def Tcp : typename = record {
   ack_number  : uint(32); // value of next seq number sender expects to receive
   data_offset : uint(4);  // how many 32-bit words are in the header
   reserved    : uint(6);  // reserved for future use
-  code 			  : uint(6);  // contains various flag information
-  window			: uint(16); // size of data that can be received
-  checksum		: uint(16); // checksum to detect corruption of packets
+  code        : uint(6);  // contains various flag information
+  window      : uint(16); // size of data that can be received
+  checksum    : uint(16); // checksum to detect corruption of packets
   urgent_ptr  : uint(16); // pointer to the first byte of urgent data 
-  options			: seq(uint(32)) where constrain(data_offset - 5);
+  options     : seq(uint(32)) where constrain(data_offset - 5);
   data        : seq(uint(8)); // where constrain(window)?
 };
