@@ -6,6 +6,6 @@ def Udp : typename = record {
   src_port  : uint(16); // source port
   dest_port : uint(16); // destination port
   length    : uint(16); // length in bytes of the whole udp packet (header+data)
-  checksum  : uint(16); // 16 bit checksum to detect corruption of packets
+  checksum  : uint(16); // checksum to detect corruption of packets
   data      : seq(uint(8)) where constrain(length - 8);
 };

@@ -1,5 +1,7 @@
 
 // Sanity test.
 // Ensure that the standard library can be found.
+// For this to work be sure that the environment variable
+// STEVE_MODULE_PATH is set to <path-to-steve-dir>/lib/std
 
 import std;
